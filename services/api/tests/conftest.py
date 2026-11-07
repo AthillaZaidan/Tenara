@@ -13,6 +13,7 @@ from app.core.security import create_access_token, hash_password
 from app.db.base import get_session
 from app.main import app
 from app.models import RoleAssignment, User
+from app.services.embedding import FakeEmbedder, get_embedder
 
 API_DIR = Path(__file__).resolve().parent.parent
 
@@ -53,8 +54,14 @@ def session(engine):
 
 
 @pytest.fixture
-def client(session):
+def embedder():
+    return FakeEmbedder()
+
+
+@pytest.fixture
+def client(session, embedder):
     app.dependency_overrides[get_session] = lambda: session
+    app.dependency_overrides[get_embedder] = lambda: embedder
     yield TestClient(app)
     app.dependency_overrides.clear()
 

@@ -1,4 +1,16 @@
 from app.models.audit import AuditEvent
+from app.models.commerce import (
+    CommissionRule,
+    DeliveryAddress,
+    DemoPayment,
+    FabricCheckout,
+    Order,
+    OrderEvent,
+    SettlementEntry,
+    Shipment,
+    StockMovement,
+    StockReservation,
+)
 from app.models.enums import FileVisibility, JobStatus, Role, RoleStatus, UserStatus
 from app.models.file import File
 from app.models.gallery import (
@@ -23,7 +35,11 @@ from app.models.user import RoleAssignment, User
 
 __all__ = [
     "AuditEvent",
+    "CommissionRule",
     "CulturalSource",
+    "DeliveryAddress",
+    "DemoPayment",
+    "FabricCheckout",
     "FabricListing",
     "FabricStockUnit",
     "File",
@@ -35,12 +51,18 @@ __all__ = [
     "JobStatus",
     "ListingImage",
     "MerchantProfile",
+    "Order",
+    "OrderEvent",
     "PartnerApplication",
     "PartnerReview",
     "Role",
     "RoleAssignment",
     "RoleStatus",
+    "SettlementEntry",
+    "Shipment",
     "SourceChunk",
+    "StockMovement",
+    "StockReservation",
     "Story",
     "StoryCitation",
     "TailorCapability",

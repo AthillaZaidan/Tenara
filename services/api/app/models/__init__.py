@@ -51,11 +51,29 @@ from app.models.partner import (
     TailorCapability,
     TailorProfile,
 )
+from app.models.support import (
+    Appeal,
+    Claim,
+    ClaimDecision,
+    ClaimEvidence,
+    ClaimResponse,
+    Conversation,
+    ConversationMember,
+    Message,
+    RemedyEvent,
+)
 from app.models.user import RoleAssignment, User
 
 __all__ = [
+    "Appeal",
     "AuditEvent",
+    "Claim",
+    "ClaimDecision",
+    "ClaimEvidence",
+    "ClaimResponse",
     "CommissionRule",
+    "Conversation",
+    "ConversationMember",
     "CulturalSource",
     "CustomRequest",
     "Customization",
@@ -80,6 +98,7 @@ __all__ = [
     "MeasurementValue",
     "MerchantConfirmation",
     "MerchantProfile",
+    "Message",
     "Order",
     "OrderAmendment",
     "OrderEvent",
@@ -90,6 +109,7 @@ __all__ = [
     "PromptRequest",
     "Quote",
     "QuoteLine",
+    "RemedyEvent",
     "Role",
     "RoleAssignment",
     "RoleStatus",

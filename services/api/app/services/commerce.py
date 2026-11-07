@@ -399,6 +399,11 @@ FABRIC_TRANSITIONS = {
 
 def apply_event(session: Session, user: User, order: Order, roles: set[str], event: str,
                 note: str | None) -> Order:
+    if event == "confirm_receipt":
+        from app.services.claims import has_open_claim  # local import: claims depends on commerce
+
+        if has_open_claim(session, order.id):
+            raise InvalidTransition("Masih ada klaim terbuka; selesaikan klaim sebelum konfirmasi terima")
     if order.kind == "custom":
         from app.services import custom_orders  # local import: custom_orders depends on commerce
 

@@ -13,7 +13,14 @@ from app.core.errors import Forbidden
 from app.core.pagination import paginate
 from app.core.responses import ok
 from app.db.base import get_session
-from app.models import CommissionRule, DeliveryAddress, MerchantProfile, Order, User
+from app.models import (
+    CommissionRule,
+    DeliveryAddress,
+    MerchantProfile,
+    Order,
+    TailorProfile,
+    User,
+)
 from app.schemas.commerce import (
     AddressIn,
     CheckoutConfirm,
@@ -108,7 +115,12 @@ def complete_payment(payment_id: uuid.UUID, body: PaymentComplete,
     payment = svc.owned_payment(session, user, payment_id)
 
     def run() -> tuple[int, dict]:
-        order = svc.complete_payment(session, user, payment, body.outcome)
+        if payment.quote_id:
+            from app.services import custom_orders
+
+            order = custom_orders.complete_quote_payment(session, user, payment, body.outcome)
+        else:
+            order = svc.complete_payment(session, user, payment, body.outcome)
         data = {"payment": {"id": payment.id, "status": payment.status,
                             "amount_idr": payment.amount_idr},
                 "order": svc.order_out(session, order) if order else None,
@@ -121,7 +133,7 @@ def complete_payment(payment_id: uuid.UUID, body: PaymentComplete,
 # ----- orders -----
 
 @router.get("/orders")
-def list_orders(as_: str = Query(default="buyer", alias="as", pattern="^(buyer|merchant|admin)$"),
+def list_orders(as_: str = Query(default="buyer", alias="as", pattern="^(buyer|merchant|tailor|admin)$"),
                 status: str | None = Query(default=None),
                 limit: int = Query(default=20, ge=1, le=100),
                 cursor: str | None = Query(default=None),
@@ -134,6 +146,11 @@ def list_orders(as_: str = Query(default="buyer", alias="as", pattern="^(buyer|m
         if profile is None:
             raise Forbidden("Merchant account required")
         stmt = stmt.where(Order.merchant_id == profile.id)
+    elif as_ == "tailor":
+        tailor = session.scalar(select(TailorProfile).where(TailorProfile.user_id == user.id))
+        if tailor is None:
+            raise Forbidden("Tailor account required")
+        stmt = stmt.where(Order.tailor_id == tailor.id)
     else:
         require_role("admin")(user)
     if status:
@@ -148,8 +165,8 @@ def list_orders(as_: str = Query(default="buyer", alias="as", pattern="^(buyer|m
 @router.get("/orders/{order_id}")
 def get_order(order_id: uuid.UUID, user: User = Depends(current_user),
               session: Session = Depends(get_session)):
-    order, _roles = svc.get_order_for(session, user, order_id)
-    return ok(svc.order_out(session, order))
+    order, roles = svc.get_order_for(session, user, order_id)
+    return ok(svc.order_out(session, order, roles))
 
 
 @router.post("/orders/{order_id}/events")
@@ -158,7 +175,7 @@ def order_event(order_id: uuid.UUID, body: OrderEventIn, user: User = Depends(cu
     order, roles = svc.get_order_for(session, user, order_id)
     svc.apply_event(session, user, order, roles, body.event, body.note)
     session.commit()
-    return ok(svc.order_out(session, order))
+    return ok(svc.order_out(session, order, roles))
 
 
 @router.get("/orders/{order_id}/settlement")

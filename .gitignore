@@ -1,0 +1,37 @@
+# Secrets (repo is public)
+.env
+.env.*
+!.env.example
+
+# Product docs kept local only
+Tenara_PRD.md
+
+# Large / third-party data (re-download; see data/README-less note in docs)
+data/tenun_datasets/
+data/private/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node (future web app)
+node_modules/
+.next/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local experiment outputs
+experiments/**/results/
+
+# Local design specs and plans (kept out of the public repo)
+docs/superpowers/
+
+# Local file storage
+services/api/storage/

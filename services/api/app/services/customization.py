@@ -9,6 +9,7 @@ from app.models import (
     Customization,
     DesignRevision,
     FabricListing,
+    Job,
     Preview,
     PromptRequest,
     TemplateVersion,
@@ -18,6 +19,7 @@ from app.services import audit, jobs
 from app.services import listings as listings_svc
 from app.services import templates as templates_svc
 from app.services.prompt_interpreter import InterpretationFailed, get_interpreters
+from app.services.signing import make_token
 from app.services.template_defs import defaults
 
 LIVE_PREVIEW_STATES = ("queued", "processing", "completed", "completed_with_warnings")
@@ -243,6 +245,21 @@ def request_preview(session: Session, user: User, cust: Customization) -> Previe
     return preview
 
 
+def request_on_body_preview(session: Session, user: User, cust: Customization,
+                            photo_id: uuid.UUID) -> Preview:
+    preview = Preview(customization_id=cust.id, design_revision=cust.current_revision,
+                      kind="on_body", body_photo_id=photo_id)
+    session.add(preview)
+    session.flush()
+    job = jobs.enqueue(session, "preview.on_body", user.id,
+                       {"preview_id": str(preview.id), "photo_id": str(photo_id)},
+                       subject_type="customization", subject_id=cust.id,
+                       subject_revision=cust.current_revision)
+    preview.job_id = job.id
+    session.flush()
+    return preview
+
+
 def owned_preview(session: Session, user: User, preview_id: uuid.UUID) -> Preview:
     preview = session.get(Preview, preview_id)
     cust = session.get(Customization, preview.customization_id) if preview else None
@@ -253,12 +270,20 @@ def owned_preview(session: Session, user: User, preview_id: uuid.UUID) -> Previe
 
 def preview_out(session: Session, preview: Preview) -> dict:
     cust = session.get(Customization, preview.customization_id)
-    status = preview.status
-    if preview.design_revision != cust.current_revision and status in LIVE_PREVIEW_STATES:
+    job = session.get(Job, preview.job_id) if preview.job_id else None
+    status, warnings = preview.status, list(preview.warnings)
+    outdated = preview.design_revision != cust.current_revision
+    if job is not None and job.status == "failed":
+        status = "failed"
+        if job.error:
+            warnings.append(job.error)
+    elif outdated:
         status = "stale"
-    url = f"/api/v1/files/{preview.file_id}" if preview.file_id else None
+    elif job is not None and job.status in ("queued", "processing"):
+        status = job.status  # the job is the source of truth until it has produced an image
+    url = (f"/api/v1/files/{preview.file_id}?token={make_token(preview.file_id)}"
+           if preview.file_id and status != "stale" else None)
     return {"id": preview.id, "kind": preview.kind, "status": status,
             "design_revision": preview.design_revision, "method": preview.method,
-            "warnings": preview.warnings, "job_id": preview.job_id, "file_id": preview.file_id,
-            "label": "Ilustrasi konseptual produk; bukan pola potong atau jaminan hasil akhir.",
-            "url_requires_signature": url is not None}
+            "warnings": warnings, "job_id": preview.job_id, "url": url,
+            "label": "Ilustrasi konseptual; bukan pola potong atau jaminan hasil akhir."}

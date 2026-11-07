@@ -19,12 +19,12 @@ API = "/api/v1"
 
 
 @pytest.fixture
-def oid(scene):  # noqa: F811
+def oid(scene):
     return _order(scene)["id"]
 
 
 @pytest.fixture
-def evidence(scene, make_file):  # noqa: F811
+def evidence(scene, make_file):
     return make_file(scene.buyer)
 
 
@@ -66,7 +66,7 @@ def _decide(s, appeal_id, who="admin", **body):
 
 # ---------- chat ----------
 
-def test_conversation_is_scoped_to_buyer_and_the_chosen_partner(scene, oid):  # noqa: F811
+def test_conversation_is_scoped_to_buyer_and_the_chosen_partner(scene, oid):
     s = scene
     r = _open_conv(s, "buyer", oid, "merchant")
     assert r.status_code == 201
@@ -79,7 +79,7 @@ def test_conversation_is_scoped_to_buyer_and_the_chosen_partner(scene, oid):  # 
     assert {m["role"] for m in tailor_thread["members"]} == {"buyer", "tailor"}
 
 
-def test_other_partner_cannot_open_or_read_the_thread(scene, oid):  # noqa: F811
+def test_other_partner_cannot_open_or_read_the_thread(scene, oid):
     s = scene
     assert _open_conv(s, "tailor", oid, "merchant").status_code == 403
     conv = _open_conv(s, "buyer", oid, "merchant").json()["data"]
@@ -91,7 +91,7 @@ def test_other_partner_cannot_open_or_read_the_thread(scene, oid):  # noqa: F811
     assert s.client.get(f"{API}/conversations/{conv['id']}/messages", headers=s.h["admin"]).status_code == 404
 
 
-def test_strangers_cannot_open_conversations(scene, oid, make_user, auth_header):  # noqa: F811
+def test_strangers_cannot_open_conversations(scene, oid, make_user, auth_header):
     s = scene
     stranger = auth_header(make_user("stranger@example.com"))
     r = s.client.post(f"{API}/conversations", headers=stranger,
@@ -99,7 +99,7 @@ def test_strangers_cannot_open_conversations(scene, oid, make_user, auth_header)
     assert r.status_code == 404
 
 
-def test_messages_are_ordered_and_pollable(scene, oid):  # noqa: F811
+def test_messages_are_ordered_and_pollable(scene, oid):
     s = scene
     conv = _open_conv(s, "buyer", oid, "merchant").json()["data"]
     url = f"{API}/conversations/{conv['id']}/messages"
@@ -114,7 +114,7 @@ def test_messages_are_ordered_and_pollable(scene, oid):  # noqa: F811
     assert idle["items"] == [] and idle["next_cursor"] == new["next_cursor"]
 
 
-def test_message_validation(scene, oid):  # noqa: F811
+def test_message_validation(scene, oid):
     s = scene
     conv = _open_conv(s, "buyer", oid, "merchant").json()["data"]
     url = f"{API}/conversations/{conv['id']}/messages"
@@ -124,7 +124,7 @@ def test_message_validation(scene, oid):  # noqa: F811
     assert s.client.get(f"{url}?after=bogus", headers=s.h["buyer"]).status_code == 422
 
 
-def test_conversation_list_shows_only_mine(scene, oid, make_user, auth_header):  # noqa: F811
+def test_conversation_list_shows_only_mine(scene, oid, make_user, auth_header):
     s = scene
     conv = _open_conv(s, "buyer", oid, "merchant").json()["data"]
     s.client.post(f"{API}/conversations/{conv['id']}/messages", headers=s.h["buyer"], json={"body": "Hai"})
@@ -135,7 +135,7 @@ def test_conversation_list_shows_only_mine(scene, oid, make_user, auth_header): 
     assert s.client.get(f"{API}/conversations", headers=other).json()["data"] == []
 
 
-def test_conversation_can_be_opened_before_ordering(scene):  # noqa: F811
+def test_conversation_can_be_opened_before_ordering(scene):
     from test_custom_orders import _ready_customization, _request, _submit
 
     s = scene
@@ -152,7 +152,7 @@ def test_conversation_can_be_opened_before_ordering(scene):  # noqa: F811
 
 # ---------- claims: opening + evidence ----------
 
-def test_buyer_opens_claim_with_dedicated_discussion(scene, oid, evidence):  # noqa: F811
+def test_buyer_opens_claim_with_dedicated_discussion(scene, oid, evidence):
     s = scene
     r = _claim(s, oid, "merchant", "fabric", [evidence])
     assert r.status_code == 201
@@ -167,7 +167,7 @@ def test_buyer_opens_claim_with_dedicated_discussion(scene, oid, evidence):  # n
     assert _claim(s, oid, "tailor", "garment").status_code == 201
 
 
-def test_only_the_buyer_opens_claims_and_evidence_must_be_own(scene, oid, make_file):  # noqa: F811
+def test_only_the_buyer_opens_claims_and_evidence_must_be_own(scene, oid, make_file):
     s = scene
     r = s.client.post(f"{API}/orders/{oid}/claims", headers=s.h["merchant"],
                       json={"target": "merchant", "component": "fabric", "description": "tidak boleh"})
@@ -176,7 +176,7 @@ def test_only_the_buyer_opens_claims_and_evidence_must_be_own(scene, oid, make_f
     assert _claim(s, oid, files=[foreign]).status_code == 422
 
 
-def test_claims_are_private(scene, oid, make_user, auth_header):  # noqa: F811
+def test_claims_are_private(scene, oid, make_user, auth_header):
     s = scene
     claim = _claim(s, oid).json()["data"]
     stranger = auth_header(make_user("stranger@example.com"))
@@ -187,7 +187,7 @@ def test_claims_are_private(scene, oid, make_user, auth_header):  # noqa: F811
     assert len(s.client.get(f"{API}/claims", headers=s.h["merchant"]).json()["data"]["items"]) == 1
 
 
-def test_evidence_urls_are_signed_for_participants(scene, oid, evidence, storage):  # noqa: F811
+def test_evidence_urls_are_signed_for_participants(scene, oid, evidence, storage):
     s = scene
     app.dependency_overrides[get_storage] = lambda: storage
     claim = _claim(s, oid, files=[evidence]).json()["data"]
@@ -196,7 +196,7 @@ def test_evidence_urls_are_signed_for_participants(scene, oid, evidence, storage
     assert s.client.get(url.split("?")[0]).status_code == 403  # no token, no access
 
 
-def test_partner_can_add_their_own_evidence(scene, oid, make_file):  # noqa: F811
+def test_partner_can_add_their_own_evidence(scene, oid, make_file):
     s = scene
     claim = _claim(s, oid).json()["data"]
     mine = make_file(s.merchant)
@@ -210,7 +210,7 @@ def test_partner_can_add_their_own_evidence(scene, oid, make_file):  # noqa: F81
 
 # ---------- claims: partner response ----------
 
-def test_proposal_needs_a_valid_remedy(scene, oid):  # noqa: F811
+def test_proposal_needs_a_valid_remedy(scene, oid):
     s = scene
     claim = _claim(s, oid).json()["data"]
     assert _respond(s, "merchant", claim["id"], "proposal").status_code == 422
@@ -221,7 +221,7 @@ def test_proposal_needs_a_valid_remedy(scene, oid):  # noqa: F811
     assert ok.json()["data"]["status"] == "partner_discussion"
 
 
-def test_accepting_a_proposal_resolves_without_touching_the_order(scene, oid):  # noqa: F811
+def test_accepting_a_proposal_resolves_without_touching_the_order(scene, oid):
     s = scene
     claim = _claim(s, oid).json()["data"]
     prop = _respond(s, "merchant", claim["id"], "proposal", "Kami beri refund sebagian",
@@ -240,7 +240,7 @@ def test_accepting_a_proposal_resolves_without_touching_the_order(scene, oid):  
     assert again.status_code == 409
 
 
-def test_accepted_refund_is_executed_separately_and_only_hits_the_responsible_party(scene, oid):  # noqa: F811
+def test_accepted_refund_is_executed_separately_and_only_hits_the_responsible_party(scene, oid):
     s = scene
     claim = _claim(s, oid).json()["data"]
     _respond(s, "merchant", claim["id"], "proposal", "Refund sebagian",
@@ -264,7 +264,7 @@ def test_accepted_refund_is_executed_separately_and_only_hits_the_responsible_pa
     assert detail["remedy_events"][0]["simulated"] is True and "SIMULASI" in detail["simulation_notice"]
 
 
-def test_refund_can_be_executed_in_instalments_but_never_beyond_the_order(scene, oid):  # noqa: F811
+def test_refund_can_be_executed_in_instalments_but_never_beyond_the_order(scene, oid):
     s = scene
     claim = _claim(s, oid).json()["data"]
     _respond(s, "merchant", claim["id"], "proposal", "Refund",
@@ -281,7 +281,7 @@ def test_refund_can_be_executed_in_instalments_but_never_beyond_the_order(scene,
     assert total == -95_000
 
 
-def test_rejecting_a_proposal_returns_to_discussion(scene, oid):  # noqa: F811
+def test_rejecting_a_proposal_returns_to_discussion(scene, oid):
     s = scene
     claim = _claim(s, oid).json()["data"]
     _respond(s, "merchant", claim["id"], "proposal", "Penjelasan saja", {"remedy_type": "explanation"})
@@ -291,7 +291,7 @@ def test_rejecting_a_proposal_returns_to_discussion(scene, oid):  # noqa: F811
     assert out["status"] == "partner_discussion"
 
 
-def test_buyer_can_withdraw_an_open_claim(scene, oid):  # noqa: F811
+def test_buyer_can_withdraw_an_open_claim(scene, oid):
     s = scene
     claim = _claim(s, oid).json()["data"]
     out = s.client.post(f"{API}/claims/{claim['id']}/withdraw", headers=s.h["buyer"]).json()["data"]
@@ -302,7 +302,7 @@ def test_buyer_can_withdraw_an_open_claim(scene, oid):  # noqa: F811
 
 # ---------- appeal + internal review ----------
 
-def test_appeal_requires_a_recorded_rejection(scene, oid):  # noqa: F811
+def test_appeal_requires_a_recorded_rejection(scene, oid):
     s = scene
     claim = _claim(s, oid).json()["data"]
     early = _appeal(s, claim["id"], str(uuid.uuid4()))
@@ -324,7 +324,7 @@ def _appealed(s, oid, files=()):
     return claim, appeal
 
 
-def test_review_queue_is_admin_only_and_party_cannot_review(scene, oid, make_user, auth_header):  # noqa: F811
+def test_review_queue_is_admin_only_and_party_cannot_review(scene, oid, make_user, auth_header):
     s = scene
     _, appeal = _appealed(s, oid)
     assert s.client.get(f"{API}/admin/appeals", headers=s.h["buyer"]).status_code == 403
@@ -337,7 +337,7 @@ def test_review_queue_is_admin_only_and_party_cannot_review(scene, oid, make_use
     assert r.status_code == 403  # the responsible partner cannot review their own case
 
 
-def test_reviewer_joins_the_claim_discussion_and_sees_a_scoped_bundle(scene, oid, evidence, storage):  # noqa: F811
+def test_reviewer_joins_the_claim_discussion_and_sees_a_scoped_bundle(scene, oid, evidence, storage):
     s = scene
     app.dependency_overrides[get_storage] = lambda: storage
     claim, appeal = _appealed(s, oid, files=[evidence])
@@ -359,7 +359,7 @@ def test_reviewer_joins_the_claim_discussion_and_sees_a_scoped_bundle(scene, oid
     assert {"claim.review_started", "claim.evidence_viewed"} <= actions
 
 
-def test_reviewer_can_request_more_evidence(scene, oid):  # noqa: F811
+def test_reviewer_can_request_more_evidence(scene, oid):
     s = scene
     claim, appeal = _appealed(s, oid)
     s.client.post(f"{API}/admin/appeals/{appeal['id']}/start-review", headers=s.h["admin"])
@@ -371,7 +371,7 @@ def test_reviewer_can_request_more_evidence(scene, oid):  # noqa: F811
     assert "Permintaan bukti reviewer" in msgs[-1]["body"]
 
 
-def test_upholding_the_rejection_resolves_the_claim(scene, oid):  # noqa: F811
+def test_upholding_the_rejection_resolves_the_claim(scene, oid):
     s = scene
     claim, appeal = _appealed(s, oid)
     s.client.post(f"{API}/admin/appeals/{appeal['id']}/start-review", headers=s.h["admin"])
@@ -383,7 +383,7 @@ def test_upholding_the_rejection_resolves_the_claim(scene, oid):  # noqa: F811
     assert "Bukti menunjukkan" in detail["decision"]["reasoning"]
 
 
-def test_overturning_needs_a_remedy_and_reasoning(scene, oid):  # noqa: F811
+def test_overturning_needs_a_remedy_and_reasoning(scene, oid):
     s = scene
     _, appeal = _appealed(s, oid)
     s.client.post(f"{API}/admin/appeals/{appeal['id']}/start-review", headers=s.h["admin"])
@@ -393,7 +393,7 @@ def test_overturning_needs_a_remedy_and_reasoning(scene, oid):  # noqa: F811
     assert _decide(s, appeal["id"], who="buyer").status_code == 403
 
 
-def test_only_the_assigned_reviewer_decides(scene, oid, make_user, auth_header):  # noqa: F811
+def test_only_the_assigned_reviewer_decides(scene, oid, make_user, auth_header):
     s = scene
     _, appeal = _appealed(s, oid)
     other_admin = make_user("admin2@example.com", roles=(("admin", "active"),))
@@ -404,7 +404,7 @@ def test_only_the_assigned_reviewer_decides(scene, oid, make_user, auth_header):
     assert s.client.get(f"{API}/admin/appeals/{appeal['id']}", headers=s.h["admin2"]).status_code == 403
 
 
-def test_overturned_decision_is_executed_separately_then_resolves(scene, oid):  # noqa: F811
+def test_overturned_decision_is_executed_separately_then_resolves(scene, oid):
     s = scene
     claim, appeal = _appealed(s, oid)
     s.client.post(f"{API}/admin/appeals/{appeal['id']}/start-review", headers=s.h["admin"])
@@ -441,7 +441,7 @@ def _deliver(s, oid):
     _event(s, "admin", oid, "simulate_delivery")
 
 
-def test_open_claim_blocks_completion_until_it_is_handled(scene, oid):  # noqa: F811
+def test_open_claim_blocks_completion_until_it_is_handled(scene, oid):
     s = scene
     _deliver(s, oid)
     claim = _claim(s, oid, "tailor", "garment").json()["data"]
@@ -451,7 +451,7 @@ def test_open_claim_blocks_completion_until_it_is_handled(scene, oid):  # noqa: 
     assert _event(s, "buyer", oid, "confirm_receipt").json()["data"]["status"] == "completed"
 
 
-def test_claims_can_still_be_opened_after_completion(scene, oid):  # noqa: F811
+def test_claims_can_still_be_opened_after_completion(scene, oid):
     s = scene
     _deliver(s, oid)
     _event(s, "buyer", oid, "confirm_receipt")
@@ -460,7 +460,7 @@ def test_claims_can_still_be_opened_after_completion(scene, oid):  # noqa: F811
 
 # ---------- privacy + admin audit ----------
 
-def test_users_can_list_and_delete_their_own_private_files(scene, make_file, storage):  # noqa: F811
+def test_users_can_list_and_delete_their_own_private_files(scene, make_file, storage):
     s = scene
     app.dependency_overrides[get_storage] = lambda: storage
     f = make_file(s.buyer)
@@ -472,7 +472,7 @@ def test_users_can_list_and_delete_their_own_private_files(scene, make_file, sto
     assert s.client.delete(f"{API}/files/{f.id}", headers=s.h["buyer"]).status_code == 404
 
 
-def test_evidence_of_an_open_claim_cannot_be_deleted(scene, oid, evidence, storage):  # noqa: F811
+def test_evidence_of_an_open_claim_cannot_be_deleted(scene, oid, evidence, storage):
     s = scene
     app.dependency_overrides[get_storage] = lambda: storage
     claim = _claim(s, oid, files=[evidence]).json()["data"]
@@ -481,7 +481,7 @@ def test_evidence_of_an_open_claim_cannot_be_deleted(scene, oid, evidence, stora
     assert s.client.delete(f"{API}/files/{evidence.id}", headers=s.h["buyer"]).status_code == 200
 
 
-def test_deleting_a_file_does_not_erase_the_approved_order(scene, oid, make_file, storage):  # noqa: F811
+def test_deleting_a_file_does_not_erase_the_approved_order(scene, oid, make_file, storage):
     s = scene
     app.dependency_overrides[get_storage] = lambda: storage
     f = make_file(s.buyer)
@@ -491,7 +491,7 @@ def test_deleting_a_file_does_not_erase_the_approved_order(scene, oid, make_file
     assert before["snapshot"] == after["snapshot"] and after["total_idr"] == before["total_idr"]
 
 
-def test_audit_trail_is_admin_only_and_filterable(scene, oid):  # noqa: F811
+def test_audit_trail_is_admin_only_and_filterable(scene, oid):
     s = scene
     claim = _claim(s, oid).json()["data"]
     assert s.client.get(f"{API}/admin/audit-events", headers=s.h["buyer"]).status_code == 403

@@ -67,3 +67,7 @@ class RemedyEventIn(BaseModel):
     action: Literal["rework", "replacement", "refund_partial", "refund_full"]
     amount_idr: int | None = Field(default=None, gt=0)
     note: str | None = None
+
+
+class EscalateIn(BaseModel):
+    reason: str = Field(min_length=5)

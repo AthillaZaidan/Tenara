@@ -14,6 +14,7 @@ from app.schemas.support import (
     AppealDecisionIn,
     AppealIn,
     ClaimCreate,
+    EscalateIn,
     EvidenceIn,
     EvidenceRequestIn,
     ProposalDecision,
@@ -96,6 +97,15 @@ def appeal_claim(claim_id: uuid.UUID, body: AppealIn, user: User = Depends(curre
                  session: Session = Depends(get_session)):
     claim, _ = svc.claim_for(session, user, claim_id)
     row = svc.appeal(session, user, claim, body.partner_rejection_id, body.reason, body.evidence_ids)
+    session.commit()
+    return ok(svc.appeal_summary(session, row))
+
+
+@router.post("/claims/{claim_id}/escalate", status_code=201)
+def escalate_claim(claim_id: uuid.UUID, body: EscalateIn, user: User = Depends(current_user),
+                   session: Session = Depends(get_session)):
+    claim, _ = svc.claim_for(session, user, claim_id)
+    row = svc.escalate_no_response(session, user, claim, body.reason)
     session.commit()
     return ok(svc.appeal_summary(session, row))
 

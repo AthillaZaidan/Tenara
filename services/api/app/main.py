@@ -6,6 +6,8 @@ from app.routers import (
     admin_gallery,
     admin_partners,
     auth,
+    chat,
+    claims,
     commerce,
     custom,
     customizations,
@@ -25,5 +27,5 @@ app = FastAPI(title="Tenara API", version="0.1.0")
 register_error_handlers(app)
 for router in (custom.router, health.router, auth.router, files.router, jobs.router, gallery.router,
                admin_gallery.router, partners.router, admin_partners.router, listings.router,
-               commerce.router, templates.router, customizations.router, measurements.router):
+               commerce.router, templates.router, customizations.router, measurements.router, chat.router, claims.router):
     app.include_router(router, prefix="/api/v1")

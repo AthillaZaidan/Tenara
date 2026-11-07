@@ -7,12 +7,15 @@ import time
 from collections.abc import Callable
 
 from app.db.base import SessionLocal
+from app.services.commerce import expire_holds
 from app.services.jobs import process_one
 
 
 def main(poll_interval: float = 1.0, should_stop: Callable[[], bool] = lambda: False) -> None:
     while not should_stop():
         with SessionLocal() as session:
+            expire_holds(session)  # release payment holds whose window has passed
+            session.commit()
             worked = process_one(session)
         if not worked:
             time.sleep(poll_interval)

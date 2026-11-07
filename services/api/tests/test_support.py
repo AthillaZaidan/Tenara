@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 
 import pytest
 from sqlalchemy import select
@@ -11,6 +12,7 @@ from test_custom_orders import (  # noqa: F401  (fixtures + helpers shared with 
     synced,
 )
 
+from app.core.config import settings
 from app.main import app
 from app.models import AuditEvent, SettlementEntry
 from app.services.storage import get_storage
@@ -499,3 +501,103 @@ def test_audit_trail_is_admin_only_and_filterable(scene, oid):
                          headers=s.h["admin"]).json()["data"]["items"]
     assert len(items) == 1 and items[0]["actor_user_id"] == str(s.buyer.id)
     assert items[0]["metadata"]["target"] == "merchant"
+
+
+# ---------- demo claim policy: window + response SLA + explicit no-response rule ----------
+
+def _age(session, model, row_id, **shift):
+    row = session.get(model, uuid.UUID(str(row_id)))
+    row.created_at = row.created_at - timedelta(**shift)
+    session.flush()
+
+
+def test_claims_expire_a_set_time_after_delivery_but_not_before(scene, oid):
+    from app.models import OrderEvent
+
+    s = scene
+    assert _claim(s, oid).status_code == 201  # during fulfilment there is no window yet
+    _deliver(s, oid)
+    delivered = s.session.scalar(select(OrderEvent).where(OrderEvent.to_status == "delivered"))
+    delivered.created_at = delivered.created_at - timedelta(days=settings.claim_window_days + 1)
+    s.session.flush()
+    late = _claim(s, oid, "tailor", "garment")
+    assert late.status_code == 422 and "Batas waktu klaim" in late.json()["error"]["message"]
+    delivered.created_at = delivered.created_at + timedelta(days=3)
+    s.session.flush()
+    assert _claim(s, oid, "tailor", "garment").status_code == 201
+
+
+def test_claim_view_exposes_the_policy(scene, oid):
+    s = scene
+    claim = _claim(s, oid).json()["data"]
+    policy = claim["policy"]
+    assert policy["claim_window_ends_at"] is None and policy["partner_overdue"] is False
+    assert policy["partner_response_due_at"] and "demo" in policy["note"].lower()
+    _deliver(s, oid)
+    after = s.client.get(f"{API}/claims/{claim['id']}", headers=s.h["buyer"]).json()["data"]["policy"]
+    assert after["claim_window_ends_at"] is not None
+
+
+def test_silence_is_not_a_rejection_until_the_sla_passes(scene, oid):
+    from app.models import Claim
+
+    s = scene
+    claim = _claim(s, oid).json()["data"]
+    url = f"{API}/claims/{claim['id']}/escalate"
+    body = {"reason": "Mitra belum merespons klaim saya"}
+    early = s.client.post(url, headers=s.h["buyer"], json=body)
+    assert early.status_code == 409 and "batas waktu respons" in early.json()["error"]["message"]
+    _age(s.session, Claim, claim["id"], hours=settings.partner_response_sla_hours + 1)
+    view = s.client.get(f"{API}/claims/{claim['id']}", headers=s.h["buyer"]).json()["data"]
+    assert view["policy"]["partner_overdue"] is True and view["status"] == "opened"  # still not "rejected"
+    assert s.client.post(url, headers=s.h["merchant"], json=body).status_code == 403
+    ok = s.client.post(url, headers=s.h["buyer"], json=body)
+    assert ok.status_code == 201 and ok.json()["data"]["basis"] == "no_response"
+    assert s.client.get(f"{API}/claims/{claim['id']}", headers=s.h["buyer"]).json()["data"]["status"] == "appealed"
+    assert s.client.post(url, headers=s.h["buyer"], json=body).status_code == 409
+
+
+def test_a_partner_reply_restarts_the_clock(scene, oid):
+    from app.models import Claim
+
+    s = scene
+    claim = _claim(s, oid).json()["data"]
+    _age(s.session, Claim, claim["id"], hours=settings.partner_response_sla_hours + 5)
+    _respond(s, "merchant", claim["id"], "discussion", "Kami cek stok dulu")
+    r = s.client.post(f"{API}/claims/{claim['id']}/escalate", headers=s.h["buyer"],
+                      json={"reason": "Sudah lewat waktu tapi ada balasan"})
+    assert r.status_code == 409  # the reply counts: the partner is engaging
+
+
+def test_no_escalation_while_a_proposal_awaits_the_buyer_or_after_a_rejection(scene, oid):
+    from app.models import Claim
+
+    s = scene
+    first = _claim(s, oid).json()["data"]
+    _respond(s, "merchant", first["id"], "proposal", "Penjelasan", {"remedy_type": "explanation"})
+    _age(s.session, Claim, first["id"], hours=500)
+    assert s.client.post(f"{API}/claims/{first['id']}/escalate", headers=s.h["buyer"],
+                         json={"reason": "tidak relevan"}).status_code == 409
+    second = _claim(s, oid, "tailor", "garment").json()["data"]
+    s.client.post(f"{API}/claims/{second['id']}/responses", headers=s.h["tailor"],
+                  json={"kind": "rejection", "reason": "Sesuai spesifikasi"})
+    assert s.client.post(f"{API}/claims/{second['id']}/escalate", headers=s.h["buyer"],
+                         json={"reason": "gunakan banding"}).status_code == 409  # use the normal appeal
+
+
+def test_no_response_appeal_goes_through_the_same_internal_review(scene, oid):
+    from app.models import Claim
+
+    s = scene
+    claim = _claim(s, oid).json()["data"]
+    _age(s.session, Claim, claim["id"], hours=settings.partner_response_sla_hours + 1)
+    appeal = s.client.post(f"{API}/claims/{claim['id']}/escalate", headers=s.h["buyer"],
+                           json={"reason": "Mitra tidak merespons"}).json()["data"]
+    queue = s.client.get(f"{API}/admin/appeals", headers=s.h["admin"]).json()["data"]["items"]
+    assert queue[0]["basis"] == "no_response"
+    s.client.post(f"{API}/admin/appeals/{appeal['id']}/start-review", headers=s.h["admin"])
+    bundle = s.client.get(f"{API}/admin/appeals/{appeal['id']}", headers=s.h["admin"]).json()["data"]
+    assert bundle["appeal"]["basis"] == "no_response"
+    done = _decide(s, appeal["id"], outcome="overturned", remedy_type="explanation", amount_idr=None)
+    assert done.status_code == 200
+    assert s.client.get(f"{API}/claims/{claim['id']}", headers=s.h["buyer"]).json()["data"]["status"] == "resolved"

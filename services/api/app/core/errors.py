@@ -63,6 +63,12 @@ class InvalidTransition(AppError):
     default_message = "This action is not allowed in the current state"
 
 
+class ServiceUnavailable(AppError):
+    status_code = 503
+    code = "service_unavailable"
+    default_message = "A required service is unavailable"
+
+
 class AppValidationError(AppError):
     status_code = 422
     code = "validation_error"

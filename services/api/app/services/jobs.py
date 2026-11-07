@@ -9,6 +9,10 @@ from app.models import Job, JobStatus
 
 MAX_ATTEMPTS = 3
 
+
+class PermanentJobError(Exception):
+    """Deterministic failure (bad input, missing model): record it, do not retry."""
+
 Handler = Callable[[Session, Job], dict]
 Resolver = Callable[[Session, uuid.UUID], int]
 
@@ -88,6 +92,8 @@ def run_job(session: Session, job: Job, now: datetime | None = None) -> Job:
     try:
         with session.begin_nested():
             output = handler(session, job)
+    except PermanentJobError as exc:
+        return _finish(job, JobStatus.FAILED, now, error=str(exc))
     except Exception as exc:  # noqa: BLE001 - any handler failure is recorded on the job
         message = str(exc)
         if job.attempts < MAX_ATTEMPTS:

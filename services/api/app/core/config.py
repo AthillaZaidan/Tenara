@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     llm_model: str = "openai/gpt-6-luna"
     openai_api_key: str = ""
     openrouter_api_key: str = ""
+    pose_model_path: str = "./models/pose_landmarker_full.task"
+    photo_default_retention_minutes: int = 60  # raw body photos are purged after this by default
+    photo_max_retention_days: int = 7
+    photo_max_bytes: int = 8_000_000
+    vlm_timeout_seconds: int = 90
 
 
 settings = Settings()

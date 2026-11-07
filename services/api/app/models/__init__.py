@@ -11,6 +11,17 @@ from app.models.commerce import (
     StockMovement,
     StockReservation,
 )
+from app.models.customization import (
+    Customization,
+    DesignRevision,
+    GarmentTemplate,
+    MaterialEstimate,
+    MeasurementSet,
+    MeasurementValue,
+    Preview,
+    PromptRequest,
+    TemplateVersion,
+)
 from app.models.enums import FileVisibility, JobStatus, Role, RoleStatus, UserStatus
 from app.models.file import File
 from app.models.gallery import (
@@ -37,8 +48,10 @@ __all__ = [
     "AuditEvent",
     "CommissionRule",
     "CulturalSource",
+    "Customization",
     "DeliveryAddress",
     "DemoPayment",
+    "DesignRevision",
     "FabricCheckout",
     "FabricListing",
     "FabricStockUnit",
@@ -46,15 +59,21 @@ __all__ = [
     "FileVisibility",
     "GalleryEntry",
     "GalleryReferenceImage",
+    "GarmentTemplate",
     "IdempotencyKey",
     "Job",
     "JobStatus",
     "ListingImage",
+    "MaterialEstimate",
+    "MeasurementSet",
+    "MeasurementValue",
     "MerchantProfile",
     "Order",
     "OrderEvent",
     "PartnerApplication",
     "PartnerReview",
+    "Preview",
+    "PromptRequest",
     "Role",
     "RoleAssignment",
     "RoleStatus",
@@ -67,6 +86,7 @@ __all__ = [
     "StoryCitation",
     "TailorCapability",
     "TailorProfile",
+    "TemplateVersion",
     "User",
     "UserStatus",
 ]

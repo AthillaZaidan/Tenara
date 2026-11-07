@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     hold_minutes: int = 15
     default_commission_bps: int = 500  # demo value (5%), configurable by admin
     buyer_service_fee_idr: int = 0  # buyer-visible platform fee; zero until configured
+    prompt_interpreter: str = "rules"  # rules | llm (llm always falls back to rules on failure)
+    llm_provider: str = "openrouter"  # openai | openrouter | ollama
+    llm_model: str = "openai/gpt-6-luna"
+    openai_api_key: str = ""
+    openrouter_api_key: str = ""
 
 
 settings = Settings()

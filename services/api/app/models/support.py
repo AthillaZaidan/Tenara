@@ -161,15 +161,17 @@ class Appeal(Base):
         UniqueConstraint("claim_id", name="uq_appeals_claim"),
         CheckConstraint("status in ('pending','under_review','decided')",
                         name="ck_appeals_status_valid"),
+        CheckConstraint("basis in ('rejection','no_response')", name="ck_appeals_basis_valid"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     claim_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("claims.id", ondelete="CASCADE"), nullable=False
     )
-    rejection_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("claim_responses.id", ondelete="CASCADE"), nullable=False
+    rejection_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("claim_responses.id", ondelete="CASCADE"), nullable=True
     )
+    basis: Mapped[str] = mapped_column(String(12), nullable=False, server_default="rejection")
     buyer_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )

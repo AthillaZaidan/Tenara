@@ -20,7 +20,9 @@ from app.schemas.gallery import (
     StoryCreate,
 )
 from app.services import gallery as svc
+from app.services import story_gen
 from app.services.embedding import Embedder, get_embedder
+from app.services.story_gen import TextLLM, get_story_llm
 
 router = APIRouter(prefix="/admin", tags=["admin-gallery"])
 Admin = Depends(require_role("admin"))
@@ -164,6 +166,17 @@ def create_story(entry_id: uuid.UUID, body: StoryCreate, user: User = Admin,
     story = svc.create_story(session, user, entry, body=body.body,
                              citations=[c.model_dump() for c in body.citations],
                              unresolved=body.unresolved)
+    session.commit()
+    return ok(_story(session, story))
+
+
+@router.post("/gallery/{entry_id}/story/generate", status_code=201)
+def generate_story(entry_id: uuid.UUID, user: User = Admin, session: Session = Depends(get_session),
+                   embedder: Embedder | None = Depends(get_embedder),
+                   llm: TextLLM | None = Depends(get_story_llm)):
+    """Writer/critic draft from approved source chunks. Always a draft: a curator still reviews it."""
+    entry = svc.get_entry(session, entry_id)
+    story = story_gen.generate_story(session, user, entry, llm, embedder)
     session.commit()
     return ok(_story(session, story))
 

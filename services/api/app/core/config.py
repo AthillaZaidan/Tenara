@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     file_url_secret: str = DEFAULT_FILE_SECRET
     file_url_ttl_seconds: int = 300
     storage_dir: str = "./storage"
+    embedder: str = "fastembed"  # fastembed | fake | none
+    embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    search_min_similarity: float = 0.35
 
 
 settings = Settings()

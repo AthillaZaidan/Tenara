@@ -63,10 +63,11 @@ def compute(defn: dict, dims: dict[str, float], state: dict, *, width_cm: float,
 
 def _purchase_meter(listing: FabricListing, required_cm: float) -> Decimal:
     required = Decimal(str(round(required_cm / 100, 2)))
+    cent = Decimal("0.01")
     if required <= listing.min_quantity:
-        return listing.min_quantity
+        return Decimal(listing.min_quantity).quantize(cent)
     steps = math.ceil((required - listing.min_quantity) / listing.quantity_increment)
-    return listing.min_quantity + steps * listing.quantity_increment
+    return (listing.min_quantity + steps * listing.quantity_increment).quantize(cent)
 
 
 def estimate_for(session: Session, user: User, cust: Customization) -> MaterialEstimate:

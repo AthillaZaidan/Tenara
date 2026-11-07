@@ -1,3 +1,4 @@
+from app.models.ai import BodyPhoto, CvAnalysis, PhotoConsent
 from app.models.audit import AuditEvent
 from app.models.commerce import (
     CommissionRule,
@@ -67,6 +68,7 @@ from app.models.user import RoleAssignment, User
 __all__ = [
     "Appeal",
     "AuditEvent",
+    "BodyPhoto",
     "Claim",
     "ClaimDecision",
     "ClaimEvidence",
@@ -77,6 +79,7 @@ __all__ = [
     "CulturalSource",
     "CustomRequest",
     "Customization",
+    "CvAnalysis",
     "DeliveryAddress",
     "DemoPayment",
     "DesignRevision",
@@ -104,6 +107,7 @@ __all__ = [
     "OrderEvent",
     "PartnerApplication",
     "PartnerReview",
+    "PhotoConsent",
     "Preview",
     "ProductionSpec",
     "PromptRequest",

@@ -215,5 +215,8 @@ class Preview(Base):
     job_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("jobs.id", ondelete="SET NULL"), nullable=True
     )
+    body_photo_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("body_photos.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = _ts()
     updated_at: Mapped[datetime] = _upd()

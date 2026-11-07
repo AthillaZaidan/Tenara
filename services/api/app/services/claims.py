@@ -1,8 +1,9 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
+from app.core.config import settings
 from app.core.errors import AppValidationError, Forbidden, InvalidTransition, NotFound
 from app.models import (
     Appeal,
@@ -44,6 +45,34 @@ def has_open_claim(session, order_id: uuid.UUID) -> bool:
         Claim.order_id == order_id, Claim.status.in_(OPEN_STATUSES)).limit(1)) is not None
 
 
+# ---------- demo policy: claim window + partner response SLA ----------
+
+def delivered_at(session, order_id: uuid.UUID) -> datetime | None:
+    return session.scalar(select(OrderEvent.created_at).where(
+        OrderEvent.order_id == order_id, OrderEvent.to_status == "delivered")
+        .order_by(OrderEvent.created_at).limit(1))
+
+
+def claim_window_ends(session, order_id: uuid.UUID) -> datetime | None:
+    delivered = delivered_at(session, order_id)
+    return delivered + timedelta(days=settings.claim_window_days) if delivered else None
+
+
+def partner_due_at(session, claim: Claim) -> datetime:
+    """The partner must react within the SLA after the claim opened, their last reply, or the
+    buyer's last rejection of a proposal (whichever is latest)."""
+    anchors = [claim.created_at]
+    for r in session.scalars(select(ClaimResponse).where(ClaimResponse.claim_id == claim.id)):
+        anchors.append(r.created_at)
+        if r.decided_at:
+            anchors.append(r.decided_at)
+    return max(anchors) + timedelta(hours=settings.partner_response_sla_hours)
+
+
+def partner_overdue(session, claim: Claim) -> bool:
+    return claim.status in ("opened", "partner_discussion") and _now() > partner_due_at(session, claim)
+
+
 # ---------- access ----------
 
 def claim_for(session, user: User, claim_id: uuid.UUID) -> tuple[Claim, set[str]]:
@@ -78,6 +107,11 @@ def open_claim(session, buyer: User, order_id: uuid.UUID, target: str, component
         raise Forbidden("Only the buyer can open a claim")
     if order.status == "cancelled":
         raise InvalidTransition("Cancelled orders cannot be claimed")
+    window_end = claim_window_ends(session, order.id)
+    if window_end is not None and _now() > window_end:
+        raise AppValidationError(
+            f"Batas waktu klaim ({settings.claim_window_days} hari setelah pengiriman diterima) "
+            "sudah terlewati", field="order_id")
     if target == "tailor" and not order.tailor_id:
         raise AppValidationError("Pesanan ini tidak memiliki tailor", field="target")
     target_user = (session.get(MerchantProfile, order.merchant_id).user_id if target == "merchant"
@@ -195,12 +229,32 @@ def appeal(session, buyer: User, claim: Claim, rejection_id: uuid.UUID, reason: 
         row = session.get(ClaimEvidence, eid)
         if row is None or row.claim_id != claim.id:
             raise AppValidationError("Evidence does not belong to this claim", field="evidence_ids")
-    row = Appeal(claim_id=claim.id, rejection_id=rejection_id, buyer_id=buyer.id, reason=reason,
-                 evidence_ids=[str(e) for e in evidence_ids])
+    row = Appeal(claim_id=claim.id, rejection_id=rejection_id, basis="rejection", buyer_id=buyer.id,
+                 reason=reason, evidence_ids=[str(e) for e in evidence_ids])
     session.add(row)
     claim.status = "appealed"
     session.flush()
     audit.record(session, actor=buyer, action="claim.appealed", target_type="claim",
+                 target_id=claim.id, metadata={"appeal_id": str(row.id)})
+    return row
+
+
+def escalate_no_response(session, buyer: User, claim: Claim, reason: str) -> Appeal:
+    """Explicit rule: only after the partner missed the SLA may the buyer ask for internal review.
+    Silence is never treated as a partner rejection; the appeal records its own basis."""
+    if claim.buyer_id != buyer.id:
+        raise Forbidden()
+    if claim.status not in ("opened", "partner_discussion"):
+        raise InvalidTransition(f"Claim is {claim.status}")
+    if not partner_overdue(session, claim):
+        raise InvalidTransition("Mitra masih dalam batas waktu respons "
+                                f"({settings.partner_response_sla_hours} jam)")
+    row = Appeal(claim_id=claim.id, rejection_id=None, basis="no_response", buyer_id=buyer.id,
+                 reason=reason, evidence_ids=[])
+    session.add(row)
+    claim.status = "appealed"
+    session.flush()
+    audit.record(session, actor=buyer, action="claim.escalated_no_response", target_type="claim",
                  target_id=claim.id, metadata={"appeal_id": str(row.id)})
     return row
 
@@ -360,6 +414,10 @@ def claim_out(session, claim: Claim, roles: set[str]) -> dict:
                       "requires_execution": decision.requires_execution} if decision else None),
         "remedy_events": [{"action": e.action, "amount_idr": e.amount_idr, "note": e.note,
                            "simulated": e.simulated, "created_at": e.created_at} for e in remedies],
+        "policy": {"claim_window_ends_at": claim_window_ends(session, claim.order_id),
+                   "partner_response_due_at": partner_due_at(session, claim),
+                   "partner_overdue": partner_overdue(session, claim),
+                   "note": "Kebijakan demo yang dapat dikonfigurasi; bukan kebijakan operasional final."},
         "roles": sorted(roles), "created_at": claim.created_at, "resolved_at": claim.resolved_at,
         "simulation_notice": commerce_svc.SIMULATION_NOTICE,
     }
@@ -367,7 +425,7 @@ def claim_out(session, claim: Claim, roles: set[str]) -> dict:
 
 def appeal_summary(session, row: Appeal) -> dict:
     claim = session.get(Claim, row.claim_id)
-    return {"id": row.id, "status": row.status, "claim_id": claim.id, "order_id": claim.order_id,
+    return {"id": row.id, "status": row.status, "basis": row.basis, "claim_id": claim.id, "order_id": claim.order_id,
             "component": claim.component, "target_role": claim.target_role, "reason": row.reason,
             "reviewer_id": row.reviewer_id, "created_at": row.created_at}
 

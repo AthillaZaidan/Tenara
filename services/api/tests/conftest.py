@@ -17,6 +17,14 @@ from app.services.embedding import FakeEmbedder, get_embedder
 
 API_DIR = Path(__file__).resolve().parent.parent
 
+# Tests create hundreds of users; cheap argon2 parameters keep the suite fast.
+# Production keeps the library defaults (verification reads parameters from each hash).
+from argon2 import PasswordHasher
+
+import app.core.security as _security
+
+_security._hasher = PasswordHasher(time_cost=1, memory_cost=512, parallelism=1)
+
 
 def _ensure_test_db(url: str) -> None:
     target = make_url(url)

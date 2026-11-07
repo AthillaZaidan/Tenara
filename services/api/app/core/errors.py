@@ -45,6 +45,24 @@ class IdempotencyConflict(AppError):
     default_message = "Idempotency-Key conflict"
 
 
+class InsufficientStock(AppError):
+    status_code = 409
+    code = "insufficient_stock"
+    default_message = "Not enough stock for this request"
+
+
+class PaymentExpired(AppError):
+    status_code = 409
+    code = "payment_expired"
+    default_message = "The payment window has expired"
+
+
+class InvalidTransition(AppError):
+    status_code = 409
+    code = "invalid_transition"
+    default_message = "This action is not allowed in the current state"
+
+
 class AppValidationError(AppError):
     status_code = 422
     code = "validation_error"

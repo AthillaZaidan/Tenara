@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     embedder: str = "fastembed"  # fastembed | fake | none
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     search_min_similarity: float = 0.35
+    hold_minutes: int = 15
+    default_commission_bps: int = 500  # demo value (5%), configurable by admin
+    buyer_service_fee_idr: int = 0  # buyer-visible platform fee; zero until configured
 
 
 settings = Settings()

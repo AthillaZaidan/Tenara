@@ -323,8 +323,13 @@ def reference_images(session: Session, entry_id: uuid.UUID) -> list[dict]:
 
 def detail(session: Session, entry: GalleryEntry) -> dict:
     story = approved_story(session, entry.id)
+    from app.services.listings import (
+        entry_availability,  # local import: listings depends on gallery
+    )
+
     return {**brief(entry), "has_story": story is not None,
-            "reference_images": reference_images(session, entry.id)}
+            "reference_images": reference_images(session, entry.id),
+            "availability": entry_availability(session, entry.id)}
 
 
 def passport(session: Session, entry: GalleryEntry) -> dict:

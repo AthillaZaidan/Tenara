@@ -30,6 +30,7 @@ from app.models import (
     Shipment,
     StockMovement,
     StockReservation,
+    TailorProfile,
     User,
 )
 from app.services import audit
@@ -177,6 +178,11 @@ def expire_holds(session: Session, now: datetime | None = None) -> int:
         .with_for_update(skip_locked=True)))
     for reservation in stale:
         _release(session, reservation, "expired")
+        if reservation.quote_id:
+            quote_payment = session.scalar(select(DemoPayment).where(
+                DemoPayment.quote_id == reservation.quote_id, DemoPayment.status == "pending"))
+            if quote_payment is not None:
+                quote_payment.status, quote_payment.resolved_at = "expired", now
         checkout = session.get(FabricCheckout, reservation.checkout_id) if reservation.checkout_id else None
         if checkout is not None and checkout.status == "payment_pending":
             checkout.status = "expired"
@@ -264,6 +270,14 @@ def confirm_checkout(session: Session, buyer: User, checkout: FabricCheckout,
 
 def owned_payment(session: Session, buyer: User, payment_id: uuid.UUID) -> DemoPayment:
     payment = session.get(DemoPayment, payment_id)
+    if payment is not None and payment.quote_id:
+        from app.models.custom import CustomRequest, Quote
+
+        quote = session.get(Quote, payment.quote_id)
+        request = session.get(CustomRequest, quote.request_id)
+        if request.buyer_id != buyer.id:
+            raise NotFound("Payment not found")
+        return payment
     checkout = session.get(FabricCheckout, payment.checkout_id) if payment and payment.checkout_id else None
     if payment is None or checkout is None or checkout.buyer_id != buyer.id:
         raise NotFound("Payment not found")
@@ -343,6 +357,12 @@ def complete_payment(session: Session, buyer: User, payment: DemoPayment, outcom
 
 # ---------- orders ----------
 
+def order_roles_admin(session: Session, user: User) -> bool:
+    return session.scalar(select(RoleAssignment.id).where(
+        RoleAssignment.user_id == user.id, RoleAssignment.role == "admin",
+        RoleAssignment.status == "active")) is not None
+
+
 def order_roles(session: Session, user: User, order: Order) -> set[str]:
     roles = set()
     if order.buyer_id == user.id:
@@ -351,10 +371,11 @@ def order_roles(session: Session, user: User, order: Order) -> set[str]:
         merchant = session.get(MerchantProfile, order.merchant_id)
         if merchant.user_id == user.id:
             roles.add("merchant")
-    admin = session.scalar(select(RoleAssignment.id).where(
-        RoleAssignment.user_id == user.id, RoleAssignment.role == "admin",
-        RoleAssignment.status == "active"))
-    if admin:
+    if order.tailor_id:
+        tailor = session.get(TailorProfile, order.tailor_id)
+        if tailor.user_id == user.id:
+            roles.add("tailor")
+    if order_roles_admin(session, user):
         roles.add("admin")
     return roles
 
@@ -378,6 +399,10 @@ FABRIC_TRANSITIONS = {
 
 def apply_event(session: Session, user: User, order: Order, roles: set[str], event: str,
                 note: str | None) -> Order:
+    if order.kind == "custom":
+        from app.services import custom_orders  # local import: custom_orders depends on commerce
+
+        return custom_orders.apply_custom_event(session, user, order, roles, event, note)
     if order.kind != "fabric" or event not in FABRIC_TRANSITIONS:
         raise AppValidationError("Unknown event for this order", field="event")
     allowed_roles, from_states, to_status = FABRIC_TRANSITIONS[event]
@@ -438,14 +463,26 @@ def _cancel_fabric(session: Session, order: Order) -> None:
                                     created_at=_now()))
 
 
-def order_out(session: Session, order: Order) -> dict:
+def _redact_for_merchant(snapshot: dict) -> dict:
+    hidden = {"measurements_cm", "address", "design_state"}
+    cleaned = {k: v for k, v in snapshot.items() if k not in hidden}
+    if "specification" in cleaned:
+        cleaned["specification"] = {k: v for k, v in cleaned["specification"].items()
+                                    if k not in hidden | {"finished_dimensions_cm"}}
+    return cleaned
+
+
+def order_out(session: Session, order: Order, roles: set[str] | None = None) -> dict:
     events = session.scalars(select(OrderEvent).where(OrderEvent.order_id == order.id)
                              .order_by(OrderEvent.created_at, OrderEvent.id))
     shipments = session.scalars(select(Shipment).where(Shipment.order_id == order.id))
     payment = session.scalar(select(DemoPayment).where(DemoPayment.order_id == order.id))
     return {
         "id": order.id, "kind": order.kind, "status": order.status, "total_idr": order.total_idr,
-        "created_at": order.created_at, "snapshot": order.snapshot,
+        "created_at": order.created_at,
+        "snapshot": (_redact_for_merchant(order.snapshot)
+                     if order.kind == "custom" and roles and roles <= {"merchant"}
+                     else order.snapshot),
         "payment": {"status": payment.status, "amount_idr": payment.amount_idr} if payment else None,
         "shipments": [{"leg": s.leg, "status": s.status, "tracking_no": s.tracking_no,
                        "shipped_at": s.shipped_at, "delivered_at": s.delivered_at,
@@ -461,12 +498,15 @@ def settlement_out(session: Session, user: User, order: Order, roles: set[str]) 
     snap = order.snapshot
     out = {"simulation_notice": SIMULATION_NOTICE}
     if "buyer" in roles:
-        out["buyer_total"] = {k: snap[k] for k in ("subtotal_idr", "shipping_idr",
-                                                   "service_fee_idr", "total_idr")}
+        if order.kind == "custom":
+            out["buyer_total"] = {"lines": snap["quote"]["lines"], "total_idr": order.total_idr}
+        else:
+            out["buyer_total"] = {k: snap[k] for k in ("subtotal_idr", "shipping_idr",
+                                                       "service_fee_idr", "total_idr")}
     entries = select(SettlementEntry).where(SettlementEntry.order_id == order.id)
-    if "admin" not in roles and "merchant" in roles:
+    if "admin" not in roles and roles & {"merchant", "tailor"}:
         entries = entries.where(SettlementEntry.party_user_id == user.id)
-    if "admin" in roles or "merchant" in roles:
+    if roles & {"admin", "merchant", "tailor"}:
         rows = session.scalars(entries.order_by(SettlementEntry.created_at, SettlementEntry.id))
         out["entries"] = [{"party_role": r.party_role, "kind": r.kind, "gross_idr": r.gross_idr,
                            "commission_bps": r.commission_bps, "commission_idr": r.commission_idr,

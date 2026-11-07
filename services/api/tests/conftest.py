@@ -87,3 +87,59 @@ def auth_header():
         return {"Authorization": f"Bearer {create_access_token(user.id)}"}
 
     return _header
+
+
+@pytest.fixture
+def storage(tmp_path):
+    from app.services.storage import LocalDiskStorage
+
+    return LocalDiskStorage(tmp_path)
+
+
+@pytest.fixture
+def make_file(session, storage):
+    def _make(owner, visibility="private", content_type="image/png"):
+        from app.services.files import create_file
+
+        return create_file(session, storage, owner_id=owner.id, kind="test", data=b"x",
+                           content_type=content_type, visibility=visibility)
+
+    return _make
+
+
+@pytest.fixture
+def make_partner(session, make_user):
+    """An approved, active merchant or tailor with profile (bypasses the application flow)."""
+    def _make(kind="merchant", email=None, shop="Toko Uji", city="Bandung", province="Jawa Barat"):
+        from app.models import MerchantProfile, TailorProfile
+
+        user = make_user(email or f"{kind}-{shop.lower().replace(' ', '')}@example.com",
+                         roles=(("buyer", "active"), (kind, "active")))
+        model = MerchantProfile if kind == "merchant" else TailorProfile
+        profile = model(user_id=user.id, shop_name=shop, city=city, province=province)
+        session.add(profile)
+        session.flush()
+        return user, profile
+
+    return _make
+
+
+@pytest.fixture
+def published_entry(session, embedder, make_user):
+    """A published Gallery entry, built through the service layer."""
+    from app.services import gallery as g
+
+    def _make(name="Tenun Ikat Sumba"):
+        admin = make_user(f"curator-{name.replace(' ', '')}@example.com",
+                          roles=(("admin", "active"),))
+        source = g.create_source(session, admin, title="Dataset", license="CC BY 4.0")
+        g.decide_source(session, admin, source, "approve", None)
+        entry = g.create_entry(session, admin, name=name, region="NTT", summary="Ringkasan.")
+        story = g.create_story(session, admin, entry, body="Cerita.",
+                               citations=[{"source_id": source.id}])
+        g.submit_story(session, admin, story)
+        g.decide_story(session, admin, story, "approve", None, embedder)
+        g.publish_entry(session, admin, entry, embedder)
+        return entry
+
+    return _make

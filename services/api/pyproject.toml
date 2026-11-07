@@ -15,6 +15,9 @@ dependencies = [
     "pyjwt>=2.8",
     "email-validator>=2.1",
     "fastembed>=0.9.1",
+    "mediapipe>=1.2.2",
+    "pillow>=13.0.0",
+    "python-multipart>=0.0.33",
 ]
 
 [dependency-groups]
@@ -32,5 +35,12 @@ extend-immutable-calls = [
     "fastapi.Depends",
     "fastapi.Query",
     "fastapi.Header",
+    "fastapi.Form",
+    "fastapi.File",
+    "app.routers.ai.FormFile",
     "app.core.deps.require_role",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# pytest fixtures imported from sibling test modules are used as parameters, which looks like a redefinition
+"tests/*" = ["F811"]

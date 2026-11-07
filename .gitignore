@@ -35,3 +35,6 @@ docs/superpowers/
 
 # Local file storage
 services/api/storage/
+
+# Downloaded ML model weights
+services/api/models/

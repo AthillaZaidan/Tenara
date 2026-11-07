@@ -115,6 +115,9 @@ class StockReservation(Base):
         Uuid, ForeignKey("fabric_checkouts.id", ondelete="SET NULL"), nullable=True
     )
     quantity: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    quote_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("quotes.id", ondelete="SET NULL"), nullable=True
+    )
     allocations: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="held")
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -142,6 +145,7 @@ class Order(Base):
     __tablename__ = "orders"
     __table_args__ = (
         UniqueConstraint("checkout_id", name="uq_orders_checkout"),
+        UniqueConstraint("request_id", name="uq_orders_request"),
         CheckConstraint("kind in ('fabric','custom')", name="ck_orders_kind_valid"),
         CheckConstraint(f"status in ({_STATUS_LIST})", name="ck_orders_status_valid"),
     )
@@ -162,6 +166,9 @@ class Order(Base):
     )
     checkout_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("fabric_checkouts.id"), nullable=True
+    )
+    request_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("custom_requests.id"), nullable=True
     )
     status: Mapped[str] = mapped_column(String(40), nullable=False, server_default="confirmed")
     snapshot: Mapped[dict] = mapped_column(JSONB, nullable=False)
@@ -188,6 +195,9 @@ class DemoPayment(Base):
     )
     order_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("orders.id", ondelete="SET NULL"), nullable=True
+    )
+    quote_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("quotes.id", ondelete="SET NULL"), nullable=True
     )
     amount_idr: Mapped[int] = mapped_column(BigInteger, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="pending")

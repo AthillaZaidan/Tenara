@@ -126,10 +126,9 @@ def collect_groups(data_dir: Path) -> dict[str, dict]:
 def _story_body(name: str, records: list[dict]) -> tuple[str, list[int]]:
     cats = Counter(c.strip() for r in records for c in r["category"].split(",") if c.strip())
     top = ", ".join(c for c, _ in cats.most_common(3)) or "beragam kategori"
-    lines = [
-        f"Dataset terbuka mendokumentasikan {len(records)} motif untuk {name}, "
-        f"terutama berkategori {top}."
-    ]
+    intro = (f"Dataset terbuka mendokumentasikan {len(records)} motif untuk {name}, "
+             f"terutama berkategori {top}.")
+    lines = [intro]
     quoted, seen = [], set()
     for i, r in enumerate(records):
         meaning = r["meaning"]

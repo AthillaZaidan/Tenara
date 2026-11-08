@@ -25,10 +25,10 @@ export function ScanPanel({ listingId, current, hasPhoto, onChanged }: { listing
   return (
     <section className="grid gap-4">
       <h3 className="text-xl font-medium" style={{ fontFamily: "var(--font-hanken)" }}>Scan foto kain</h3>
-      <p className="text-base">Sistem membaca foto pertama, mencari sumber di web, lalu menyarankan tradisi dan daerah beserta buktinya. Anda yang memutuskan; kurator Tenara yang memverifikasi.</p>
+      <p className="text-base">Sistem membaca foto pertama, mencocokkannya dengan katalog tenun Nusantara yang disetujui kurator, lalu menyarankan tradisi dan daerah beserta sumbernya. Anda yang memutuskan; kurator Tenara yang memverifikasi.</p>
       {act.error && <Notice tone="error">{act.error}</Notice>}
       <button className="btn w-fit" disabled={act.busy || !hasPhoto} onClick={async () => { const r = await act.run(() => api("/vision/analyze", { body: { listing_id: listingId } })); if (r) onChanged(); }}>
-        {act.busy ? "Menganalisis foto dan mencari sumber…" : current ? "Scan ulang" : "Scan foto"}
+        {act.busy ? "Menganalisis foto…" : current ? "Scan ulang" : "Scan foto"}
       </button>
       {!hasPhoto && <p className="text-base text-muted">Tambahkan foto kain dulu.</p>}
       {current && (

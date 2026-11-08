@@ -38,13 +38,13 @@ export function VisualMatch({ data, compact = false }: { data: VisualMatchData; 
           {evidence.map((e) => (
             <li key={e.id}>
               <a href={e.url} target="_blank" rel="noopener noreferrer nofollow" className="link">{e.title || e.domain}</a>
-              <span className="block text-muted t-small">{e.domain} · {TIER[e.tier]}{cited.has(e.id) ? " · dipakai sebagai bukti" : ""}</span>
+              <span className="block text-muted t-small">{e.domain} · {TIER[e.tier]}{cited.has(e.id) ? " · sumber katalog" : ""}</span>
             </li>
           ))}
         </ul>
       )}
       {!compact && data.notes?.map((n) => <p key={n} className="text-muted">{n}</p>)}
-      <p className="t-small text-muted">Saran otomatis dari foto dan sumber web. Bukan sertifikasi asal-usul.</p>
+      <p className="t-small text-muted">Saran otomatis dari foto dan katalog yang disetujui kurator. Bukan sertifikasi asal-usul.</p>
     </div>
   );
 }

@@ -191,3 +191,59 @@ class StoryCitation(Base):
         Uuid, ForeignKey("source_chunks.id", ondelete="SET NULL"), nullable=True
     )
     locator: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+
+PHOTO_DIM = 768  # google/siglip2-base-patch16-224 image embedding
+
+
+class ReferencePhoto(Base):
+    """A labelled photo of a tradition, used to check a seller's claim against what it looks like.
+
+    style 'modern' (curator photos, verified listings, modern photo datasets) is the only kind used
+    for a verdict; 'archival' (museum/archive photos) is shown as comparison only, because photos of
+    old museum cloth do not predict how a seller's phone photo of new cloth matches (see
+    experiments/vlm_eval). source_label is the unit of diversity (a collection, photographer or
+    merchant). display_allowed is false when the licence does not allow showing it to others.
+    """
+
+    __tablename__ = "reference_photos"
+    __table_args__ = (
+        CheckConstraint("style in ('modern','archival')", name="ck_reference_photos_style_valid"),
+        CheckConstraint("approval_status in ('pending','approved','rejected')",
+                        name="ck_reference_photos_status_valid"),
+        UniqueConstraint("external_id", name="uq_reference_photos_external_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    entry_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("gallery_entries.id", ondelete="CASCADE"), nullable=False
+    )
+    file_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("files.id", ondelete="SET NULL"), nullable=True
+    )
+    listing_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("fabric_listings.id", ondelete="SET NULL"), nullable=True
+    )
+    style: Mapped[str] = mapped_column(String(10), nullable=False)
+    source_label: Mapped[str] = mapped_column(String(200), nullable=False)
+    source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    external_id: Mapped[str | None] = mapped_column(String(300), nullable=True)  # idempotent seeding
+    credit: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    license: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    display_allowed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    embedding: Mapped[list[float]] = mapped_column(Vector(PHOTO_DIM), nullable=False)
+    embed_model: Mapped[str] = mapped_column(String(100), nullable=False)
+    approval_status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="pending")
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+Index("ix_reference_photos_embedding_hnsw", ReferencePhoto.embedding, postgresql_using="hnsw",
+      postgresql_with={"m": 16, "ef_construction": 64},
+      postgresql_ops={"embedding": "vector_cosine_ops"})
+Index("ix_reference_photos_entry_status", ReferencePhoto.entry_id, ReferencePhoto.approval_status)

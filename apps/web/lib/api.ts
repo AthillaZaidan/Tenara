@@ -43,7 +43,7 @@ type Options = {
   signal?: AbortSignal;
 };
 
-export async function api<T = any>(path: string, opts: Options = {}): Promise<T> {
+export async function api<T = unknown>(path: string, opts: Options = {}): Promise<T> {
   const headers: Record<string, string> = {};
   const token = opts.token === undefined && typeof window !== "undefined" ? tokenStore.get() : opts.token;
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -66,7 +66,7 @@ export async function api<T = any>(path: string, opts: Options = {}): Promise<T>
   } catch {
     throw new ApiError(0, "network", "Server tidak dapat dihubungi. Coba lagi sebentar.");
   }
-  let payload: any = null;
+  let payload: { data?: unknown; error?: { code?: string; message?: string; field?: string | null } | null } | null = null;
   try {
     payload = await res.json();
   } catch {

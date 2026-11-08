@@ -25,44 +25,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [me, setMe] = useState<Me | null>(null);
   const [ready, setReady] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<Me | null> => {
     if (!tokenStore.get()) return null;
     try {
-      const data = await api<Me>("/auth/me");
-      setMe(data);
-      return data;
+      return await api<Me>("/auth/me");
     } catch {
       tokenStore.set(null);
-      setMe(null);
       return null;
     }
   }, []);
 
   useEffect(() => {
-    load().finally(() => setReady(true));
+    let alive = true;
+    load().then((data) => {
+      if (!alive) return;
+      setMe(data);
+      setReady(true);
+    });
+    return () => {
+      alive = false;
+    };
   }, [load]);
 
-  const value = useMemo<AuthState>(
-    () => ({
+  const value = useMemo<AuthState>(() => {
+    const login = async (email: string, password: string): Promise<Me> => {
+      const res = await api<{ access_token: string }>("/auth/login", { body: { email, password }, token: null });
+      tokenStore.set(res.access_token);
+      const user = await load();
+      setMe(user);
+      return user!;
+    };
+    return {
       me,
       ready,
-      async login(email, password) {
-        const res = await api<{ access_token: string }>("/auth/login", { body: { email, password }, token: null });
-        tokenStore.set(res.access_token);
-        return (await load())!;
-      },
-      async register(email, password, displayName) {
+      login,
+      async register(email: string, password: string, displayName: string): Promise<Me> {
         await api("/auth/register", { body: { email, password, display_name: displayName }, token: null });
-        return value.login(email, password);
+        return login(email, password);
       },
       logout() {
         tokenStore.set(null);
         setMe(null);
       },
-      has: (role) => !!me?.roles.some((r) => r.role === role && r.status === "active"),
-    }),
-    [me, ready, load],
-  );
+      has: (role: string) => !!me?.roles.some((r) => r.role === role && r.status === "active"),
+    };
+  }, [me, ready, load]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

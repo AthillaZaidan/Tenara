@@ -48,7 +48,7 @@ function Detail() {
   if (loading) return <p>Memuat…</p>;
   if (error || !c) return <Notice tone="error">{error ?? "Klaim tidak ditemukan."}</Notice>;
   const buyer = c.roles.includes("buyer");
-  const partner = c.roles.includes("merchant") || c.roles.includes("tailor");
+  const partner = c.roles.includes("target");
   const done = ["resolved", "withdrawn"].includes(c.status);
   const rejection = [...c.responses].reverse().find((r) => r.kind === "rejection");
   const pending = c.responses.find((r) => r.kind === "proposal" && r.buyer_decision === "pending");

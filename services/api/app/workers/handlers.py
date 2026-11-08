@@ -7,6 +7,10 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.errors import AppValidationError, ServiceUnavailable
+from app.ml.text import product_story
+from app.ml.text.embedding import get_embedder
+from app.ml.text.story_gen import get_story_llm
 from app.ml.vision import body_measure, render
 from app.ml.vision.body_measure import MeasurementFailure
 from app.ml.vision.pose import get_pose_detector
@@ -21,6 +25,7 @@ from app.models import (
     MeasurementSet,
     MeasurementValue,
     Preview,
+    User,
 )
 from app.services import jobs, photos
 from app.services.files import create_file
@@ -123,6 +128,33 @@ def handle_on_body_preview(session: Session, job: Job) -> dict:
     return _save(session, preview, cust, composite, ONBODY_METHOD, rendered.warnings, job)
 
 
+def _story_llm():
+    return get_story_llm()
+
+
+def _embedder():
+    return get_embedder()
+
+
+def handle_story_generate(session: Session, job: Job) -> dict:
+    """Writer + critic story for a listing; long prose takes 30-60 s, so it runs here, not in the request."""
+    listing = session.get(FabricListing, uuid.UUID(job.input["listing_id"]))
+    user = session.get(User, job.owner_id)
+    if listing is None or user is None:
+        raise PermanentJobError("Listing tidak ditemukan")
+    llm = _story_llm()
+    try:
+        story = product_story.generate(session, user, listing, llm, _embedder())
+    except AppValidationError as exc:
+        raise PermanentJobError(exc.message) from exc
+    except ServiceUnavailable as exc:
+        if llm is None:
+            raise PermanentJobError(exc.message) from exc
+        raise RuntimeError(exc.message) from exc  # provider hiccup: the job queue retries
+    return {"story_id": str(story.id)}
+
+
 jobs.register_handler("measurement.estimate", handle_measurement_estimate)
 jobs.register_handler("preview.product", handle_product_preview)
 jobs.register_handler("preview.on_body", handle_on_body_preview)
+jobs.register_handler("story.generate", handle_story_generate)

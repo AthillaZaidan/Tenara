@@ -12,8 +12,6 @@ from app.core.ownership import get_owned_or_404
 from app.core.responses import ok
 from app.db.base import get_session
 from app.ml.text import product_story
-from app.ml.text.embedding import Embedder, get_embedder
-from app.ml.text.story_gen import TextLLM, get_story_llm
 from app.ml.vision import photo_match, vlm
 from app.ml.vision.photo_match import PhotoEmbedder, get_photo_embedder
 from app.ml.vision.vlm import VLMClient, get_vlm
@@ -172,16 +170,31 @@ def analyze_fabric(body: AnalyzeIn, user: User = Depends(current_user),
     return ok(vlm.analysis_out(row))
 
 
-@router.post("/listings/{listing_id}/story", status_code=201)
+STORY_JOB = "story.generate"
+
+
+def _story_job(session: Session, listing_id: uuid.UUID) -> Job | None:
+    return session.scalar(select(Job).where(Job.kind == STORY_JOB, Job.subject_type == "listing",
+                                            Job.subject_id == listing_id)
+                          .order_by(Job.created_at.desc(), Job.id.desc()).limit(1))
+
+
+def _job_out(job: Job | None) -> dict | None:
+    return {"id": job.id, "status": job.status, "error": job.error} if job else None
+
+
+@router.post("/listings/{listing_id}/story", status_code=202)
 def draft_product_story(listing_id: uuid.UUID, user: User = Depends(current_user),
-                        session: Session = Depends(get_session),
-                        llm: TextLLM | None = Depends(get_story_llm),
-                        embedder: Embedder | None = Depends(get_embedder)):
-    """Writer + critic draft of the listing's cultural story (after a scan; the seller publishes it)."""
+                        session: Session = Depends(get_session)):
+    """Queue the writer + critic story (30-60 s); the seller reviews the draft and publishes it."""
     listing = listings_svc.owned_listing(session, active_merchant(session, user), listing_id)
-    story = product_story.generate(session, user, listing, llm, embedder)
+    product_story.check_ready(listing)  # fail now, not inside the worker, when the scan is missing
+    job = _story_job(session, listing.id)
+    if job is None or job.status not in ("queued", "processing"):
+        job = jobs.enqueue(session, STORY_JOB, user.id, {"listing_id": str(listing.id)},
+                           subject_type="listing", subject_id=listing.id)
     session.commit()
-    return ok(product_story.story_out(story))
+    return ok({"job": _job_out(job)})
 
 
 @router.get("/listings/{listing_id}/story")
@@ -193,7 +206,8 @@ def listing_stories(listing_id: uuid.UUID, user: User = Depends(current_user),
                                 .order_by(ProductStory.created_at.desc())))
     draft = next((s for s in rows if s.status == "draft"), None)
     published = next((s for s in rows if s.status == "published"), None)
-    return ok({"draft": product_story.story_out(draft), "published": product_story.story_out(published)})
+    return ok({"draft": product_story.story_out(draft), "published": product_story.story_out(published),
+               "job": _job_out(_story_job(session, listing.id))})
 
 
 @router.post("/listings/{listing_id}/story/{story_id}/publish")

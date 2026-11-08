@@ -13,6 +13,7 @@ from app.core.security import create_access_token, hash_password
 from app.db.base import get_session
 from app.main import app
 from app.ml.text.embedding import FakeEmbedder, get_embedder
+from app.ml.vision.photo_match import FakePhotoEmbedder, get_photo_embedder
 from app.models import RoleAssignment, User
 
 API_DIR = Path(__file__).resolve().parent.parent
@@ -70,6 +71,7 @@ def embedder():
 def client(session, embedder):
     app.dependency_overrides[get_session] = lambda: session
     app.dependency_overrides[get_embedder] = lambda: embedder
+    app.dependency_overrides[get_photo_embedder] = FakePhotoEmbedder  # never load SigLIP in tests
     yield TestClient(app)
     app.dependency_overrides.clear()
 

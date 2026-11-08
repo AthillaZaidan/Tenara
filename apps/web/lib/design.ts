@@ -1,7 +1,7 @@
 export const OPTION_LABEL: Record<string, string> = {
   collar: "Kerah", buttons: "Kancing", pockets: "Saku", motif_placement: "Penempatan motif",
-  hem_length_delta_cm: "Panjang bawahan (cm)", sleeve_length_delta_cm: "Panjang lengan (cm)",
-  neckline: "Garis leher", skirt_length_delta_cm: "Panjang rok (cm)", waist: "Pinggang", closure: "Penutup",
+  hem_length_delta_cm: "Ubah panjang bawahan (cm)", sleeve_length_delta_cm: "Ubah panjang lengan (cm)",
+  neckline: "Garis leher", skirt_length_delta_cm: "Ubah panjang rok (cm)", waist: "Pinggang", closure: "Penutup",
 };
 
 export const VALUE_LABEL: Record<string, string> = {

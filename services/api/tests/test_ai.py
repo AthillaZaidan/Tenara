@@ -787,9 +787,15 @@ def test_chat_client_maps_http_errors_and_reads_annotations(monkeypatch):
         def __exit__(self, *a):
             return False
 
-    body = {"choices": [{"message": {"content": "{}", "annotations": [{"type": "url_citation"}]}}]}
-    monkeypatch.setattr(llm_client.urllib.request, "urlopen", lambda req, timeout: Resp(json.dumps(body).encode()))
-    assert llm_client.chat([{"role": "user", "content": "x"}]).annotations == [{"type": "url_citation"}]
+    body = {"choices": [{"message": {"content": "{}", "annotations": [{"type": "url_citation"}]}}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 2, "cost": 0.0001}}
+    sent = []
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen",
+                        lambda req, timeout: (sent.append(json.loads(req.data)), Resp(json.dumps(body).encode()))[1])
+    monkeypatch.setattr(llm_client.settings, "llm_provider", "openrouter")
+    out = llm_client.chat([{"role": "user", "content": "x"}])
+    assert out.annotations == [{"type": "url_citation"}] and out.usage["cost"] == 0.0001
+    assert sent[0]["usage"] == {"include": True}
 
     def boom(req, timeout):
         raise urllib.error.HTTPError(req.full_url, 402, "Payment Required", {}, io.BytesIO(b"no credits"))

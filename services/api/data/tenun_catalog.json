@@ -1,0 +1,1123 @@
+{
+  "about": "Katalog tenun Nusantara untuk scan kain. Ringkasan fakta ditulis ulang (bukan salinan) dari sumber web yang dicantumkan per tradisi. Disusun lewat riset web otomatis (AI) pada 2026-11-08; semua sumber berstatus pending sampai ditinjau kurator manusia.",
+  "researched_at": "2026-11-08",
+  "traditions": [
+    {
+      "name": "Ulos Batak Toba",
+      "province": "Sumatera Utara",
+      "region": "sekitar Danau Toba, Tapanuli Utara",
+      "community": "Batak Toba",
+      "technique": "other",
+      "visual": "Kain tenun tangan (alat tenun bukan mesin) yang dikenal dalam banyak jenis, antara lain Ragi Hidup, Bolean, Sibolang, Mangiring, Bintang Maratur, Ragi Hotang, Suri-suri, Sadum, dan Sitolu Tuho. Ragi Hotang bercorak garis-garis yang menyerupai rotan (hotang) dan disebut memakai tiga warna dengan bagian yang identik berwarna merah. Sadum bermotif ramai dengan warna yang lebih cerah, memuat motif seperti pangolat, ipon-ipon, roti-roti, bonggit, andor-andor, jolma-jolma, suri-suri, dan cicak Batak.",
+      "culture": "Setiap jenis ulos memiliki fungsi dan makna sendiri dalam adat Batak Toba. Ragi Hotang dipakai pada pesta pernikahan maupun upacara kematian adat. Sadum dimaknai sebagai simbol sukacita, dan tiap motifnya punya makna simbolik tersendiri. Pewarnaan alami makin jarang karena prosesnya lama, sehingga banyak penenun kini memakai pewarna kimia.",
+      "uncertain": [
+        "Jumlah motif Sadum (satu jurnal menyebut 27) dan daftar warna Ragi Hotang perlu dicek ke sumber primer."
+      ],
+      "sources": [
+        {
+          "url": "https://www.indonesia.travel/id-id/travel-ideas/culture/kain-tenun-ulos-khas-batak/",
+          "title": "Kain Tenun Ulos Khas Batak",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://www.indonesia.travel/id/id/travel-ideas/heritage/tak-hanya-memesona-5-kain-ulos-khas-danau-toba-ini-juga-sarat-makna/",
+          "title": "5 Kain Ulos Khas Danau Toba",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://digilib.unimed.ac.id/37673/3/8.%20NIM.%205103141016%20CHAPTER%20I.pdf",
+          "title": "Skripsi tentang ulos (Bab I)",
+          "publisher": "Universitas Negeri Medan"
+        }
+      ]
+    },
+    {
+      "name": "Songket Minangkabau (Pandai Sikek dan Silungkang)",
+      "province": "Sumatera Barat",
+      "region": "Pandai Sikek (Tanah Datar), Silungkang (Sawahlunto), juga Sumpur Kudus dan Halaban",
+      "community": "Minangkabau",
+      "technique": "songket",
+      "visual": "Songket dengan benang emas dan perak yang ditenun bersama sutra sehingga berkilau. Pandai Sikek dikenal dalam dua tata letak: balapak, yang hiasannya memenuhi seluruh permukaan kain, dan batabua, yang motifnya tersebar. Motif yang disebut khas Pandai Sikek antara lain batang pinang, bijo bayam, dan saluak laka. Ragam hias Silungkang dinilai lebih sederhana, dengan contoh motif bungo malur, dan Silungkang juga dikaitkan dengan songket batabua.",
+      "culture": "Sumatera Barat memiliki beberapa sentra songket; Pandai Sikek dan Silungkang dianggap yang paling unggul. Songket menjadi kain kebesaran dalam adat Minangkabau.",
+      "uncertain": [
+        "Daftar motif Pandai Sikek berbeda antarsumber (cukie dan sungayang menurut satu sumber; batang pinang, bijo bayam, saluak laka menurut sumber lain)."
+      ],
+      "sources": [
+        {
+          "url": "https://museumadityawarman.sumbarprov.go.id/koleksi_kategori/print/54",
+          "title": "Koleksi Museum Adityawarman",
+          "publisher": "Museum Adityawarman, Pemprov Sumatera Barat"
+        },
+        {
+          "url": "https://e-journal.trisakti.ac.id/index.php/dimensi/article/download/1778/1538/3617",
+          "title": "Kajian songket Sumatera Barat",
+          "publisher": "Universitas Trisakti"
+        },
+        {
+          "url": "https://www.goodnewsfromindonesia.id/indonesiana/nasional/kain-songket-pandai-sikek-jenis-tenun-klasik-dan-mewah-dari-minangkabau",
+          "title": "Kain Songket Pandai Sikek",
+          "publisher": "Good News From Indonesia"
+        }
+      ]
+    },
+    {
+      "name": "Songket Palembang",
+      "province": "Sumatera Selatan",
+      "region": "Palembang",
+      "community": "Melayu Palembang",
+      "technique": "songket",
+      "visual": "Songket yang dibedakan menurut jenis motif dan benangnya. Lepus hampir seluruh permukaannya tertutup anyaman benang emas (Lepus Penuh hanya benang emas; Lepus Berekam dan Lepus Berantai memadukan benang perak atau berwarna). Limar berwarna-warni: benang sutra dicelup (antara lain merah) lalu dipadukan dengan benang emas. Tretes hanya bermotif di ujung-ujung kain dengan bagian tengah kosong. Tabur memiliki motif kecil seperti bunga dan bintang yang tersebar merata.",
+      "culture": "Jenis songket mencerminkan status dan lingkungan pemakainya; varian Bunga Emas dikaitkan dengan masyarakat keturunan Tionghoa dan Bunga Pacik (benang kapas putih) dengan masyarakat keturunan Arab.",
+      "uncertain": [
+        "Pengelompokan jenis berbeda antarsumber (ada yang hanya Lepus, Limar, Tawur; ada yang menambah Tretes, Rumpak, Bunga)."
+      ],
+      "sources": [
+        {
+          "url": "https://journal.isi.ac.id/index.php/ars/article/download/4253/2474",
+          "title": "Kajian songket Palembang",
+          "publisher": "Institut Seni Indonesia Yogyakarta"
+        },
+        {
+          "url": "https://repository.unsri.ac.id/145578/6/RAMA_87201_06041181924007_0002056301_04.pdf",
+          "title": "Penelitian songket Palembang",
+          "publisher": "Universitas Sriwijaya"
+        },
+        {
+          "url": "https://indonesiaexpat.id/travel/history-culture/songket-palembang-a-distinctive-handwoven-textile",
+          "title": "Songket Palembang: a distinctive handwoven textile",
+          "publisher": "Indonesia Expat"
+        }
+      ]
+    },
+    {
+      "name": "Tapis Lampung",
+      "province": "Lampung",
+      "region": "pesisir dan pedalaman (Pepadun) Lampung",
+      "community": "Lampung (Saibatin dan Pepadun)",
+      "technique": "other",
+      "visual": "Kain sarung dari tenunan benang kapas bermotif yang dihias benang emas atau perak dengan sistem sulam (sugi). Motif utamanya dari alam, seperti flora dan fauna; tapis pesisir dominan bermotif flora, sedangkan tapis pedalaman (Pepadun) cenderung sederhana dan kaku. Motif kapal juga dikenal pada tapis.",
+      "culture": "Dipakai sebagai perlengkapan upacara adat, keagamaan, dan perkawinan. Nilainya bergantung pada kerumitan motif, proporsi benang emas, dan umur kain. Penenun yang mampu membuat tapis dari awal makin langka; banyak perajin kini menyulam di atas kain jadi.",
+      "uncertain": [
+        "Sumber berbeda soal teknik: sebagian menyebut motif ditenun, sebagian menyebut disulam di atas kain tenun dasar."
+      ],
+      "sources": [
+        {
+          "url": "https://www.detik.com/sumbagsel/budaya/d-6877348/mengenal-kain-tapis-lampung-fungsi-dan-sejarahnya",
+          "title": "Mengenal Kain Tapis Lampung, Fungsi dan Sejarahnya",
+          "publisher": "detikSumbagsel"
+        },
+        {
+          "url": "https://journal.isi.ac.id/index.php/corak/article/view/2395",
+          "title": "Eksplorasi anyaman manik Kalimantan dan sulam tapis Lampung",
+          "publisher": "Institut Seni Indonesia Yogyakarta"
+        },
+        {
+          "url": "https://repository.its.ac.id/47981",
+          "title": "Perancangan Buku Visual Tapis Lampung",
+          "publisher": "Institut Teknologi Sepuluh Nopember"
+        }
+      ]
+    },
+    {
+      "name": "Songket Siak",
+      "province": "Riau",
+      "region": "Siak Sri Indrapura",
+      "community": "Melayu Riau",
+      "technique": "songket",
+      "visual": "Songket dari benang kapas atau sutra dengan motif benang emas yang berkilau. Motif paling dominan adalah pucuk rebung, berbentuk segitiga dari tunas bambu, yang muncul di kepala kain, bagian bawah, dan ujung sarung, dengan banyak variasi (bertabur, kaluk pakis, penuh). Motif lain antara lain siku keluang dan tampuk manggis. Warna merah, kuning, dan hijau disebut mencerminkan karakter Siak.",
+      "culture": "Pucuk rebung dikaitkan dengan kesuburan dan kesabaran. Songket Siak dipakai dalam busana adat Melayu, termasuk busana pengantin.",
+      "uncertain": [
+        "Makna simbolik warna berbeda antarperajin dan antarsumber."
+      ],
+      "sources": [
+        {
+          "url": "https://e-journal.trisakti.ac.id/index.php/seni/article/view/1876",
+          "title": "Kajian Motif Tenun Songket Melayu Siak Tradisional Khas Riau",
+          "publisher": "Universitas Trisakti"
+        },
+        {
+          "url": "https://openlibrarypublications.telkomuniversity.ac.id/index.php/artdesign/article/view/11282",
+          "title": "Pengembangan Motif Kain Tenun Songket Siak Khas Riau pada Produk Fesyen",
+          "publisher": "Telkom University"
+        },
+        {
+          "url": "https://jurnal.univpgri-palembang.ac.id/index.php/sitakara/article/view/9030",
+          "title": "Motif Hias Tenun Siak pada Busana Pengantin",
+          "publisher": "Universitas PGRI Palembang"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Cual Bangka Belitung",
+      "province": "Kepulauan Bangka Belitung",
+      "region": "Muntok, Bangka",
+      "community": "Melayu Bangka",
+      "technique": "songket",
+      "visual": "Perpaduan teknik ikat (limar) dan sungkit: benang pakan sutra dicelup sebelum ditenun, lalu benang emas diselipkan di antara benang berwarna. Motifnya flora dan fauna, termasuk hewan laut (ubur-ubur, ketam) dan bunga khas setempat; motif yang paling identik adalah Jande Bekecak (janda bersolek) dan Penganten Bekecak (pengantin bersolek).",
+      "culture": "Dahulu dikenal sebagai Limar Muntok; nama cual merujuk pada proses pencelupan benang di awal pembuatan. Motif cual pernah dinyatakan hampir punah sehingga perlu pelestarian.",
+      "uncertain": [
+        "Perkiraan awal kemunculan (abad ke-17) belum disepakati antarsumber."
+      ],
+      "sources": [
+        {
+          "url": "https://jurnal.unej.ac.id/index.php/INFORMAL/article/view/3344",
+          "title": "Strategi Mengenali Motif Khas Kain Tenun Cual Bangka Dengan AHP",
+          "publisher": "Universitas Jember"
+        },
+        {
+          "url": "https://go.kompas.com/read/2020/11/07/005922174/the-riddle-of-tenun-cual-from-indonesias-bangka-belitung-province",
+          "title": "The riddle of tenun cual from Bangka Belitung",
+          "publisher": "Kompas"
+        },
+        {
+          "url": "https://www.goodnewsfromindonesia.id/2023/02/16/motif-dan-makna-filosofis-kain-tenun-cual-khas-bangka-belitung",
+          "title": "Motif dan Makna Filosofis Kain Tenun Cual",
+          "publisher": "Good News From Indonesia"
+        }
+      ]
+    },
+    {
+      "name": "Songket Aceh",
+      "province": "Aceh",
+      "region": "Aceh Besar dan sekitarnya",
+      "community": "Aceh",
+      "technique": "songket",
+      "visual": "Songket dari benang sutra dengan benang emas atau perak. Warna dasar tradisionalnya kuning, merah, dan hijau; umumnya memakai satu warna dasar dengan motif yang padat dan banyak dalam sehelai kain. Motif yang sering disebut: pinto Aceh (dari ragam hias pintu rumah tradisional Aceh), awan meucanek, peucok reubong (pucuk rebung), dan bungong geulima.",
+      "culture": "Warna tradisional dimaknai menurut lapisan masyarakat: kuning untuk raja, merah untuk bangsawan, hijau untuk rakyat. Motif pinto Aceh dikaitkan dengan rumah adat yang rendah namun luas, lambang kerendahan hati. Kini songket Aceh juga dibuat dalam banyak warna lain.",
+      "uncertain": [
+        "Gambaran bentuk motif pinto Aceh berbeda antarsumber."
+      ],
+      "sources": [
+        {
+          "url": "https://journal.uny.ac.id/index.php/ptbb/article/view/44666",
+          "title": "Daya Tarik Konsumen terhadap Tenun Songket Aceh Jasmani di Aceh Besar",
+          "publisher": "Universitas Negeri Yogyakarta"
+        },
+        {
+          "url": "https://binus.ac.id/character-building/2024/07/seri-khazanah-budaya-nusantara-kain-tenun-songket-aceh/",
+          "title": "Seri Khazanah Budaya Nusantara: Kain Tenun (Songket) Aceh",
+          "publisher": "BINUS University"
+        },
+        {
+          "url": "https://repository.telkomuniversity.ac.id/pustaka/files/200497/bab1/adaptasi-visual-motif-kain-tenun-songket-aceh-pada-produk-fesyen-dengan-teknik-bordir.pdf",
+          "title": "Adaptasi visual motif kain tenun songket Aceh",
+          "publisher": "Telkom University"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Baduy",
+      "province": "Banten",
+      "region": "Kanekes, Lebak",
+      "community": "Baduy (Kanekes)",
+      "technique": "plain_weave",
+      "visual": "Tenun bertekstur kasar dengan motif sederhana, bergaris, dan geometris. Warna khasnya putih, hitam, dan biru tua dari pewarna alam: putih dari kapas, biru kehitaman dari nila atau tarum, hitam dari kulit jengkol. Jenis kain antara lain jamang (putih polos), samping hideung (hitam), dan samping aros (hitam dengan garis-garis putih tipis); motif lain antara lain poleng hideung, poleng paul, dan mursadam.",
+      "culture": "Baduy Dalam berpakaian serba putih, sedangkan Baduy Luar memakai hitam dengan ikat kepala biru. Sebagian penenun kini memakai pewarna sintetis dan motif yang lebih kompleks untuk pasar.",
+      "uncertain": [
+        "Daftar motif bervariasi antarsumber dan belum lengkap di sumber akademik."
+      ],
+      "sources": [
+        {
+          "url": "https://www.indonesia.travel/id-id/travel-ideas/culture/traditional-clothing-of-banten/",
+          "title": "Pakaian Tradisional Banten",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://jurnal.isbi.ac.id/index.php/atrat/article/view/925",
+          "title": "Teknik block printing dengan inspirasi motif kebudayaan Suku Baduy",
+          "publisher": "ISBI Bandung"
+        },
+        {
+          "url": "https://www.goodnewsfromindonesia.id/2023/08/20/kain-tenun-baduy-menjalin-identitas-budaya-dan-memulai-kemandirian-ekonomi",
+          "title": "Kain Tenun Baduy",
+          "publisher": "Good News From Indonesia"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Ikat Troso",
+      "province": "Jawa Tengah",
+      "region": "Desa Troso, Pecangaan, Jepara",
+      "community": "Jepara",
+      "technique": "ikat",
+      "visual": "Tenun ikat dengan ATBM; menurut sumber wisata resmi dan penelitian, polanya dibuat dengan ikat pakan sehingga motif dirancang sebelum menenun. Motif yang dicatat antara lain ampel, kedawung, mbelik boyolali, dan sicengkir dengan tumpal di tepi kain; motif awal yang sering disebut lompong, cemara, dan gapura Mantingan. Banyak motif Troso mengadaptasi motif flora, fauna, dan geometris dari Indonesia timur.",
+      "culture": "Motif sering berubah mengikuti pesanan pasar, sehingga tidak selalu mencerminkan identitas Jepara; motif lubeng dinilai unik namun belum didaftarkan sebagai kekayaan intelektual.",
+      "uncertain": [
+        "Satu jurnal menyebut benang pakan atau lungsi yang diikat; sumber lain tegas ikat pakan."
+      ],
+      "sources": [
+        {
+          "url": "https://www.indonesia.travel/id-id/travel-ideas/culture/tenun-troso/",
+          "title": "Tenun Troso",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://journal.unnes.ac.id/sju/eduart/article/view/67024",
+          "title": "Motif Khas Tenun Ikat Troso",
+          "publisher": "Universitas Negeri Semarang"
+        },
+        {
+          "url": "https://publikasi.dinus.ac.id/andharupa/article/view/2022",
+          "title": "Pengembangan Motif Tenun Troso Berbasis Komputer Grafis",
+          "publisher": "Universitas Dian Nuswantoro"
+        }
+      ]
+    },
+    {
+      "name": "Lurik",
+      "province": "Jawa Tengah dan DI Yogyakarta",
+      "region": "Pedan (Klaten), Sewon (Bantul), Yogyakarta",
+      "community": "Jawa",
+      "technique": "plain_weave",
+      "visual": "Kain tenun bergaris; nama lurik berasal dari kata Jawa lorek (garis). Polanya garis-garis atau kotak-kotak, dan nama jenisnya mengikuti susunan corak garis tersebut. Lurik tradisional ditenun dengan ATBM; sentra terbesarnya di Pedan, Klaten.",
+      "culture": "Lurik klasik berasal dari lingkungan Kraton Yogyakarta dan bernilai filosofis, misalnya corak berbeda untuk prajurit Jogokaryan dan Patangpuluhan. Motif tradisional dianggap membawa petuah, cita-cita, dan harapan bagi pemakainya, dan ada lurik yang dipakai dalam upacara ruwatan. Lurik ATBM kini makin jarang penerusnya.",
+      "uncertain": [
+        "Ada pendapat bahwa kain bergaris dari alat tenun mesin bukan lurik; sumber lain tetap menyebut lurik industri."
+      ],
+      "sources": [
+        {
+          "url": "https://journal.binus.ac.id/index.php/Humaniora/article/view/3150",
+          "title": "Makna Simbolik di Balik Kain Lurik Solo - Yogyakarta",
+          "publisher": "BINUS University"
+        },
+        {
+          "url": "https://journal.isi.ac.id/index.php/corak/article/download/14951/4140",
+          "title": "Kajian lurik",
+          "publisher": "Institut Seni Indonesia Yogyakarta"
+        },
+        {
+          "url": "https://ejournal.undip.ac.id/index.php/humanika/article/view/45261",
+          "title": "Kajian lurik Pedan",
+          "publisher": "Universitas Diponegoro"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Gedog Tuban",
+      "province": "Jawa Timur",
+      "region": "Kecamatan Kerek, Tuban",
+      "community": "Tuban",
+      "technique": "plain_weave",
+      "visual": "Kain dari benang kapas pintal tangan (benang tukel, dipintal dengan jontro) yang ditenun pada alat tenun gedogan. Ketebalan benangnya tidak seragam dan kainnya cenderung kaku karena benang dikanji. Warnanya didominasi warna alam seperti cokelat, biru, hijau, dan krem (indigo untuk biru, daun mangga untuk hijau, kayu secang untuk cokelat); ada pula varian polos putih gading dan cokelat. Kain gedog juga menjadi dasar batik gedog dengan motif floral dan geometris seperti burung hong dan kijing miring.",
+      "culture": "Nama gedog berasal dari bunyi alat tenunnya (dog dog dog). Perajinnya terbatas di Kecamatan Kerek, kapasnya masih ditanam di sana, dan satu kain bisa memakan waktu sampai sebulan.",
+      "uncertain": [],
+      "sources": [
+        {
+          "url": "https://www.suara.com/lifestyle/2014/11/28/073652/uniknya-kain-tenun-gedog-khas-tuban",
+          "title": "Uniknya Kain Tenun Gedog Khas Tuban",
+          "publisher": "Suara.com"
+        },
+        {
+          "url": "https://www.industry.co.id/read/12461/dekranas-rintis-pengembangan-potensi-tenun-gedok",
+          "title": "Dekranas Rintis Pengembangan Potensi Tenun Gedok",
+          "publisher": "Industry.co.id"
+        },
+        {
+          "url": "https://openlibrary.telkomuniversity.ac.id/pustaka/files/161492/bab1/penerapan-teknik-krawangan-tenun-gedog-khas-tuban-pada-produk-fesyen.pdf",
+          "title": "Teknik krawangan tenun gedog khas Tuban",
+          "publisher": "Telkom University"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Ikat Bandar Kidul",
+      "province": "Jawa Timur",
+      "region": "Bandar Kidul, Kota Kediri",
+      "community": "Kediri",
+      "technique": "ikat",
+      "visual": "Tenun ikat (disebut ikat pakan) yang banyak dibuat sebagai sarung. Ragam hiasnya cenderung berwarna tua, didominasi bentuk geometris dan flora dengan kesan mendatar. Ciri khasnya motif wajikan (belah ketupat besar dengan susunan acak) pada motif ceplok; motif awalnya botolan, yang berkembang menjadi tirtoreje, gajah mada, dan mlinjon. Motif flora seperti blarak sempal terinspirasi pohon kelapa.",
+      "culture": "Budaya tenun ikat berkembang di Bandar Kidul sejak 1950-an dan kini juga dijual ke luar negeri.",
+      "uncertain": [
+        "Rincian proses pewarnaan tidak tercantum di sumber yang ditemukan."
+      ],
+      "sources": [
+        {
+          "url": "https://journal.uny.ac.id/index.php/ptbb/article/view/30747",
+          "title": "Lokalitas dalam Modernitas: Sarung Tenun Bandar Kidul Kediri",
+          "publisher": "Universitas Negeri Yogyakarta"
+        },
+        {
+          "url": "https://jatim.antaranews.com/berita/246501/tenun-ikat-kediri-tembus-mancanegara",
+          "title": "Tenun ikat Kediri tembus mancanegara",
+          "publisher": "ANTARA Jatim"
+        },
+        {
+          "url": "https://timesindonesia.co.id/english/454496/tenun-ikat-bandar-kidul-of-kediri-and-its-exotic-pattern",
+          "title": "Tenun Ikat Bandar Kidul of Kediri",
+          "publisher": "Times Indonesia"
+        }
+      ]
+    },
+    {
+      "name": "Gringsing Tenganan",
+      "province": "Bali",
+      "region": "Desa Tenganan Pegringsingan, Karangasem",
+      "community": "Bali Aga Tenganan",
+      "technique": "ikat",
+      "visual": "Tenun ikat ganda (double ikat): benang lungsi dan pakan sama-sama diikat dan dicelup sebelum ditenun, satu-satunya di Indonesia. Warnanya terbatas tiga sampai empat warna: merah, kuning, hitam, dan biru, dari pewarna alam (kuning dari campuran minyak kemiri, hitam dari taum). Ragam hiasnya geometris, organis, dan dekoratif; tercatat sekitar 21 motif yang berkembang menjadi 25, termasuk wayang kebo.",
+      "culture": "Nama gringsing dari gring (sakit) dan sing (tidak), dimaknai sebagai penolak bala dan simbol penyembuhan. Kain ini sakral bagi warga Tenganan dan dipakai sebagai selendang atau senteng (wanita) maupun ikat (pria). Pembuatan satu kain bisa memakan waktu bertahun-tahun.",
+      "uncertain": [
+        "Lama pembuatan (2 sampai 5 tahun) dan jumlah motif berasal dari satu atau dua sumber."
+      ],
+      "sources": [
+        {
+          "url": "https://ejournal.unesa.ac.id/index.php/jurnal-tata-busana/article/view/11884",
+          "title": "Perkembangan Ragam Hias, Motif, dan Warna Tenun Ikat Gringsing",
+          "publisher": "Universitas Negeri Surabaya"
+        },
+        {
+          "url": "https://bali.antaranews.com/berita/308670/pesona-desa-wisata-adat-tenganan-di-karangasem-bali",
+          "title": "Pesona Desa Wisata Adat Tenganan",
+          "publisher": "ANTARA Bali"
+        },
+        {
+          "url": "https://www.goodnewsfromindonesia.id/2020/09/04/mengenal-tenun-ikat-ganda-yang-hanya-ada-3-di-dunia-salah-satunya-di-indonesia",
+          "title": "Mengenal Tenun Ikat Ganda",
+          "publisher": "Good News From Indonesia"
+        }
+      ]
+    },
+    {
+      "name": "Endek Bali",
+      "province": "Bali",
+      "region": "Gelgel (Klungkung), juga Gianyar dan sentra lain",
+      "community": "Bali",
+      "technique": "ikat",
+      "visual": "Tenun ikat pakan: benang pakan dibentangkan, digambar sesuai desain, diikat (kini dengan tali rafia), lalu dicelup sebelum ditenun. Motif wajik ukir disebut khas Klungkung. Endek Gianyar dikenal berwarna lembut, tidak mencolok.",
+      "culture": "Perkembangannya dikaitkan dengan Kerajaan Gelgel di Klungkung sekitar abad ke-16 pada masa Dalem Waturenggong. Desa Gelgel memproduksi endek dan songket.",
+      "uncertain": [
+        "Palet warna khas Klungkung tidak disebut spesifik di sumber yang ditemukan."
+      ],
+      "sources": [
+        {
+          "url": "https://www.ejournal.warmadewa.ac.id/index.php/pcsj/article/view/5867",
+          "title": "Perlindungan Hukum dan Peningkatan Kualitas Pekerja Tenun Endek/Songket di Desa Gelgel",
+          "publisher": "Universitas Warmadewa"
+        },
+        {
+          "url": "https://jurnal.isi-dps.ac.id/index.php/segarawidya/article/download/2987/1108/7506",
+          "title": "Kajian tenun endek",
+          "publisher": "ISI Denpasar"
+        },
+        {
+          "url": "https://www.goodnewsfromindonesia.id/2026/08/10/kain-endek-bali-sejarah-motif-filosofi-jenis-cara-pembuatan-hingga-perbedaannya-dengan-batik",
+          "title": "Kain Endek Bali: sejarah, motif, filosofi",
+          "publisher": "Good News From Indonesia"
+        }
+      ]
+    },
+    {
+      "name": "Songket Bali",
+      "province": "Bali",
+      "region": "Sidemen (Karangasem), Gelgel (Klungkung)",
+      "community": "Bali",
+      "technique": "songket",
+      "visual": "Songket dengan pakan tambahan; songket Gelgel secara tradisional memakai benang emas dan perak, sedangkan songket Sidemen banyak memakai benang katun atau sutra (bukan benang emas) dan ditenun dengan alat tenun gedogan (backstrap). Motif tradisional Sidemen berbentuk geometris yang dipadukan dengan ornamen tradisional Bali yang natural; kini juga ada motif modern.",
+      "culture": "Songket Gelgel dahulu ditenun terutama oleh perempuan di lingkungan puri. Songket Sidemen dikenal harganya lebih terjangkau dibanding Gelgel.",
+      "uncertain": [
+        "Sumber tentang bahan baku Sidemen berasal dari studi 2011 sampai 2019."
+      ],
+      "sources": [
+        {
+          "url": "https://e-journal.unmas.ac.id/index.php/ngayah/article/view/10",
+          "title": "IPTEK bagi Produk Ekspor Kerajinan Songket Motif Bali di Karangasem",
+          "publisher": "Universitas Mahasaraswati Denpasar"
+        },
+        {
+          "url": "https://threadsoflife.com/blogs/textile-highlights/songket-from-bali-1",
+          "title": "Songket from Bali",
+          "publisher": "Threads of Life"
+        },
+        {
+          "url": "https://www.indonesia.travel/sa-en/travel-ideas/culture/kain-songket",
+          "title": "Kain Songket",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        }
+      ]
+    },
+    {
+      "name": "Kain Cepuk Nusa Penida",
+      "province": "Bali",
+      "region": "Tanglad dan Julingan, Nusa Penida (Klungkung)",
+      "community": "Nusa Penida",
+      "technique": "ikat",
+      "visual": "Kain ritual tenun ikat pakan (endek) yang berlatar merah, biasanya dengan empat warna: merah, biru atau hitam, dan kuning. Merupakan adaptasi lokal kain patola India. Motifnya antara lain mekawis, lingking paku, kecubung, kurung, dan bintang kurung, dengan motif belah ketupat.",
+      "culture": "Dapat menggantikan patola dalam upacara. Mekawis dipakai membungkus tulang dalam ritual kremasi; lingking paku dan kecubung untuk upacara potong gigi (laki-laki dan perempuan); kurung untuk sehari-hari. Penenun disebut berpuasa selama proses, dan pewarnaan alami bisa memakan sekitar enam bulan.",
+      "uncertain": [
+        "Klaim bahwa hanya satu dari enam motif tradisional yang masih dikuasai berasal dari satu artikel 2023."
+      ],
+      "sources": [
+        {
+          "url": "https://australian.museum/learn/cultures/international-collection/indonesia/ritual-silk-cloth/",
+          "title": "Ritual silk cloth (kain cepuk)",
+          "publisher": "Australian Museum"
+        },
+        {
+          "url": "https://threadsoflife.com/blogs/field-notes/the-cepuk-and-kawis-textiles-of-nusa-penida-1",
+          "title": "The Cepuk and Kawis textiles of Nusa Penida",
+          "publisher": "Threads of Life"
+        },
+        {
+          "url": "https://jurnal2.isi-dps.ac.id/index.php/bhumidevi/article/view/742/246",
+          "title": "Kajian kain cepuk (Udiyani dan Sunarya)",
+          "publisher": "ISI Denpasar"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Sasak Lombok",
+      "province": "Nusa Tenggara Barat",
+      "region": "Sukarara (Lombok Tengah), Pringgasela (Lombok Timur)",
+      "community": "Sasak",
+      "technique": "songket",
+      "visual": "Songket dan ikat tenun tangan dengan alat tradisional; motifnya geometris (garis lurus dan lengkung, lingkaran, poligon) dan motif tembus ke sisi belakang kain. Motif Sukarara antara lain subahnale (dengan varian laeq, keker, wayang, bulan bekurung), wayang, dan alang/lumbung yang terinspirasi rumah tradisional Sasak. Motif Pringgasela yang terkenal: sri menanti, sundawa, pucuk rebong, ragi bayanan, dan pancor.",
+      "culture": "Nama subahnale dikaitkan dengan ucapan Subhanallah; motif ini dianggap paling sempurna dan bergengsi, dan dalam tradisi ditenun di dalam rumah dengan aturan tertentu. Motif Pringgasela mencerminkan perpaduan budaya lokal dan pengaruh Islam.",
+      "uncertain": [
+        "Palet warna khas Sukarara atau Pringgasela tidak ditemukan di sumber."
+      ],
+      "sources": [
+        {
+          "url": "https://www.indonesia.travel/id-id/travel-ideas/culture/tenun-sasak-kain-tradisional-suku-sasak-yang-penuh-makna/",
+          "title": "Tenun Sasak, Kain Tradisional Suku Sasak",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://ir.uitm.edu.my/id/eprint/109008",
+          "title": "Study of Lombok songket weaving: Sasak ethnicity in socio-cultural context",
+          "publisher": "Universiti Teknologi MARA"
+        },
+        {
+          "url": "https://rri.co.id/en/entertainment/1919835/weaving-the-future-sasak-women-preserve-lombok-s-cultural-legacy",
+          "title": "Weaving the Future: Sasak Women Preserve Lombok's Cultural Legacy",
+          "publisher": "RRI"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Bima (Tembe Nggoli)",
+      "province": "Nusa Tenggara Barat",
+      "region": "Kabupaten dan Kota Bima, Dompu",
+      "community": "Mbojo (Bima)",
+      "technique": "songket",
+      "visual": "Sarung tembe nggoli bergaya songket dari benang katun dan benang perak, dengan pola kotak-kotak. Motif geometris utamanya nggusu waru (bersudut delapan), nggusu upa, nggusu tolu, dan pado waji; motif flora antara lain bunga samobo, wunta satako, bunga aruna, dan kakando. Warna yang dicatat antara lain kuning, merah, merah muda, biru, hijau, putih, dan hitam.",
+      "culture": "Nggusu waru melambangkan delapan sifat atau tanggung jawab seorang pemimpin Mbojo (antara lain jujur, santun, bekerja keras) dan dahulu dikhususkan bagi pemimpin daerah.",
+      "uncertain": [
+        "Jumlah motif, makna, dan nama warna tidak sepenuhnya seragam antarsumber."
+      ],
+      "sources": [
+        {
+          "url": "https://ejournal.undiksha.ac.id/index.php/JJPKK/article/view/66297",
+          "title": "Kain Tenun Nggoli di Kecamatan Belo Kabupaten Bima",
+          "publisher": "Universitas Pendidikan Ganesha"
+        },
+        {
+          "url": "https://journal2.um.ac.id/index.php/jbs/article/view/28517/0",
+          "title": "Historical study on the development of the weaving motif of Bima",
+          "publisher": "Universitas Negeri Malang"
+        },
+        {
+          "url": "https://eprints.unm.ac.id/17154/",
+          "title": "Bentuk dan Makna Simbolis Motif Sarung Tenun Songket Khas Suku Bima",
+          "publisher": "Universitas Negeri Makassar"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Ikat Sumba",
+      "province": "Nusa Tenggara Timur",
+      "region": "Sumba Timur (antara lain Kaliuda) dan Sumba Barat",
+      "community": "Sumba",
+      "technique": "ikat",
+      "visual": "Tenun ikat dengan motif figuratif dari kehidupan sehari-hari: kuda (njara), ayam (manu), kakatua (kaka), manusia (tau), tugu tengkorak (andadungu katiku tau), ular, rusa, udang (kurangu), buaya, dan kura-kura; ada juga tenun pahikung. Hinggi (kain pria) tersusun dari panel-panel lungsi, dan merah dari akar kombu menandai kain bangsawan. Kain Sumba Timur umumnya berdasar gelap dengan motif berwarna, sedangkan Sumba Barat lazim berdasar biru tua.",
+      "culture": "Kuda melambangkan keberanian, kekuatan, dan status sosial; udang melambangkan kehidupan dan kelahiran kembali karena berganti kulit. Warna merah kombu dahulu menjadi penanda status bangsawan.",
+      "uncertain": [
+        "Perbedaan warna dasar Sumba Timur (hitam) dan Sumba Barat (biru tua) berasal dari sumber blog."
+      ],
+      "sources": [
+        {
+          "url": "https://www.roots.gov.sg/Collection-Landing/listing/1395619",
+          "title": "Man's cloth (hinggi kombu)",
+          "publisher": "National Heritage Board Singapore (Roots.sg)"
+        },
+        {
+          "url": "https://www.eria.org/uploads/7_ch_3-Sumba-Timur-Tenun.pdf",
+          "title": "Sumba Timur Tenun (bab 3)",
+          "publisher": "ERIA"
+        },
+        {
+          "url": "https://rri.co.id/kupang/daerah-3t/2605902/pesona-kain-tenun-sumba-timur-perpaduan-seni-tradisi-dan-filosofi",
+          "title": "Pesona Kain Tenun Sumba Timur",
+          "publisher": "RRI Kupang"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Ikat Sikka",
+      "province": "Nusa Tenggara Timur",
+      "region": "Kabupaten Sikka (Maumere), Flores",
+      "community": "Sikka",
+      "technique": "ikat",
+      "visual": "Tenun ikat berpewarna alam: biru dan hitam dari daun nila (indigo), merah dari akar mengkudu, cokelat dari mengkudu dan kulit bakau. Puluhan motif tradisional tercatat (data MPIG menyebut 52 motif terdaftar), yang terkenal antara lain dala mawarani, manu hutu, dan rempe sikka. Utang mitang bergaris gelap yang tenang; utang mawarani bermotif bintang kejora.",
+      "culture": "Tenun ikat Sikka dilindungi Indikasi Geografis. Kain bergaris gelap seperti utang mitang biasanya dipakai orang tua, sedangkan bintang kejora pada mawarani dimaknai sebagai pemberi terang.",
+      "uncertain": [
+        "Nomor sertifikat IG dan daftar motif perlu dicek di basis data DJKI; atribusi tanaman per warna sedikit berbeda antarsumber."
+      ],
+      "sources": [
+        {
+          "url": "https://journal.unismuh.ac.id/index.php/harmoni/article/download/21370/10480/63920",
+          "title": "Kajian tenun ikat Sikka",
+          "publisher": "Universitas Muhammadiyah Makassar"
+        },
+        {
+          "url": "https://media.neliti.com/media/publications/973-ID-pembuatan-kain-tenun-ikat-maumere-di-desa-wololora-kecamatan-lela-kabupaten-sikk.pdf",
+          "title": "Pembuatan Kain Tenun Ikat Maumere di Desa Wololora",
+          "publisher": "Neliti"
+        },
+        {
+          "url": "https://www.thejakartapost.com/multimedia/2017/05/31/precious-heritage-from-sikka",
+          "title": "Precious heritage from Sikka",
+          "publisher": "The Jakarta Post"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Ikat Ende-Lio",
+      "province": "Nusa Tenggara Timur",
+      "region": "Kabupaten Ende, Flores",
+      "community": "Ende dan Lio",
+      "technique": "ikat",
+      "visual": "Lawo adalah kain sarung perempuan Lio yang cukup panjang. Motif Lio kecil dan geometris (bentuk ceplok), dengan figur manusia dan biawak berwarna merah atau biru di atas dasar gelap; kain perempuan juga memuat flora dan fauna seperti kuda, daun, burung, dan sayap lalat. Kain Ende disebut hanya memakai satu motif di bidang tengah, dengan warna dominan cokelat dan merah. Di Manulondo, warna utamanya hitam, biru, dan merah.",
+      "culture": "Tenun Lio dikaitkan dengan pengaruh kain patola India. Warna hitam, biru, dan merah di Manulondo disebut mengikuti warna danau Kelimutu sebagai warisan leluhur.",
+      "uncertain": [
+        "Warna dan motif berbeda antardesa; sebagian sumber bersifat artikel populer."
+      ],
+      "sources": [
+        {
+          "url": "https://ejournal2.undip.ac.id/index.php/jpps/article/view/11258",
+          "title": "Kajian simbolisme sarung Ende-Lio",
+          "publisher": "Universitas Diponegoro"
+        },
+        {
+          "url": "https://e-journal.uniflor.ac.id/index.php/jupika/article/download/249/432/1156",
+          "title": "Kajian lawo Mbuli Lio",
+          "publisher": "Universitas Flores"
+        },
+        {
+          "url": "https://merahputih.com/post/read/kekayaan-ragam-motif-kain-tenun-flores/",
+          "title": "Kekayaan Ragam Motif Kain Tenun Flores",
+          "publisher": "MerahPutih"
+        }
+      ]
+    },
+    {
+      "name": "Songke Manggarai",
+      "province": "Nusa Tenggara Timur",
+      "region": "Manggarai Raya, Flores barat",
+      "community": "Manggarai",
+      "technique": "songket",
+      "visual": "Towe songke berwarna dasar hitam dengan motif dari benang tambahan berwarna mencolok seperti merah, putih, oranye, dan kuning. Motif yang diidentifikasi antara lain wela runu, ranggong, wela kaweng, ntala, su'i (garis), dan jok.",
+      "culture": "Songke wajib dipakai dalam acara adat seperti penti (kenduri), randang (membuka ladang), dan nempung (musyawarah). Motif su'i dimaknai sebagai kehidupan yang tumbuh dan berkembang. Songke dikenakan para pemimpin pada KTT ASEAN ke-42 di Labuan Bajo.",
+      "uncertain": [
+        "Alasan warna dasar hitam (iklim dingin) berasal dari satu sumber."
+      ],
+      "sources": [
+        {
+          "url": "https://setkab.go.id/hari-kedua-ktt-ke-42-asean-para-pemimpin-kenakan-tenun-songke-manggarai/",
+          "title": "Hari Kedua KTT ke-42 ASEAN, Para Pemimpin Kenakan Tenun Songke Manggarai",
+          "publisher": "Sekretariat Kabinet RI"
+        },
+        {
+          "url": "https://ojs.mahadewa.ac.id/index.php/nirwasita/article/view/2247",
+          "title": "Motif kain tenun songke Manggarai",
+          "publisher": "Universitas PGRI Mahadewa Indonesia"
+        },
+        {
+          "url": "https://ojs.uajy.ac.id/index.php/justitiaetpax/article/view/8369",
+          "title": "Perlindungan hukum kain tenun songke Manggarai sebagai indikasi geografis",
+          "publisher": "Universitas Atma Jaya Yogyakarta"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Timor (Amarasi, Insana, Timor Tengah Selatan)",
+      "province": "Nusa Tenggara Timur",
+      "region": "Amarasi (Kabupaten Kupang), Insana (Timor Tengah Utara), Timor Tengah Selatan",
+      "community": "Atoni (Dawan)",
+      "technique": "ikat",
+      "visual": "Tenun ikat dengan teknik pakan tambahan buna (lilitan) dan sotis. Kain Timor Tengah Selatan banyak menampilkan burung, cecak, buaya, dan motif kaif; ayam juga sering muncul. Kain Amarasi tercatat memakai ikat putih di atas dasar merah mengkudu, dengan sotis sebagai garis aksen hitam-putih di antara garis merah dan hijau. Kain Insana cenderung cerah (benang pabrikan), sering merah dengan nila atau merah dengan kuning.",
+      "culture": "Pada kain Amarasi, motif kaif menjadi simbol hubungan dengan leluhur; warna alam merah, hitam, dan putih dikaitkan dengan hubungan manusia, alam, dan roh leluhur.",
+      "uncertain": [
+        "Data buna dan sotis banyak berasal dari kain Insana dan koleksi Amarasi 1920-1950."
+      ],
+      "sources": [
+        {
+          "url": "https://www.indonesia.travel/nl-nl/travel-ideas/culture/tenun-buna",
+          "title": "Tenun Buna",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://publication.petra.ac.id/index.php/dkv/article/download/5602/5118",
+          "title": "Kajian motif tenun Timor",
+          "publisher": "Universitas Kristen Petra"
+        },
+        {
+          "url": "https://threadsoflife.com/products/traditional-textiles-timor-5",
+          "title": "Traditional textiles: Timor",
+          "publisher": "Threads of Life"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Ikat Sabu (Savu Raijua)",
+      "province": "Nusa Tenggara Timur",
+      "region": "Pulau Sabu dan Raijua",
+      "community": "Sabu (Hawu)",
+      "technique": "ikat",
+      "visual": "Tenun ikat bermotif flora, fauna, dan geometris dengan warna yang sering dipakai cokelat, merah, dan biru; salah satu ciri khasnya motif bunga teratai kecil dan besar di atas dasar biru tua dan merah terang. Worapi adalah ikatan tambahan untuk memperindah motif utama (hebe).",
+      "culture": "Kain terbagi menurut dua garis keturunan perempuan: Hubi Ae (mayang besar) dan Hubi Iki (mayang kecil), dengan sub-bagian wini; tiap kelompok punya motif sendiri. Worapi tidak boleh dipakai untuk acara dan ritual adat. Kain Raijua lama untuk ritual sudah jarang ditemukan.",
+      "uncertain": [
+        "Motif tiap klan tidak dirinci di sumber yang ditemukan."
+      ],
+      "sources": [
+        {
+          "url": "https://www.indonesia.travel/id/id/travel-ideas/culture/pakaian-adat-suku-sabu",
+          "title": "Pakaian Adat Suku Sabu",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://e-journal.trisakti.ac.id/index.php/jsrr/article/download/17477/10632/67911",
+          "title": "Kajian tenun ikat Sabu",
+          "publisher": "Universitas Trisakti"
+        },
+        {
+          "url": "https://www.agsa.sa.gov.au/collection-publications/collection/works/womans-tube-skirt-ei-raja-or-ei-ledo-with-geometric-motif-possibly-floral-or-otherwise/67069/",
+          "title": "Woman's tube skirt (ei raja or ei ledo)",
+          "publisher": "Art Gallery of South Australia"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Ikat Rote",
+      "province": "Nusa Tenggara Timur",
+      "region": "Pulau Rote, Rote Ndao",
+      "community": "Rote",
+      "technique": "ikat",
+      "visual": "Tenun ikat yang didominasi warna hitam dan putih, dengan garis merah. Lambi tei adalah salah satu tenun ikat Rote Ndao yang dikaji.",
+      "culture": "Setiap marga memiliki motif khas yang diwariskan turun-temurun, dan paman dari pihak ibu biasanya memimpin penyerahan kain.",
+      "uncertain": [
+        "Rincian motif per marga tidak tercantum di sumber yang ditemukan."
+      ],
+      "sources": [
+        {
+          "url": "https://jurnal.unimed.ac.id/2012/index.php/gorga/article/view/32859",
+          "title": "Manifestasi Lambi Tei, Tenun Ikat Asal Rote Ndao",
+          "publisher": "Universitas Negeri Medan"
+        },
+        {
+          "url": "https://www.medcom.id/rona/keluarga/zNA7yR6k-cerita-di-balik-kain-tenun-ntt-di-peragaan-busana-internasional",
+          "title": "Cerita di balik kain tenun NTT",
+          "publisher": "Medcom"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Ikat Sintang (Dayak)",
+      "province": "Kalimantan Barat",
+      "region": "Kabupaten Sintang (antara lain Ensaid Panjang), juga Kapuas Hulu",
+      "community": "Dayak (Desa, Iban, dan lainnya)",
+      "technique": "ikat",
+      "visual": "Tenun Dayak dalam empat jenis menurut tingkat kesulitan: kebat (ikat), sidan, songket, dan plin slam. Motif kebat menampilkan bunga, manusia, dan naga; sidan menampilkan bunga dan orang. Motif berasal dari flora, fauna, dan benda alam, antara lain rabing atau buaya (sakral) dan merinjan (motif tua). Pewarna alam: merah dari daun engkerebai atau kulit kayu beting, hitam kebiruan dari daun kemunting dan rengat, kuning dari akar mengkudu; merah pekat didapat dari pencelupan berulang.",
+      "culture": "Secara tradisional hanya dikerjakan perempuan, dengan ritual adat sebelum menenun, dan makna motif diwariskan secara lisan. Di Dayak Iban setiap keluarga punya motif sendiri. Tenun Sintang tercatat sebagai Warisan Budaya Takbenda Indonesia namun terancam punah.",
+      "uncertain": [],
+      "sources": [
+        {
+          "url": "https://e-journal.trisakti.ac.id/index.php/dimensi/article/view/2873",
+          "title": "Design Clinic Eksplorasi Motif Sintang, Desa Ensaid Panjang",
+          "publisher": "Universitas Trisakti"
+        },
+        {
+          "url": "https://mongabay.co.id/2017/03/19/merawat-budaya-adat-dengan-tenun-kain-alami/",
+          "title": "Merawat Budaya Adat dengan Tenun Kain Alami",
+          "publisher": "Mongabay Indonesia"
+        },
+        {
+          "url": "https://journal.unnes.ac.id/sju/arty/article/download/49584/22878",
+          "title": "Kajian motif tenun Sintang (Nurani dan Setyawan)",
+          "publisher": "Universitas Negeri Semarang"
+        }
+      ]
+    },
+    {
+      "name": "Songket Sambas",
+      "province": "Kalimantan Barat",
+      "region": "Kabupaten Sambas",
+      "community": "Melayu Sambas",
+      "technique": "songket",
+      "visual": "Songket bergaya Melayu dengan motif dari benang kuning keemasan atau perak, sehingga dijuluki kain benang emas atau kain lunggi. Motif yang disebut antara lain pucuk rebung, itik pulang petang, motif flora, dan keris; ada bagian tepi kain berwarna putih polos.",
+      "culture": "Tradisi menenun di Sambas disebut turun-temurun sejak abad ke-17, dikaitkan dengan berdirinya Kesultanan Sambas. Benang emas dihargai karena ringan, tahan lama, dan warnanya awet.",
+      "uncertain": [
+        "Motif khas berbeda antarsumber (itik pulang petang vs pucuk rebung)."
+      ],
+      "sources": [
+        {
+          "url": "https://journal.upy.ac.id/index.php/karmawibangga/article/view/5953",
+          "title": "Peran Perempuan dalam Proses Pembuatan Kain Tenun Songket Sambas",
+          "publisher": "Universitas PGRI Yogyakarta"
+        },
+        {
+          "url": "https://www.goodnewsfromindonesia.id/2023/01/02/asal-usul-kain-tenun-sambas-sudah-ada-sejak-abad-17",
+          "title": "Asal Usul Kain Tenun Sambas",
+          "publisher": "Good News From Indonesia"
+        },
+        {
+          "url": "https://rri.co.id/pontianak/ekonomi/umkm/2615575/tenun-kalbar-karya-songket-kurnia-mendunia",
+          "title": "Tenun Kalbar, Karya Songket Mendunia",
+          "publisher": "RRI Pontianak"
+        }
+      ]
+    },
+    {
+      "name": "Ulap Doyo",
+      "province": "Kalimantan Timur",
+      "region": "Tanjung Isuy dan Mancong, Jempang, Kutai Barat",
+      "community": "Dayak Benuaq",
+      "technique": "plain_weave",
+      "visual": "Tenun dari serat daun doyo (Curculigo latifolia) yang dikerok, dibelah 2 sampai 3 mm, lalu dipilin menjadi benang; warna dasar alaminya putih krem, dan motif dibuat dengan pewarna dari kayu, kulit, dan bagian tumbuhan lain. Motif khasnya kupu-kupu, bunga nunuk, limar, dan abstraksi bentuk leluhur.",
+      "culture": "Dipakai laki-laki dan perempuan dalam upacara adat, tarian, dan kehidupan sehari-hari. Permintaan wisatawan menghidupkan kembali tenun di Tanjung Isuy dan Mancong, tetapi bahan baku dan penenun masih terbatas.",
+      "uncertain": [
+        "Klaim bahwa tenun ini ada sejak Kerajaan Kutai Hindu belum terverifikasi."
+      ],
+      "sources": [
+        {
+          "url": "https://e-journal.trisakti.ac.id/index.php/dimensi/article/view/2864",
+          "title": "Warna Tenun Doyo sebagai Ekspresi Masyarakatnya (Tanjung Isuy)",
+          "publisher": "Universitas Trisakti"
+        },
+        {
+          "url": "https://jurnal.fkip.unmul.ac.id/index.php/bivalen/article/view/1796",
+          "title": "Kondisi optimum pewarnaan serat daun doyo",
+          "publisher": "Universitas Mulawarman"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Tenun_Ulap_Doyo",
+          "title": "Tenun Ulap Doyo",
+          "publisher": "Wikipedia"
+        }
+      ]
+    },
+    {
+      "name": "Sarung Tenun Samarinda",
+      "province": "Kalimantan Timur",
+      "region": "Samarinda Seberang",
+      "community": "Bugis di Samarinda",
+      "technique": "plain_weave",
+      "visual": "Sarung ATBM dengan motif geometris kotak-kotak yang dominan, juga dimodifikasi dengan bunga besar berwarna mencolok. Warna dominan hitam, putih, merah, ungu, biru laut atau biru dongker, dan hijau, dengan kesan gelap dan kontras. Motif yang disebut antara lain hatta, soeharto, dan sari pengantin; sarung sekitar 80 cm x 2 m dengan sambungan tengah yang dijahit tangan.",
+      "culture": "Dibawa pendatang Bugis ke Samarinda Seberang sekitar 1668 dan berkembang menjadi corak Samarinda. Motif kotak merah tua dengan kotak hitam pernah menjadi bagian lambang Kota Samarinda (1960 sampai 1998).",
+      "uncertain": [
+        "Hubungan motifnya dengan sarung Bugis asli diperdebatkan antarsumber."
+      ],
+      "sources": [
+        {
+          "url": "https://www.indonesia.travel/id/id/destination/kalimantan/east-kalimantan/sarung-tenun-samarinda",
+          "title": "Sarung Tenun Samarinda",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://kaltim.antaranews.com/berita/207456/merajut-tradisi-warisan-leluhur-di-kampung-tenun-samarinda",
+          "title": "Merajut Tradisi di Kampung Tenun Samarinda",
+          "publisher": "ANTARA Kaltim"
+        },
+        {
+          "url": "https://tirto.id/diaspora-bugis-melahirkan-sarung-samarinda-cExr",
+          "title": "Diaspora Bugis Melahirkan Sarung Samarinda",
+          "publisher": "Tirto.id"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Toraja (Sa'dan)",
+      "province": "Sulawesi Selatan",
+      "region": "Sa'dan To'barana', Toraja Utara",
+      "community": "Toraja",
+      "technique": "plain_weave",
+      "visual": "Tenun dengan kombinasi warna cerah dalam garis tipis panjang, panjang 3 sampai 4 meter per lembar. Motif yang paling sering: garis vertikal, bunga, dan burung, banyak diambil dari ukiran Toraja termasuk ukiran rumah tongkonan. Warna dari pewarna alam: jingga, merah, hitam, biru, dan kuning, atau nuansa gelap (merah, hitam, cokelat, biru tua). Jenisnya antara lain paruki', pa'kala'pa', pa'bunga-bunga, pa'mata pa', paramba', pa'borong, dan pa'dure'.",
+      "culture": "Paruki' bermotif pa'sekong kandaure melambangkan kebesaran perempuan Toraja dan dipakai sebagai selubung peti jenazah pada Rambu Solo'. Pa'tedong (kepala kerbau) muncul pada kain sarita untuk upacara Rambu Tuka' dan melambangkan harapan, kelimpahan, dan kemakmuran.",
+      "uncertain": [
+        "Bentuk visual pa'tedong pada tenun tidak dirinci di sumber."
+      ],
+      "sources": [
+        {
+          "url": "https://eprints.unm.ac.id/17152/",
+          "title": "Kajian tenun Sa'dan Toraja",
+          "publisher": "Universitas Negeri Makassar"
+        },
+        {
+          "url": "https://www.goodnewsfromindonesia.id/2023/01/09/parukidan-sarita-kain-tenun-yang-hiasi-upacara-sakral-suku-toraja",
+          "title": "Paruki dan Sarita",
+          "publisher": "Good News From Indonesia"
+        },
+        {
+          "url": "https://ojstexere.stttekstil.ac.id/index.php/texere/article/download/124/pdf",
+          "title": "Kajian tenun Toraja",
+          "publisher": "Politeknik STTT Bandung"
+        }
+      ]
+    },
+    {
+      "name": "Lipa' Sabbe Sengkang",
+      "province": "Sulawesi Selatan",
+      "region": "Sengkang, Kabupaten Wajo",
+      "community": "Bugis",
+      "technique": "plain_weave",
+      "visual": "Sarung sutra Bugis 100 persen benang sutra, ditenun dengan ATBM, dengan motif geometris berwarna cukup mencolok. Motif balo renni tersusun dari garis vertikal dan horizontal tipis yang bersilangan membentuk kotak-kotak kecil; pasangannya balo lobang berkotak besar atau kosong.",
+      "culture": "Secara tradisional balo renni dipakai perempuan muda yang belum menikah dan balo lobang oleh laki-laki yang belum menikah. Sengkang adalah salah satu sentra tenun terbesar di Sulawesi Selatan.",
+      "uncertain": [
+        "Jumlah motif berbeda antarsumber (empat, enam, atau 14 motif)."
+      ],
+      "sources": [
+        {
+          "url": "https://ojs.unm.ac.id/societies/article/view/23612",
+          "title": "Semiotika Peirce dalam Tanda Balo Lipaq Sabbe",
+          "publisher": "Universitas Negeri Makassar"
+        },
+        {
+          "url": "https://www.djkn.kemenkeu.go.id/kanwil-sulseltrabar/baca-kilas-peristiwa/14278/Kain-Tenun-Sengkang-Warisan-Budaya-dari-Wajo-Sulsel.html",
+          "title": "Kain Tenun Sengkang, Warisan Budaya dari Wajo",
+          "publisher": "DJKN Kementerian Keuangan"
+        },
+        {
+          "url": "https://ejournal.unesa.ac.id/index.php/jurnal-tata-busana/article/download/2656/1585/4633",
+          "title": "Motif kain sutra Sengkang",
+          "publisher": "Universitas Negeri Surabaya"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Sekomandi Kalumpang",
+      "province": "Sulawesi Barat",
+      "region": "Kalumpang dan Karataun, Mamuju (juga Bonehau)",
+      "community": "Kalumpang",
+      "technique": "ikat",
+      "visual": "Tenun ikat berpewarna alam dengan warna dominan cokelat kemerahan atau krem di atas dasar hitam, berkesan lembut tetapi tegas. Motifnya antara lain perisai, garis beraturan, dan figur manusia. Kain biasanya dua panel ikat yang disambung di tengah, dengan bidang tengah berikat dan bingkai bergaris (panel samping disebut lete).",
+      "culture": "Diwariskan turun-temurun di komunitas Kalumpang; motif menjadi cara menyampaikan nilai dan identitas budaya, dan cerita rakyat mengisahkan motif pertama berasal dari daun yang digigit seekor anjing. Pengerjaan manual bisa 4 sampai 6 bulan; tenun ikat Sekomandi Kalumpang diajukan sebagai Indikasi Geografis (dalam pemeriksaan pada Maret 2024).",
+      "uncertain": [
+        "Bahan benang berbeda antarsumber (kapas dipintal, disebut ma'kare', vs kulit kayu); struktur panel berasal dari situs komersial."
+      ],
+      "sources": [
+        {
+          "url": "https://www.indonesia.travel/au-en/travel-ideas/heritage/tenun-ikat-sekomandi",
+          "title": "Tenun Ikat Sekomandi",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://journal.unismuh.ac.id/index.php/harmoni/article/view/21283",
+          "title": "Proses Pembuatan Kain Tradisional Sekomandi Desa Batuisi",
+          "publisher": "Universitas Muhammadiyah Makassar"
+        },
+        {
+          "url": "https://threadsoflife.com/blogs/textile-highlights/sekomandi-from-sulawesi-1",
+          "title": "Sekomandi from Sulawesi",
+          "publisher": "Threads of Life"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Buton",
+      "province": "Sulawesi Tenggara",
+      "region": "Kota Baubau, Buton, Buton Tengah (Watarumbe)",
+      "community": "Buton (Wolio)",
+      "technique": "plain_weave",
+      "visual": "Tenun berwarna berani, kadang dengan benang emas atau perak, bermotif sederhana berupa garis lurus dan kotak-kotak yang banyak terinspirasi alam. Motif kotak-kotak (bhia kolau) biasa untuk laki-laki dan garis lurus searah (bhia kasopa yitanu) untuk perempuan. Kamohu dari Watarumbe berwarna beragam dari kapas yang diolah tradisional.",
+      "culture": "Warna kain mencerminkan status sosial atau jabatan dalam struktur adat. Kain tenun kamohu ditetapkan sebagai Warisan Budaya Takbenda Indonesia dan juga berfungsi sebagai pakaian adat Desa Watarumbe. Kampung tenun Sulaa dikenal sebagai sentra perajin.",
+      "uncertain": [
+        "Rincian warna dan nama motif khusus kamohu belum ditemukan."
+      ],
+      "sources": [
+        {
+          "url": "https://ojs.unm.ac.id/paratiwi/article/view/50388",
+          "title": "Studi terhadap Kain Tenun Buton (Proses, Makna Motif dan Penggunaannya)",
+          "publisher": "Universitas Negeri Makassar"
+        },
+        {
+          "url": "https://eprints.unm.ac.id/id/eprint/35916",
+          "title": "Bentuk, Warna dan Makna Simbolik Motif Sarung Adat Buton di Kota Baubau",
+          "publisher": "Universitas Negeri Makassar"
+        },
+        {
+          "url": "https://www.goodnewsfromindonesia.id/2021/09/03/kain-tenun-kamohu-buton-warisan-budaya-asal-sulawesi-tenggara",
+          "title": "Kain Tenun Kamohu Buton",
+          "publisher": "Good News From Indonesia"
+        }
+      ]
+    },
+    {
+      "name": "Kain Bentenan",
+      "province": "Sulawesi Utara",
+      "region": "Minahasa",
+      "community": "Minahasa",
+      "technique": "ikat",
+      "visual": "Kain tenun berbentuk tabung panjang tanpa sambungan, dipakai dengan dilipat. Tujuh motif utama: tinompak kuda (motif berulang), tonilama (benang putih tanpa warna), tononton mata (gambar manusia), kaiwu patola (pengaruh patola India), kokera (bunga berhias manik-manik), sinoi (garis warna-warni), dan pinatikan (jala dan segi enam). Pewarna dari tumbuhan setempat: biru atau hijau dari pohon taun, menjadi hitam bila dicampur air kapur sirih.",
+      "culture": "Dipakai dalam upacara adat seperti membangun rumah, menentukan masa tanam, hingga persiapan berperang. Kain lama sangat langka; kini motif Bentenan diproduksi kembali secara komersial.",
+      "uncertain": [
+        "Jumlah kain lama yang tersisa berbeda antarsumber; ejaan nama motif bervariasi."
+      ],
+      "sources": [
+        {
+          "url": "https://artsandculture.google.com/asset/bentenan-sarong/egHnHeiMK-jpSw",
+          "title": "Bentenan sarong",
+          "publisher": "Google Arts and Culture"
+        },
+        {
+          "url": "https://kalbar.antaranews.com/berita/614602/presiden-prabowo-kenakan-kain-bentenan-minahasa-di-perayaan-natal-nasional",
+          "title": "Presiden Kenakan Kain Bentenan Minahasa",
+          "publisher": "ANTARA"
+        },
+        {
+          "url": "https://journal.unindra.ac.id/index.php/cipta/article/download/1159/995",
+          "title": "Kajian motif kain Bentenan",
+          "publisher": "Universitas Indraprasta PGRI"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Donggala",
+      "province": "Sulawesi Tengah",
+      "region": "Donggala (antara lain Watusampu)",
+      "community": "Kaili",
+      "technique": "ikat",
+      "visual": "Sarung tenun Donggala (buya sabe) dibuat tangan; buya bomba adalah tenun ikat dan buya subi adalah songket. Motif yang dicatat antara lain buya bomba, buya subi sabe, buya subi kumbaja, dan buya awi; desainnya memadukan bunga dan daun dengan unsur geometris, dan motif hewan yang umum adalah kakatua. Warnanya terbagi kelompok cerah dan gelap tanpa palet baku.",
+      "culture": "Dipakai pada pernikahan, khitanan, dan upacara adat. Buya bomba dianggap proses paling sulit dan disebut memiliki 18 motif tradisional, banyak yang kini jarang dibuat.",
+      "uncertain": [
+        "Penamaan (buya sabe, bomba, subi) sedikit berbeda antarsumber."
+      ],
+      "sources": [
+        {
+          "url": "https://ejournal.unesa.ac.id/index.php/jurnal-tata-busana/article/view/6656",
+          "title": "Sarung Tenun Ikat Donggala 2009 s.d. 2013",
+          "publisher": "Universitas Negeri Surabaya"
+        },
+        {
+          "url": "https://ojs.unm.ac.id/societies/article/view/73950",
+          "title": "Analisis Ikonografi Kain Tenun Donggala Bermotif Buya Bomba",
+          "publisher": "Universitas Negeri Makassar"
+        },
+        {
+          "url": "https://jurnal.isbi.ac.id/index.php/atrat/article/view/573",
+          "title": "Pengolahan Motif pada Buya Bomba dengan Teknik Digital Printing",
+          "publisher": "ISBI Bandung"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Ikat Tanimbar",
+      "province": "Maluku",
+      "region": "Kepulauan Tanimbar (antara lain Desa Kandar, Selaru)",
+      "community": "Tanimbar",
+      "technique": "ikat",
+      "visual": "Tenun ikat berpola garis-garis dengan ruang kosong, diselingi corak sederhana dari alam Tanimbar. Warna tradisionalnya gelap: cokelat, hitam, merah, dan biru tua (kini juga warna terang); cokelat dari kulit pohon tongke. Motif yang bertahan antara lain sair, tunis (anak panah), matantur, bunga anggrek, wulan lihir, eman matan lihir, dan ulerati.",
+      "culture": "Warna dasar menandai status: cokelat untuk bangsawan, hitam kebiruan untuk golongan menengah, hitam untuk rakyat. Anggrek melambangkan kecantikan, keagungan, dan keuletan; tunis melambangkan kesiapsiagaan. Banyak motif lama (dari sekitar 47) telah hilang.",
+      "uncertain": [
+        "Jumlah motif yang tersisa berbeda antarsumber."
+      ],
+      "sources": [
+        {
+          "url": "https://ambon.antaranews.com/berita/113297/geliat-tenun-maluku-kembali-ke-alam-bersiap-untuk-go-international",
+          "title": "Geliat Tenun Maluku Kembali ke Alam",
+          "publisher": "ANTARA Ambon"
+        },
+        {
+          "url": "https://www.detik.com/edu/foto/d-6879262/filosofi-tenun-ikat-baju-adat-tanimbar-yang-dipakai-jokowi",
+          "title": "Filosofi Tenun Ikat Baju Adat Tanimbar",
+          "publisher": "detikEdu"
+        },
+        {
+          "url": "https://publication.petra.ac.id/index.php/dkv/article/download/7158/6493",
+          "title": "Kajian tenun Tanimbar",
+          "publisher": "Universitas Kristen Petra"
+        }
+      ]
+    },
+    {
+      "name": "Songket Jambi",
+      "province": "Jambi",
+      "region": "Kota Jambi, Bungo (Songket Bungo Tanjung)",
+      "community": "Melayu Jambi",
+      "technique": "songket",
+      "visual": "Songket dengan benang emas atau perak yang ditenun pada kain dasar sehingga berkilau, dengan warna beragam seperti merah, hitam, dan biru. Songket Bungo Tanjung memiliki enam motif naturalistik, termasuk duren pecah (dua belahan durian yang masih bertaut di pangkal tangkai).",
+      "culture": "Makna duren pecah berbeda antarsumber: dua belahan dimaknai sebagai iman dan ilmu, atau sebagai keberanian dan kemakmuran; seorang penenun mengaitkannya dengan kesuburan tanah.",
+      "uncertain": [
+        "Sebagian makna motif berasal dari konteks batik Jambi, bukan khusus songket."
+      ],
+      "sources": [
+        {
+          "url": "https://ejournal.unp.ac.id/index.php/jhet/article/view/4837/3796",
+          "title": "Songket Bungo Tanjung di Kabupaten Bungo",
+          "publisher": "Universitas Negeri Padang"
+        },
+        {
+          "url": "https://www.indonesia.travel/au-en/destination/sumatra/jambi/kain-songket-jambi",
+          "title": "Kain Songket Jambi",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://www.viva.co.id/arsip/867664-mengenal-keindahan-tenun-sambas-dan-jambi?page=all",
+          "title": "Mengenal Keindahan Tenun Sambas dan Jambi",
+          "publisher": "VIVA"
+        }
+      ]
+    },
+    {
+      "name": "Songket Bengkulu",
+      "province": "Bengkulu",
+      "region": "Bengkulu, termasuk tenun Serawai di Bengkulu selatan",
+      "community": "Melayu Bengkulu, Serawai",
+      "technique": "songket",
+      "visual": "Songket dengan benang emas atau perak yang diselipkan di antara jalinan benang tenun. Rincian nama motif tidak ditemukan di sumber; kajian tenun Serawai membahas bentuk, penempatan, dan makna motif.",
+      "culture": "Setiap motif disebut memiliki makna filosofis yang mencerminkan budaya Bengkulu. Dipilih untuk upacara adat dan pernikahan, dan menandai status sosial pemakai. Masuknya Islam pada abad ke-16 disebut mengubah motif dan benang yang dipakai.",
+      "uncertain": [
+        "Nama-nama motif songket Bengkulu belum ditemukan; entri ini masih umum."
+      ],
+      "sources": [
+        {
+          "url": "https://www.indonesia.travel/id-id/travel-ideas/culture/songket-bengkulu/",
+          "title": "Songket Bengkulu",
+          "publisher": "Indonesia Travel (Kemenparekraf)"
+        },
+        {
+          "url": "https://ejournal.unp.ac.id/index.php/serupa/article/download/5605/4401",
+          "title": "Kajian tenun Serawai Bengkulu",
+          "publisher": "Universitas Negeri Padang"
+        }
+      ]
+    },
+    {
+      "name": "Tenun Sutra Garut",
+      "province": "Jawa Barat",
+      "region": "Garut (antara lain Desa Wisata Sukajaya)",
+      "community": "Sunda",
+      "technique": "plain_weave",
+      "visual": "Tenun ATBM dari benang sutra halus dengan permukaan bertekstur tiga dimensi dan motif floral serta geometris yang dipengaruhi alam Garut, misalnya bunga puspa berukuran besar. Warna khas yang disebut: merah terang dan emas. Sebagian perajin mengadaptasi motif batik Garutan seperti bilik, dadu, kipas, dan payung; ada pula tenun ikat Garut.",
+      "culture": "Kain sutra Garut sempat meredup pada 1970-an lalu populer kembali berkat inovasi; tenun Garut juga dipakai untuk busana tamu kenegaraan.",
+      "uncertain": [
+        "Detail motif dan warna berbeda antarperajin."
+      ],
+      "sources": [
+        {
+          "url": "https://jurnal.unsil.ac.id/index.php/jpls/article/view/1605",
+          "title": "Pemberdayaan Masyarakat melalui Kerajinan Kain Tenun Sutra Bermotif Kearifan Lokal",
+          "publisher": "Universitas Siliwangi"
+        },
+        {
+          "url": "https://ejournal.upi.edu/index.php/GRADASI_ANTOLOGI/article/download/558/431",
+          "title": "Kajian tenun Garut",
+          "publisher": "Universitas Pendidikan Indonesia"
+        },
+        {
+          "url": "https://www.liputan6.com/lifestyle/read/5111449/desainer-musa-widyatmodjo-rancang-jubah-tenun-garut-untuk-paus-fransiskus",
+          "title": "Jubah Tenun Garut untuk Paus Fransiskus",
+          "publisher": "Liputan6"
+        }
+      ]
+    }
+  ]
+}

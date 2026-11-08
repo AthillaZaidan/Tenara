@@ -33,3 +33,6 @@ class MotifReviewIn(BaseModel):
 
 class VerifyOriginIn(BaseModel):
     text: str = Field(min_length=3, max_length=500)
+    # the curator also confirms the listing's Gallery entry is right: its photos become modern
+    # reference photos for that tradition (used for matching only, never shown to other users)
+    add_as_reference: bool = False

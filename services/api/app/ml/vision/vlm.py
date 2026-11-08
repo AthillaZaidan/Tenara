@@ -9,6 +9,9 @@
 4. critic    (vision model, photo + pick + rival candidates): rejects generic or contradicted
              matches; a missing or malformed verdict counts as unsupported (fail closed).
              One revision round.
+5. claim     (local, SigLIP 2 photo vectors, see photo_match): is the photo consistent with the
+             curator-approved reference photos of the listing's own Gallery entry (the seller's
+             claim)? A signal for the curator, never a verification.
 
 Confidence comes from the critic's verdict plus the retrieval margin, never from the model's
 opinion. Region and sources come from the catalog, not from model prose. The result is always a
@@ -29,6 +32,8 @@ from sqlalchemy.orm import Session
 from app.core.errors import ServiceUnavailable
 from app.ml import llm_client
 from app.ml.text.embedding import Embedder
+from app.ml.vision import photo_match
+from app.ml.vision.photo_match import PhotoEmbedder
 from app.models import CulturalSource, CvAnalysis, FabricListing, GalleryEntry, SourceChunk, User
 
 TECHNIQUES = ["ikat", "songket", "plain_weave", "printed_or_batik", "other", "unknown"]
@@ -305,7 +310,7 @@ def identify(vlm: VLMClient, obs: dict, candidates: list[dict], *, image: bytes 
 
 def run_analysis(session: Session, user: User, listing: FabricListing | None, file_id,
                  image: bytes, content_type: str, vlm: VLMClient | None,
-                 embedder: Embedder | None) -> CvAnalysis:
+                 embedder: Embedder | None, photo_embedder: PhotoEmbedder | None = None) -> CvAnalysis:
     if vlm is None:
         raise ServiceUnavailable("Penganalisis visual belum dikonfigurasi (tidak ada API key/provider)")
     image, content_type = shrink(image, content_type)
@@ -324,7 +329,10 @@ def run_analysis(session: Session, user: User, listing: FabricListing | None, fi
         raise ServiceUnavailable(str(exc)) from exc
     if candidates and suggestion["verdict"] != "match":
         notes.append("Belum cukup kecocokan dengan katalog; tidak ada klaim tradisi.")
+    claimed = session.get(GalleryEntry, listing.entry_id) if listing else None
+    claim_check = photo_match.check_claim(session, photo_embedder, image, claimed)
     result = {**obs, "suggestion": suggestion, "evidence": evidence, "notes": notes,
+              "claim_check": claim_check,
               "candidates": [{"tradition": c["tradition"], "province": c["province"], "score": c["score"]}
                              for c in candidates],
               # flat fields kept for older clients

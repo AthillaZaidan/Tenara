@@ -12,7 +12,8 @@ from app.core.ownership import get_owned_or_404
 from app.core.responses import ok
 from app.db.base import get_session
 from app.ml.text.embedding import Embedder, get_embedder
-from app.ml.vision import vlm
+from app.ml.vision import photo_match, vlm
+from app.ml.vision.photo_match import PhotoEmbedder, get_photo_embedder
 from app.ml.vision.vlm import VLMClient, get_vlm
 from app.models import (
     BodyPhoto,
@@ -152,7 +153,8 @@ def analyze_fabric(body: AnalyzeIn, user: User = Depends(current_user),
                    session: Session = Depends(get_session),
                    storage: Storage = Depends(get_storage),
                    client: VLMClient | None = Depends(get_vlm),
-                   embedder: Embedder | None = Depends(get_embedder)):
+                   embedder: Embedder | None = Depends(get_embedder),
+                   photo_embedder: PhotoEmbedder | None = Depends(get_photo_embedder)):
     merchant = active_merchant(session, user)
     listing = listings_svc.owned_listing(session, merchant, body.listing_id)
     file_id = body.file_id
@@ -164,7 +166,7 @@ def analyze_fabric(body: AnalyzeIn, user: User = Depends(current_user),
     if file is None or file.owner_id != user.id or file.deleted_at is not None:
         raise AppValidationError("Foto kain tidak ditemukan", field="file_id")
     row = vlm.run_analysis(session, user, listing, file.id, storage.open(file.storage_key),
-                           file.content_type, client, embedder)
+                           file.content_type, client, embedder, photo_embedder)
     session.commit()
     return ok(vlm.analysis_out(row))
 
@@ -198,14 +200,19 @@ def motif_review(listing_id: uuid.UUID, body: MotifReviewIn, user: User = Depend
 @router.post("/admin/listings/{listing_id}/verify-origin")
 def verify_origin(listing_id: uuid.UUID, body: VerifyOriginIn,
                   user: User = Depends(require_role("admin")),
-                  session: Session = Depends(get_session)):
+                  session: Session = Depends(get_session),
+                  storage: Storage = Depends(get_storage),
+                  photo_embedder: PhotoEmbedder | None = Depends(get_photo_embedder)):
     listing = session.get(FabricListing, listing_id)
     if listing is None:
         raise NotFound("Listing not found")
     listing.curator_verified_origin = body.text
     session.flush()
+    added = photo_match.add_listing_references(session, storage, photo_embedder, listing, user) \
+        if body.add_as_reference else 0
     audit.record(session, actor=user, action="listing.origin_verified",
-                 target_type="fabric_listing", target_id=listing.id)
+                 target_type="fabric_listing", target_id=listing.id,
+                 metadata={"reference_photos_added": added})
     session.commit()
     return ok(listings_svc.listing_out(session, listing, include_merchant=False))
 

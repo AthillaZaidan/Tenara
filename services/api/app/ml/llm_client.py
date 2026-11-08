@@ -38,6 +38,7 @@ def provider_name(model: str | None = None) -> str:
 class ChatResult:
     content: str
     annotations: list[dict] = field(default_factory=list)
+    usage: dict = field(default_factory=dict)  # tokens and, on OpenRouter, the billed cost in USD
 
 
 def chat(messages: list[dict], *, model: str | None = None, json_mode: bool = True,
@@ -48,6 +49,8 @@ def chat(messages: list[dict], *, model: str | None = None, json_mode: bool = Tr
         body["response_format"] = {"type": "json_object"}
     if plugins:
         body["plugins"] = plugins
+    if settings.llm_provider == "openrouter":
+        body["usage"] = {"include": True}  # OpenRouter reports the billed cost per call
     headers = {"Content-Type": "application/json"}
     if key:
         headers["Authorization"] = f"Bearer {key}"
@@ -55,13 +58,15 @@ def chat(messages: list[dict], *, model: str | None = None, json_mode: bool = Tr
                                  headers=headers, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=settings.vlm_timeout_seconds) as resp:
-            message = json.load(resp)["choices"][0]["message"]
+            data = json.load(resp)
+            message = data["choices"][0]["message"]
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode(errors="replace")[:200]
         raise RuntimeError(f"Penyedia model menolak permintaan (HTTP {exc.code}): {detail}") from exc
     except (OSError, KeyError, IndexError, ValueError) as exc:
         raise RuntimeError(f"Penyedia model tidak dapat dihubungi/dibaca: {exc}") from exc
-    return ChatResult(content=message.get("content") or "", annotations=message.get("annotations") or [])
+    return ChatResult(content=message.get("content") or "", annotations=message.get("annotations") or [],
+                      usage=data.get("usage") or {})
 
 
 def parse_json(text: str, what: str) -> dict:

@@ -43,3 +43,6 @@ services/api/models/
 web/*.md
 .taste-skill/
 web/.taste-skill/
+
+# Model comparison outputs (local)
+experiments/vlm_eval/results/

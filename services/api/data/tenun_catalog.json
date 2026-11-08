@@ -58,7 +58,8 @@
           "title": "Kain Songket Pandai Sikek",
           "publisher": "Good News From Indonesia"
         }
-      ]
+      ],
+      "distinguish": "Balapak (hiasan benang emas memenuhi seluruh kain) atau batabua (motif tersebar); motif batang pinang, bijo bayam, saluak laka."
     },
     {
       "name": "Songket Palembang",
@@ -87,7 +88,8 @@
           "title": "Songket Palembang: a distinctive handwoven textile",
           "publisher": "Indonesia Expat"
         }
-      ]
+      ],
+      "distinguish": "Pada jenis lepus hampir seluruh permukaan kain tertutup benang emas; jenis limar memadukan sutra berwarna dengan benang emas; jenis tretes bermotif hanya di ujung kain. Pucuk rebung di kepala kain bukan penanda utamanya seperti pada songket Siak."
     },
     {
       "name": "Tapis Lampung",
@@ -145,7 +147,8 @@
           "title": "Motif Hias Tenun Siak pada Busana Pengantin",
           "publisher": "Universitas PGRI Palembang"
         }
-      ]
+      ],
+      "distinguish": "Pucuk rebung (segitiga tunas bambu) yang dominan di kepala kain, bagian bawah, dan ujung sarung adalah penanda utama; warna merah, kuning, dan hijau. Tidak selalu tertutup penuh benang emas seperti lepus Palembang."
     },
     {
       "name": "Tenun Cual Bangka Belitung",
@@ -203,7 +206,8 @@
           "title": "Adaptasi visual motif kain tenun songket Aceh",
           "publisher": "Telkom University"
         }
-      ]
+      ],
+      "distinguish": "Satu warna dasar (kuning, merah, atau hijau) dengan motif padat seperti pinto Aceh dan pucuk rebung."
     },
     {
       "name": "Tenun Baduy",
@@ -261,7 +265,8 @@
           "title": "Pengembangan Motif Tenun Troso Berbasis Komputer Grafis",
           "publisher": "Universitas Dian Nuswantoro"
         }
-      ]
+      ],
+      "distinguish": "Ikat pakan dari Jepara dengan tumpal di tepi kain; motif sering mengadaptasi motif Indonesia timur sehingga mudah tertukar, perhatikan tumpal dan motif lokal seperti lompong, cemara, dan gapura Mantingan."
     },
     {
       "name": "Lurik",
@@ -290,7 +295,8 @@
           "title": "Kajian lurik Pedan",
           "publisher": "Universitas Diponegoro"
         }
-      ]
+      ],
+      "distinguish": "Hanya garis-garis atau kotak-kotak tanpa motif ikat atau benang emas."
     },
     {
       "name": "Tenun Gedog Tuban",
@@ -346,7 +352,8 @@
           "title": "Tenun Ikat Bandar Kidul of Kediri",
           "publisher": "Times Indonesia"
         }
-      ]
+      ],
+      "distinguish": "Ragam hias didominasi geometris dan flora berwarna tua dengan kesan mendatar; motif wajikan (belah ketupat besar) pada ceplok; umumnya kain sarung. Tidak dikenal dengan figur hewan atau manusia besar seperti ikat Sumba."
     },
     {
       "name": "Gringsing Tenganan",
@@ -375,7 +382,8 @@
           "title": "Mengenal Tenun Ikat Ganda",
           "publisher": "Good News From Indonesia"
         }
-      ]
+      ],
+      "distinguish": "Ikat ganda (lungsi dan pakan sama-sama diikat); palet terbatas merah, kuning, hitam, dan biru."
     },
     {
       "name": "Endek Bali",
@@ -404,7 +412,8 @@
           "title": "Kain Endek Bali: sejarah, motif, filosofi",
           "publisher": "Good News From Indonesia"
         }
-      ]
+      ],
+      "distinguish": "Ikat pakan Bali dengan motif seperti wajik ukir; warna endek Gianyar cenderung lembut."
     },
     {
       "name": "Songket Bali",
@@ -549,7 +558,8 @@
           "title": "Pesona Kain Tenun Sumba Timur",
           "publisher": "RRI Kupang"
         }
-      ]
+      ],
+      "distinguish": "Figur hewan dan manusia yang besar dan jelas (kuda, udang, ayam, buaya, manusia, tugu tengkorak) adalah penanda utama; hinggi tersusun dari panel-panel lungsi, sering dengan merah kombu. Berbeda dari ikat yang didominasi bidang geometris kecil."
     },
     {
       "name": "Tenun Ikat Sikka",
@@ -578,7 +588,8 @@
           "title": "Precious heritage from Sikka",
           "publisher": "The Jakarta Post"
         }
-      ]
+      ],
+      "distinguish": "Pewarna alam indigo (biru dan hitam), merah mengkudu, dan cokelat; banyak motif geometris tradisional yang terdaftar (misalnya bintang kejora pada mawarani, garis gelap pada utang mitang). Figur hewan besar bukan ciri utamanya seperti pada ikat Sumba."
     },
     {
       "name": "Tenun Ikat Ende-Lio",
@@ -607,7 +618,8 @@
           "title": "Kekayaan Ragam Motif Kain Tenun Flores",
           "publisher": "MerahPutih"
         }
-      ]
+      ],
+      "distinguish": "Motif kecil geometris berbentuk ceplok (pengaruh patola) dengan figur manusia dan biawak merah atau biru di atas dasar gelap; kain Ende kadang hanya satu motif di bidang tengah."
     },
     {
       "name": "Songke Manggarai",
@@ -665,7 +677,8 @@
           "title": "Traditional textiles: Timor",
           "publisher": "Threads of Life"
         }
-      ]
+      ],
+      "distinguish": "Pakan tambahan buna dan sotis (garis aksen hitam-putih di antara garis merah dan hijau); motif kaif, ayam, burung, cecak, buaya; ikat putih di atas merah mengkudu pada Amarasi."
     },
     {
       "name": "Tenun Ikat Sabu (Savu Raijua)",
@@ -694,7 +707,8 @@
           "title": "Woman's tube skirt (ei raja or ei ledo)",
           "publisher": "Art Gallery of South Australia"
         }
-      ]
+      ],
+      "distinguish": "Motif bunga teratai kecil dan besar di atas dasar biru tua dan merah terang; warna cokelat, merah, biru."
     },
     {
       "name": "Tenun Ikat Rote",
@@ -718,7 +732,8 @@
           "title": "Cerita di balik kain tenun NTT",
           "publisher": "Medcom"
         }
-      ]
+      ],
+      "distinguish": "Didominasi hitam dan putih dengan garis merah."
     },
     {
       "name": "Tenun Ikat Sintang (Dayak)",
@@ -774,7 +789,8 @@
           "title": "Tenun Kalbar, Karya Songket Mendunia",
           "publisher": "RRI Pontianak"
         }
-      ]
+      ],
+      "distinguish": "Motif benang emas atau perak bergaya Melayu dengan tepi kain putih polos; motif seperti pucuk rebung dan itik pulang petang."
     },
     {
       "name": "Ulap Doyo",
@@ -977,7 +993,8 @@
           "title": "Kajian motif kain Bentenan",
           "publisher": "Universitas Indraprasta PGRI"
         }
-      ]
+      ],
+      "distinguish": "Kain tabung tanpa sambungan; motif khas seperti pinatikan (jala dan segi enam), tonilama (benang putih tanpa warna), dan figur manusia tononton mata."
     },
     {
       "name": "Tenun Donggala",
@@ -1035,7 +1052,8 @@
           "title": "Kajian tenun Tanimbar",
           "publisher": "Universitas Kristen Petra"
         }
-      ]
+      ],
+      "distinguish": "Pola garis-garis dengan ruang kosong yang diselingi corak sederhana; warna gelap cokelat, hitam, merah, biru tua. Bukan figur hewan besar."
     },
     {
       "name": "Songket Jambi",

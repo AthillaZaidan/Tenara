@@ -6,7 +6,7 @@ Setup (you only fill the environment variables):
     OPENAI_API_KEY / OPENROUTER_API_KEY   key for the chosen provider (ollama needs none)
     LLM_MODEL        model id (OPENAI_MODEL still works); e.g. openai/gpt-6-luna on openrouter,
                      gpt-6-luna on openai, qwen3-vl:8b on ollama. Find ids with --list-models
-    (keys: env var or a .env file next to this script / in the project root)
+    (keys: env var or the .env file in the repository root)
 
 Usage:
     python3 eval_vlm.py --list-models
@@ -63,7 +63,7 @@ CATEGORIES = ["fauna", "flora", "geometric", "figurative", "mixed", "other", "un
 
 
 def load_env():
-    for p in (HERE / ".env", ROOT / ".env"):
+    for p in (ROOT / ".env",):
         if p.exists():
             for line in p.read_text().splitlines():
                 m = re.match(r"\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$", line)

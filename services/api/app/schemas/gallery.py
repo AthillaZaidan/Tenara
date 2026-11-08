@@ -49,6 +49,14 @@ class Decision(BaseModel):
     reason: str | None = None
 
 
+class ReferenceDecision(BaseModel):
+    """Approve or reject reference photos by id, or all pending ones of a source (optionally one entry)."""
+    decision: Literal["approve", "reject"]
+    ids: list[uuid.UUID] = Field(default=[], max_length=500)
+    source_label: str | None = Field(default=None, max_length=200)
+    entry_id: uuid.UUID | None = None
+
+
 class CitationIn(BaseModel):
     source_id: uuid.UUID
     chunk_id: uuid.UUID | None = None

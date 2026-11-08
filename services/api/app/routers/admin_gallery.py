@@ -1,28 +1,41 @@
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.deps import require_role
-from app.core.errors import NotFound
+from app.core.errors import AppValidationError, NotFound
 from app.core.pagination import paginate
 from app.core.responses import ok
 from app.db.base import get_session
 from app.ml.text import story_gen
 from app.ml.text.embedding import Embedder, get_embedder
 from app.ml.text.story_gen import TextLLM, get_story_llm
-from app.models import CulturalSource, GalleryEntry, Story, StoryCitation, User
+from app.ml.vision import photo_match
+from app.models import (
+    CulturalSource,
+    File,
+    GalleryEntry,
+    ReferencePhoto,
+    Story,
+    StoryCitation,
+    User,
+)
 from app.schemas.gallery import (
     ChunkCreate,
     Decision,
     EntryCreate,
     EntryUpdate,
     ImageAttach,
+    ReferenceDecision,
     SourceCreate,
     StoryCreate,
 )
+from app.services import audit
 from app.services import gallery as svc
+from app.services.files import signed_url
 
 router = APIRouter(prefix="/admin", tags=["admin-gallery"])
 Admin = Depends(require_role("admin"))
@@ -204,3 +217,101 @@ def decide_story(story_id: uuid.UUID, body: Decision, user: User = Admin,
                              body.reason, embedder)
     session.commit()
     return ok(_story(session, story))
+
+
+# ----- reference photos (photo check of a seller's tradition claim) -----
+
+def _reference(session: Session, ref: ReferencePhoto, names: dict) -> dict:
+    file = session.get(File, ref.file_id) if ref.file_id else None
+    return {"id": ref.id, "entry_id": ref.entry_id, "tradition": names.get(ref.entry_id),
+            "style": ref.style, "source_label": ref.source_label, "source_url": ref.source_url,
+            "credit": ref.credit, "license": ref.license, "display_allowed": ref.display_allowed,
+            "approval_status": ref.approval_status, "listing_id": ref.listing_id,
+            "url": signed_url(file) if file and file.deleted_at is None else None,
+            "created_at": ref.created_at}
+
+
+def _entry_names(session: Session, ids) -> dict:
+    ids = set(ids)
+    if not ids:
+        return {}
+    return dict(session.execute(select(GalleryEntry.id, GalleryEntry.name).where(GalleryEntry.id.in_(ids))).all())
+
+
+@router.get("/reference-photos")
+def list_reference_photos(
+    approval_status: str | None = Query(default=None),
+    style: str | None = Query(default=None),
+    entry_id: uuid.UUID | None = Query(default=None),
+    source_label: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    cursor: str | None = Query(default=None),
+    user: User = Admin,
+    session: Session = Depends(get_session),
+):
+    stmt = select(ReferencePhoto)
+    for column, value in ((ReferencePhoto.approval_status, approval_status), (ReferencePhoto.style, style),
+                          (ReferencePhoto.entry_id, entry_id), (ReferencePhoto.source_label, source_label)):
+        if value is not None:
+            stmt = stmt.where(column == value)
+    page = paginate(session, ReferencePhoto, stmt, limit=limit, cursor=cursor)
+    names = _entry_names(session, [r.entry_id for r in page["items"]])
+    return ok({"items": [_reference(session, r, names) for r in page["items"]],
+               "next_cursor": page["next_cursor"]})
+
+
+@router.get("/reference-photos/coverage")
+def reference_coverage(user: User = Admin, session: Session = Depends(get_session)):
+    """Per tradition: approved/pending counts by style, modern sources, and whether it gives a verdict."""
+    rows = session.execute(
+        select(ReferencePhoto.entry_id, ReferencePhoto.style, ReferencePhoto.approval_status,
+               func.count(), func.count(func.distinct(ReferencePhoto.source_label)))
+        .group_by(ReferencePhoto.entry_id, ReferencePhoto.style, ReferencePhoto.approval_status)).all()
+    out: dict = {}
+    for entry_id, style, status, count, sources in rows:
+        item = out.setdefault(entry_id, {"entry_id": entry_id, "modern_approved": 0, "modern_sources": 0,
+                                         "archival_approved": 0, "pending": 0, "rejected": 0})
+        if status == "approved":
+            item[f"{style}_approved"] += count
+            if style == "modern":
+                item["modern_sources"] = sources
+        elif status == "pending":
+            item["pending"] += count
+        else:
+            item["rejected"] += count
+    names = _entry_names(session, out)
+    items = []
+    for item in out.values():
+        item["tradition"] = names.get(item["entry_id"])
+        item["gives_verdict"] = (item["modern_approved"] >= photo_match.MIN_REFS
+                                 and item["modern_sources"] >= photo_match.MIN_SOURCES)
+        items.append(item)
+    items.sort(key=lambda i: (not i["gives_verdict"], -(i["modern_approved"] + i["archival_approved"])))
+    return ok({"min_refs": photo_match.MIN_REFS, "min_sources": photo_match.MIN_SOURCES, "items": items})
+
+
+@router.post("/reference-photos/decision")
+def decide_reference_photos(body: ReferenceDecision, user: User = Admin,
+                            session: Session = Depends(get_session)):
+    if not body.ids and not body.source_label:
+        raise AppValidationError("Pilih foto (ids) atau sumber (source_label)", field="ids")
+    stmt = select(ReferencePhoto)
+    if body.ids:
+        stmt = stmt.where(ReferencePhoto.id.in_(body.ids))
+    else:  # a whole source at once: only what is still pending
+        stmt = stmt.where(ReferencePhoto.source_label == body.source_label,
+                          ReferencePhoto.approval_status == "pending")
+    if body.entry_id:
+        stmt = stmt.where(ReferencePhoto.entry_id == body.entry_id)
+    refs = list(session.scalars(stmt))
+    status, now = ("approved" if body.decision == "approve" else "rejected"), datetime.now(UTC)
+    for ref in refs:
+        ref.approval_status, ref.decided_by, ref.decided_at = status, user.id, now
+    session.flush()
+    if refs:
+        audit.record(session, actor=user, action=f"reference_photos.{status}",
+                     target_type="reference_photo", target_id=refs[0].id,
+                     metadata={"count": len(refs), "source_label": body.source_label,
+                               "ids": [str(r.id) for r in refs[:50]]})
+    session.commit()
+    return ok({"updated": len(refs), "approval_status": status})

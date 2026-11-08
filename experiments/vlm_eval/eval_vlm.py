@@ -17,7 +17,16 @@ Usage:
 Ground truth caveat: only technique (all Sikka photos are ikat) and the motif class folder are
 real labels. CATEGORY_GT below is a provisional guess from class names; a curator must confirm it.
 """
-import argparse, base64, json, os, random, re, sys, time, urllib.error, urllib.request
+import argparse
+import base64
+import json
+import os
+import random
+import re
+import sys
+import time
+import urllib.error
+import urllib.request
 from collections import defaultdict
 from pathlib import Path
 

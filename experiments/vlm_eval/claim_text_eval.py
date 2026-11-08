@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Can a VLM check a seller's tradition claim against the catalog text, instead of guessing it?
 
-The current scan asks the model to pick one of up to 8 traditions; on 13 test photos the Gemma
-models said "match" with the wrong tradition 9 times. Here the question is narrower: given the photo
+The old scan asked the model to pick one of up to 8 traditions; on 13 test photos the Gemma
+models said "match" with the wrong tradition 9 times (compare-20261108-161215.jsonl). Here the question is narrower: given the photo
 and the catalog's visual text (with its 'Pembeda' note) for ONE claimed tradition, is the photo
 consistent with it? Each photo is asked three times: the true claim, a hard false claim (a
 neighbouring, look-alike tradition) and an easy false claim (another technique). 'unclear' and
@@ -22,7 +22,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parents[1] / "services" / "api"))
 
-from compare_scan import CASES
+from cases import CASES
 
 from app.core.config import settings
 from app.ml import llm_client

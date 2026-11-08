@@ -10,6 +10,7 @@ from scripts.seed_catalog import CATALOG, approve_catalog, dossier_title, load_c
 MINI = {"researched_at": "2026-11-08", "traditions": [
     {"name": "Tenun Uji Satu", "province": "Provinsi A", "region": "Kab. A", "community": "A", "technique": "ikat",
      "visual": "Motif kuda merah di atas dasar gelap.", "culture": "Dipakai saat upacara.",
+     "distinguish": "Figur kuda besar membedakannya dari ikat geometris.",
      "uncertain": ["Jumlah motif belum pasti."],
      "sources": [{"url": "https://a.example/1", "title": "A1", "publisher": "Museum A"},
                  {"url": "https://b.example/2", "title": "B2", "publisher": "Kampus B"}]},
@@ -46,6 +47,7 @@ def test_load_creates_pending_dossiers_and_two_aspect_chunks(session, embedder):
     assert set(by_aspect) == {"visual", "budaya"}
     assert by_aspect["visual"].text.startswith("Tenun Uji Satu (Provinsi A; Kab. A). Tenun ikat. Ciri visual:")
     assert "Belum pasti: Jumlah motif belum pasti." in by_aspect["budaya"].text
+    assert by_aspect["visual"].text.endswith("Pembeda: Figur kuda besar membedakannya dari ikat geometris.")
     meta = by_aspect["visual"].meta
     assert meta["technique"] == "ikat" and meta["embed_model"] == embedder.name and len(meta["sources"]) == 2
     assert all(c.embedding is not None for c in chunks)

@@ -55,6 +55,8 @@ def validate(catalog: dict) -> list[dict]:
 def chunk_texts(t: dict) -> dict[str, str]:
     place = "; ".join(p for p in (t["province"], t.get("region")) if p)
     visual = f"{t['name']} ({place}). {TECHNIQUE_TEXT[t['technique']]}. Ciri visual: {t['visual']}"
+    if t.get("distinguish"):
+        visual += f" Pembeda: {t['distinguish']}"
     culture = f"{t['name']} ({t['province']}). Budaya dan makna: {t['culture']}"
     if t.get("uncertain"):
         culture += " Belum pasti: " + " ".join(t["uncertain"])

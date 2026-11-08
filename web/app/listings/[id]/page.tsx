@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BuyPanel } from "@/components/BuyPanel";
+import { VerifyOrigin } from "@/components/VerifyOrigin";
+import { VisualMatch, type VisualMatchData } from "@/components/VisualMatch";
 import type { Listing } from "@/components/ListingCard";
 import { Page } from "@/components/ui";
 import { ApiError, api, fileUrl, idr } from "@/lib/api";
@@ -52,7 +54,10 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           </dl>
           <div className="max-w-xl bg-surface p-5 text-base">
             <h2 className="mb-2 text-lg font-medium" style={{ fontFamily: "var(--font-hanken)" }}>Asal-usul, tiga hal yang dipisahkan</h2>
-            <p><span className="text-muted">Kecocokan visual: </span>{l.origin.visual_match ? "tersedia sebagai saran" : "belum dianalisis"}</p>
+            <div className="mb-3">
+              <p className="text-muted">Kecocokan visual</p>
+              {l.origin.visual_match ? <VisualMatch data={l.origin.visual_match as VisualMatchData} compact /> : <p>Belum dianalisis.</p>}
+            </div>
             <p><span className="text-muted">Klaim penjual: </span>{l.origin.merchant_claimed_origin ?? "tidak ada"}</p>
             <p><span className="text-muted">Diverifikasi kurator: </span>{l.origin.curator_verified_origin ?? "belum diverifikasi"}</p>
           </div>
@@ -61,6 +66,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <p>{[l.merchant.city, l.merchant.province].filter(Boolean).join(", ")}</p>
             <p className="text-muted">{l.merchant.verification_note}</p>
           </div>
+          <VerifyOrigin listingId={l.id} current={l.origin.curator_verified_origin} />
           {l.gallery_entry && <p className="text-base">Cerita kain ini: <Link href={`/gallery/${l.gallery_entry.slug}`} className="link">{l.gallery_entry.name}</Link></p>}
         </div>
         <div className="md:col-span-5"><BuyPanel listing={l} /></div>

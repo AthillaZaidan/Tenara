@@ -573,6 +573,7 @@ def test_scan_cites_web_evidence_and_stays_a_suggestion(client, session, seller,
     assert s["verdict"] == "match" and s["tradition"] == "Hinggi" and s["region"] == "Sumba Timur, NTT"
     assert s["gallery_match"] == "Tenun Ikat Sumba" and s["evidence_ids"] == ["s1", "s2"]
     assert s["confidence"] == "high"  # a government and a museum source agree
+    assert "s1" not in s["reason"] and "kebudayaan.kemdikbud.go.id" in s["reason"]
     assert [e["id"] for e in result["evidence"][:2]] == ["s1", "s2"]  # supporting sources first
     assert {e["tier"] for e in result["evidence"]} == {"trusted", "commerce"}
     assert result["dominant_colors"] == ["merah", "hitam", "emas"]

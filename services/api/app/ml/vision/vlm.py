@@ -12,6 +12,7 @@ review; it never sets curator-verified origin. Web text is untrusted data, never
 """
 import io
 import json
+import re
 import time
 from typing import Protocol
 from urllib.parse import urlparse
@@ -257,8 +258,14 @@ def normalize_judgment(raw: dict, evidence: list[dict], candidates: list[str]) -
         "gallery_match": gallery if match and gallery in candidates else None,
         "evidence_ids": cited_ids if match else [],
         "confidence": confidence_from(verdict, cited),
-        "reason": str(raw.get("reason") or "")[:400] if match else None,
+        "reason": _readable_reason(raw.get("reason"), by_id) if match else None,
     }
+
+
+def _readable_reason(reason, by_id: dict[str, dict]) -> str:
+    """Swap internal source ids (s1, s2) for the site names the merchant can recognise."""
+    text = str(reason or "")[:400]
+    return re.sub(r"\bs(\d+)\b", lambda m: by_id[m.group(0)]["domain"] if m.group(0) in by_id else m.group(0), text)
 
 
 def run_analysis(session: Session, user: User, listing: FabricListing | None, file_id,

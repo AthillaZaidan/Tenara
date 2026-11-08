@@ -31,11 +31,6 @@ class Settings(BaseSettings):
     prompt_interpreter: str = "rules"  # rules | llm (llm always falls back to rules on failure)
     llm_provider: str = "openrouter"  # openai | openrouter | ollama
     llm_model: str = "openai/gpt-6-luna"
-    # Fabric scan web evidence (OpenRouter web plugin). Empty search model = use llm_model.
-    llm_search_model: str = ""
-    llm_search_engine: str = "exa"  # exa | parallel | native | firecrawl | perplexity
-    web_search_max_results: int = 5
-    web_search_cache_seconds: int = 86400
     openai_api_key: str = ""
     openrouter_api_key: str = ""
     pose_model_path: str = "./models/pose_landmarker_full.task"

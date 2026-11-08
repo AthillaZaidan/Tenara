@@ -27,6 +27,16 @@ function Review() {
   const [ask, setAsk] = useState("");
   const go = async <T,>(fn: () => Promise<T>) => { const r = await act.run(fn); if (r !== undefined) reload(); };
   if (loading) return <p>Memuat…</p>;
+  if (error?.toLowerCase().includes("start the review first")) {
+    return (
+      <div className="grid max-w-xl gap-4">
+        <h1 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>Banding menunggu tinjauan</h1>
+        <p>Bukti dan percakapan klaim baru bisa dibuka setelah Anda memulai peninjauan. Anda tidak boleh menjadi salah satu pihak dalam klaim ini.</p>
+        {act.error && <Notice tone="error">{act.error}</Notice>}
+        <button className="btn w-fit" disabled={act.busy} onClick={() => go(() => api(`/admin/appeals/${id}/start-review`, { method: "POST" }))}>Mulai tinjau</button>
+      </div>
+    );
+  }
   if (error || !b) return <Notice tone="error">{error ?? "Banding tidak ditemukan."}</Notice>;
   const decided = b.appeal.status === "decided";
   const needsExec = b.claim.decision?.requires_execution && b.claim.status === "decision_issued";
@@ -40,8 +50,8 @@ function Review() {
           <p className="mt-3 max-w-[60ch]"><span className="text-muted">Alasan banding: </span>{b.appeal.reason}</p>
         </div>
         {act.error && <Notice tone="error">{act.error}</Notice>}
-        {b.appeal.status === "open" && <button className="btn w-fit" disabled={act.busy} onClick={() => go(() => api(`/admin/appeals/${id}/start-review`, { method: "POST" }))}>Mulai tinjau</button>}
-        {!decided && b.appeal.status !== "open" && (
+        {b.appeal.status === "pending" && <button className="btn w-fit" disabled={act.busy} onClick={() => go(() => api(`/admin/appeals/${id}/start-review`, { method: "POST" }))}>Mulai tinjau</button>}
+        {!decided && b.appeal.status !== "pending" && (
           <>
             <section className="grid gap-3">
               <h3 className="text-xl font-medium" style={{ fontFamily: "var(--font-hanken)" }}>Minta bukti tambahan</h3>

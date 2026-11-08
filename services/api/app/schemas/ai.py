@@ -1,4 +1,5 @@
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -10,9 +11,12 @@ class ConsentIn(BaseModel):
 
 
 class EstimateIn(BaseModel):
-    body_photo_id: uuid.UUID
+    body_photo_id: uuid.UUID  # front photo
     height_cm: float = Field(ge=100, le=230)
     customization_id: uuid.UUID | None = None
+    # with a side photo the server fits a 3D body (SMPL-X) and estimates all seven dimensions
+    side_photo_id: uuid.UUID | None = None
+    gender: Literal["male", "female"] | None = None
 
 
 class TryOnIn(BaseModel):

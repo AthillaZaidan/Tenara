@@ -30,15 +30,19 @@ from app.ml.text.story_gen import OpenAICompatTextLLM
 from app.ml.vision.vlm import entry_technique
 from app.models import FabricListing, GalleryEntry, MerchantProfile, SourceChunk, User
 
-CASES = [  # tradition, claimed origin, motifs, colours
-    ("Tenun Ikat Sumba", "Sumba Timur", ["kuda", "udang"], ["merah", "biru tua", "krem"]),
-    ("Tenun Ikat Sikka", "Maumere, Sikka", ["belah ketupat", "bunga"], ["biru tua", "hitam", "cokelat"]),
-    ("Songket Palembang", "Palembang", ["bunga tabur", "pucuk rebung"], ["merah", "emas"]),
-    ("Tapis Lampung", "Lampung", ["kapal", "sulaman"], ["cokelat", "emas"]),
-    ("Ulos Batak Toba", "Samosir", ["garis", "ragi"], ["merah", "hitam", "putih"]),
-    ("Gringsing Tenganan", "Tenganan, Karangasem", ["wayang", "bintang"], ["merah", "hitam", "krem"]),
-    ("Endek Bali", "Gianyar", ["wajik"], ["biru", "merah"]),
-    ("Lurik", "Klaten", ["garis"], ["cokelat", "hitam"]),
+CASES = [  # tradition, claimed origin, motifs, colours, visible features
+    ("Tenun Ikat Sumba", "Sumba Timur", ["kuda", "udang"], ["merah", "biru tua", "krem"],
+     ["figur besar dalam jalur horizontal", "dasar gelap", "susunan simetris"]),
+    ("Tenun Ikat Sikka", "Maumere, Sikka", ["belah ketupat", "bunga"], ["biru tua", "hitam", "cokelat"],
+     ["motif kecil berulang", "garis-garis gelap"]),
+    ("Songket Palembang", "Palembang", ["bunga tabur", "pucuk rebung"], ["merah", "emas"],
+     ["benang emas berkilau", "motif tersebar merata"]),
+    ("Tapis Lampung", "Lampung", ["kapal", "sulaman"], ["cokelat", "emas"], ["sulaman benang emas", "bidang bergaris"]),
+    ("Ulos Batak Toba", "Samosir", ["garis", "ragi"], ["merah", "hitam", "putih"], ["rumbai di ujung", "garis memanjang"]),
+    ("Gringsing Tenganan", "Tenganan, Karangasem", ["wayang", "bintang"], ["merah", "hitam", "krem"],
+     ["bidang berbentuk bintang berulang", "tepi bergaris", "kontras gelap-terang"]),
+    ("Endek Bali", "Gianyar", ["wajik"], ["biru", "merah"], ["pola berulang rapat"]),
+    ("Lurik", "Klaten", ["garis"], ["cokelat", "hitam"], ["garis vertikal berirama"]),
 ]
 
 
@@ -58,15 +62,19 @@ class TimedLLM(OpenAICompatTextLLM):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="*", default=["openai/gpt-6-luna", "google/gemma-4-26b-a4b-it"])
+    ap.add_argument("--traditions", nargs="*", help="only these Gallery entry names")
     a = ap.parse_args()
     settings.llm_provider = "openrouter"
     embedder = get_embedder()
+    embedder.embed(["pemanasan"])  # model load is not part of the measured time
     out = HERE / "results" / f"story-{time.strftime('%Y%m%d-%H%M%S')}.jsonl"
     rows = []
     with out.open("w") as live:
         for model in a.models:
             settings.llm_model = model
-            for name, origin, motifs, colors in CASES:
+            for name, origin, motifs, colors, features in CASES:
+                if a.traditions and name not in a.traditions:
+                    continue
                 session = SessionLocal()
                 try:
                     entry = session.scalar(select(GalleryEntry).where(GalleryEntry.name == name))
@@ -81,17 +89,18 @@ def main():
                                             min_quantity=Decimal(1), quantity_increment=Decimal(1))
                     tech = entry_technique(entry) or "other"
                     listing.visual_match = {"technique": tech, "motif_elements": motifs, "dominant_colors": colors,
-                                            "technique_check": {"status": "cocok"}}
+                                            "distinctive_features": features, "technique_check": {"status": "cocok"}}
                     session.add(listing)
                     session.flush()
                     llm = TimedLLM()
                     t0 = time.monotonic()
                     story = product_story.generate(session, user, listing, llm, embedder)
                     total = round(time.monotonic() - t0, 2)
-                    culture = story.body.split("\n\n")[1] if "\n\n" in story.body else ""
+                    culture = story.body.partition("\n\n")[2]
                     cited = {c["chunk_id"]: session.get(SourceChunk, c["chunk_id"]).text for c in story.citations}
                     row = {"model": model, "tradition": name, "seconds": total, "calls": llm.log,
-                           "body": story.body, "culture": culture, "notes": story.notes, "cited_texts": cited}
+                           "body": story.body, "culture": culture, "notes": story.notes, "cited_texts": cited,
+                           "sentences": story.sentences, "words": len(culture.split())}
                 except Exception as exc:  # noqa: BLE001 - report and continue
                     row = {"model": model, "tradition": name, "error": str(exc)[:300]}
                 finally:

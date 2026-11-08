@@ -12,8 +12,6 @@ from app.core.ownership import get_owned_or_404
 from app.core.responses import ok
 from app.db.base import get_session
 from app.ml.text import product_story
-from app.ml.text.embedding import Embedder, get_embedder
-from app.ml.text.story_gen import TextLLM, get_story_llm
 from app.ml.vision import photo_match, vlm
 from app.ml.vision.photo_match import PhotoEmbedder, get_photo_embedder
 from app.ml.vision.vlm import VLMClient, get_vlm
@@ -39,6 +37,7 @@ from app.services import audit, jobs, photos
 from app.services import customization as cust_svc
 from app.services import listings as listings_svc
 from app.services import measurements as meas_svc
+from app.services.files import signed_url
 from app.services.partners import active_merchant
 from app.services.storage import Storage, get_storage
 
@@ -114,10 +113,16 @@ def delete_body_photo(photo_id: uuid.UUID, user: User = Depends(current_user),
 def estimate_measurements(body: EstimateIn, user: User = Depends(current_user),
                           session: Session = Depends(get_session)):
     photos.owned_photo(session, user, body.body_photo_id)
+    if body.side_photo_id:
+        photos.owned_photo(session, user, body.side_photo_id)
+        if body.side_photo_id == body.body_photo_id:
+            raise AppValidationError("Foto samping harus berbeda dengan foto depan", field="side_photo_id")
     if body.customization_id:
         cust_svc.owned_customization(session, user, body.customization_id)
-    job = jobs.enqueue(session, "measurement.estimate", user.id,
-                       {"photo_id": str(body.body_photo_id), "height_cm": body.height_cm})
+    data = {"photo_id": str(body.body_photo_id), "height_cm": body.height_cm}
+    if body.side_photo_id:
+        data |= {"side_photo_id": str(body.side_photo_id), "gender": body.gender}
+    job = jobs.enqueue(session, "measurement.estimate", user.id, data)
     session.commit()
     return ok({"job_id": job.id, "status": job.status})
 
@@ -133,6 +138,16 @@ def measurement_job(job_id: uuid.UUID, user: User = Depends(current_user),
     if job.output and job.output.get("measurement_set_id"):
         mset = session.get(MeasurementSet, uuid.UUID(job.output["measurement_set_id"]))
         out["measurement_set"] = meas_svc.set_out(session, mset)
+    # where to draw each measurement on the owner's own photos; gone once the photos are deleted
+    out["visual"] = None
+    if job.output and job.output.get("visual"):
+        visual = {}
+        for kind, geometry in job.output["visual"].items():
+            photo = session.get(BodyPhoto, uuid.UUID(geometry["photo_id"]))
+            file = session.get(File, photo.file_id) if photo and photo.file_id and photo.status == "stored" else None
+            if file is not None and photo.owner_id == user.id:
+                visual[kind] = {**geometry, "photo_url": signed_url(file)}
+        out["visual"] = visual or None
     return ok(out)
 
 
@@ -172,16 +187,31 @@ def analyze_fabric(body: AnalyzeIn, user: User = Depends(current_user),
     return ok(vlm.analysis_out(row))
 
 
-@router.post("/listings/{listing_id}/story", status_code=201)
+STORY_JOB = "story.generate"
+
+
+def _story_job(session: Session, listing_id: uuid.UUID) -> Job | None:
+    return session.scalar(select(Job).where(Job.kind == STORY_JOB, Job.subject_type == "listing",
+                                            Job.subject_id == listing_id)
+                          .order_by(Job.created_at.desc(), Job.id.desc()).limit(1))
+
+
+def _job_out(job: Job | None) -> dict | None:
+    return {"id": job.id, "status": job.status, "error": job.error} if job else None
+
+
+@router.post("/listings/{listing_id}/story", status_code=202)
 def draft_product_story(listing_id: uuid.UUID, user: User = Depends(current_user),
-                        session: Session = Depends(get_session),
-                        llm: TextLLM | None = Depends(get_story_llm),
-                        embedder: Embedder | None = Depends(get_embedder)):
-    """Writer + critic draft of the listing's cultural story (after a scan; the seller publishes it)."""
+                        session: Session = Depends(get_session)):
+    """Queue the writer + critic story (30-60 s); the seller reviews the draft and publishes it."""
     listing = listings_svc.owned_listing(session, active_merchant(session, user), listing_id)
-    story = product_story.generate(session, user, listing, llm, embedder)
+    product_story.check_ready(listing)  # fail now, not inside the worker, when the scan is missing
+    job = _story_job(session, listing.id)
+    if job is None or job.status not in ("queued", "processing"):
+        job = jobs.enqueue(session, STORY_JOB, user.id, {"listing_id": str(listing.id)},
+                           subject_type="listing", subject_id=listing.id)
     session.commit()
-    return ok(product_story.story_out(story))
+    return ok({"job": _job_out(job)})
 
 
 @router.get("/listings/{listing_id}/story")
@@ -193,7 +223,8 @@ def listing_stories(listing_id: uuid.UUID, user: User = Depends(current_user),
                                 .order_by(ProductStory.created_at.desc())))
     draft = next((s for s in rows if s.status == "draft"), None)
     published = next((s for s in rows if s.status == "published"), None)
-    return ok({"draft": product_story.story_out(draft), "published": product_story.story_out(published)})
+    return ok({"draft": product_story.story_out(draft), "published": product_story.story_out(published),
+               "job": _job_out(_story_job(session, listing.id))})
 
 
 @router.post("/listings/{listing_id}/story/{story_id}/publish")

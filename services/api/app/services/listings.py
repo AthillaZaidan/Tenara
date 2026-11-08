@@ -15,9 +15,11 @@ from app.models import (
     ListingImage,
     MerchantProfile,
     ProductStory,
+    ReferencePhoto,
     User,
 )
 from app.services import audit
+from app.services.files import signed_url
 from app.services.partners import merchant_public
 
 MAX_IMAGES = 10
@@ -182,11 +184,29 @@ def images_out(session: Session, listing_id: uuid.UUID) -> list[dict]:
     return [{"url": f"/api/v1/files/{r.file_id}", "caption": r.caption} for r in rows]
 
 
-def _published_story(session: Session, listing_id) -> dict | None:
-    story = session.scalar(select(ProductStory).where(ProductStory.listing_id == listing_id,
+def _published_story(session: Session, listing: FabricListing) -> dict | None:
+    story = session.scalar(select(ProductStory).where(ProductStory.listing_id == listing.id,
                                                       ProductStory.status == "published"))
-    return {"body": story.body, "citations": story.citations,
-            "published_at": story.published_at} if story else None
+    if story is None:
+        return None
+    return {"body": story.body, "sentences": story.sentences, "citations": story.citations,
+            "published_at": story.published_at, "reference_photos": _reference_photos(session, listing)}
+
+
+def _reference_photos(session: Session, listing: FabricListing, limit: int = 3) -> list[dict]:
+    """Curator-approved photos of the claimed tradition whose licence allows showing them."""
+    rows = session.scalars(
+        select(ReferencePhoto).where(ReferencePhoto.entry_id == listing.entry_id,
+                                     ReferencePhoto.approval_status == "approved",
+                                     ReferencePhoto.display_allowed, ReferencePhoto.file_id.is_not(None))
+        .order_by(ReferencePhoto.style.desc(), ReferencePhoto.created_at).limit(limit))
+    out = []
+    for ref in rows:
+        file = session.get(File, ref.file_id)
+        if file is not None and file.deleted_at is None:
+            out.append({"url": signed_url(file), "credit": ref.credit, "license": ref.license,
+                        "source_url": ref.source_url, "style": ref.style})
+    return out
 
 
 def listing_out(session: Session, listing: FabricListing, *, include_merchant: bool = True) -> dict:
@@ -213,7 +233,7 @@ def listing_out(session: Session, listing: FabricListing, *, include_merchant: b
         "status": listing.status, "revision": listing.revision,
         "images": images_out(session, listing.id), "stock": stock_summary(session, listing),
         "custom_order_ready": not missing, "missing_for_custom": missing,
-        "story": _published_story(session, listing.id),
+        "story": _published_story(session, listing),
     }
     if include_merchant:
         merchant = session.get(MerchantProfile, listing.merchant_id)

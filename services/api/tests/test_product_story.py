@@ -1,4 +1,5 @@
-"""Listing story: seller claim + scan + approved catalog chunks, written by a writer and checked by a critic."""
+"""Listing story: seller claim + scan + approved catalog chunks, written in the background by a writer
+and checked by a critic."""
 import json
 
 import pytest
@@ -6,15 +7,18 @@ from sqlalchemy import select
 from test_ai import OBS, FakeVLM, _analyze, _fabric_png, ai, seller  # noqa: F401  (shared scan fixtures)
 from test_customization import entry, make_listing  # noqa: F401
 
-from app.main import app
-from app.ml.text.story_gen import get_story_llm
-from app.models import GalleryEntry, ProductStory
+from app.ml.text import product_story
+from app.models import GalleryEntry, Job, ProductStory
 from app.services import gallery as gallery_svc
+from app.services import jobs
+from app.workers import handlers
 
 API = "/api/v1"
 KUDA = "Kuda melambangkan keberanian, kekuatan, dan status sosial dalam tradisi Sumba."
 UDANG = "Udang melambangkan kehidupan dan kelahiran kembali karena berganti kulit."
 MERAH = "Warna merah kombu dahulu menjadi penanda status bangsawan di Sumba Timur."
+LOOK = "Pada kain ini, merah, biru, dan krem berdiri di atas dasar gelap seperti nyala yang tertahan."
+CLOSE = "Pada kain ini, kuda dan udang kembali bertemu dalam irama warna yang tenang."
 
 
 class FakeTextLLM:
@@ -51,65 +55,95 @@ def chunks(session, seller, embedder, make_user):
     return ids
 
 
+@pytest.fixture
+def run_story(client, session, monkeypatch, embedder):
+    """Queue the story through the API, run the worker once, and return (queue response, draft or None)."""
+    def _run(headers, listing, llm):
+        monkeypatch.setattr(handlers, "_story_llm", lambda: llm)
+        monkeypatch.setattr(handlers, "_embedder", lambda: embedder)
+        queued = client.post(f"{API}/listings/{listing.id}/story", headers=headers)
+        if queued.status_code == 202:
+            while jobs.process_one(session):
+                pass
+        mine = client.get(f"{API}/listings/{listing.id}/story", headers=headers).json()["data"]
+        return queued, mine
+    return _run
+
+
 def _scan(client, auth_header, user, listing, observation=None):
     r = _analyze(client, auth_header(user), listing, FakeVLM(observation=observation))
     assert r.status_code == 200, r.text
-
-
-def _draft(client, headers, listing, llm):
-    app.dependency_overrides[get_story_llm] = lambda: llm
-    return client.post(f"{API}/listings/{listing.id}/story", headers=headers)
 
 
 def _ok(index_count):
     return {"verdicts": [{"index": i, "supported": True, "reason": "ok"} for i in range(index_count)]}
 
 
-def test_story_needs_a_scan_and_a_technique_that_is_not_in_dispute(client, session, seller, auth_header, chunks):
+def _c(paragraph, text, *ids):
+    return {"paragraph": paragraph, "text": text, "chunk_ids": list(ids)}
+
+
+def test_story_needs_a_scan_and_a_technique_that_is_not_in_dispute(client, session, seller, auth_header, chunks,
+                                                                  run_story):
     user, listing = seller
-    r = _draft(client, auth_header(user), listing, FakeTextLLM())
-    assert r.status_code == 422 and r.json()["error"]["field"] == "scan"
-    _scan(client, auth_header, user, listing, {**OBS, "technique": "songket"})  # claim is ikat
-    r = _draft(client, auth_header(user), listing, FakeTextLLM())
-    assert r.status_code == 422 and "kurator" in r.json()["error"]["message"]
+    queued, _ = run_story(auth_header(user), listing, FakeTextLLM())
+    assert queued.status_code == 422 and queued.json()["error"]["field"] == "scan"
+    _scan(client, auth_header, user, listing, {**OBS, "technique": "songket"})  # the claim is ikat
+    queued, _ = run_story(auth_header(user), listing, FakeTextLLM())
+    assert queued.status_code == 422 and "kurator" in queued.json()["error"]["message"]
+    assert session.scalar(select(Job).where(Job.kind == "story.generate")) is None  # nothing was queued
 
 
-def test_story_is_claim_plus_scan_plus_cited_culture_and_seller_publishes_it(
-        client, session, seller, auth_header, chunks):
+def test_story_is_written_in_the_background_in_three_paragraphs_and_the_seller_publishes_it(
+        client, session, seller, auth_header, chunks, run_story):
     user, listing = seller
     _scan(client, auth_header, user, listing)
-    llm = FakeTextLLM(writer=[{"claims": [{"text": KUDA, "chunk_ids": [chunks["kuda"]]},
-                                          {"text": UDANG, "chunk_ids": [chunks["udang"]]}]}],
-                      critic=[_ok(2)])
-    r = _draft(client, auth_header(user), listing, llm)
-    assert r.status_code == 201, r.text
-    story = r.json()["data"]
-    assert [c[0] for c in llm.calls] == ["writer", "critic"]  # no revision needed: two calls
-    first, culture = story["body"].split("\n\n")
-    assert first.startswith("Menurut penjual, kain ini Tenun Ikat Sumba.")
-    assert "Dari foto terlihat tenun ikat dengan motif kuda, udang dalam warna merah, biru, krem." in first
-    assert culture == f"{KUDA} {UDANG}"
-    assert [c["urls"] for c in story["citations"]] == [["https://museum.example/kuda"], ["https://museum.example/udang"]]
-    assert story["status"] == "draft" and story["notes"] == []
-    # only approved chunks reached the writer, and the claim and the scan were given as data
+    llm = FakeTextLLM(writer=[{"claims": [_c(1, LOOK, "foto"), _c(3, KUDA, chunks["kuda"]),
+                                          _c(3, UDANG, chunks["udang"]), _c(2, MERAH, chunks["merah"]),
+                                          _c(3, CLOSE, "foto")]}],
+                      critic=[_ok(5)])
+    queued, mine = run_story(auth_header(user), listing, llm)
+    assert queued.status_code == 202 and queued.json()["data"]["job"]["status"] == "queued"
+    assert mine["job"]["status"] == "completed"
+    story = mine["draft"]
+    assert [c[0] for c in llm.calls] == ["writer", "critic"]  # nothing rejected: no revision
+    claim, look, place, meaning = story["body"].split("\n\n")
+    assert claim == "Menurut penjual, kain ini Tenun Ikat Sumba."
+    assert look == LOOK and place == MERAH and meaning == f"{KUDA} {UDANG} {CLOSE}"
+    assert story["sentences"][0] == {"paragraph": 1, "text": LOOK, "sources": ["foto"]}
+    assert [c["urls"] for c in story["citations"]] == [["https://museum.example/kuda"], ["https://museum.example/udang"],
+                                                       ["https://museum.example/merah"]]
+    # the writer got only approved chunks, and the photo observation as its own text
     writer_input = llm.calls[0][1]
-    assert chunks["pending"] not in {c["id"] for c in writer_input["potongan_sumber"]}
-    assert writer_input["tradisi_diklaim"] == "Tenun Ikat Sumba" and writer_input["motif_terlihat"] == ["kuda", "udang"]
+    assert chunks["pending"] not in {c["id"] for c in writer_input["teks_katalog"]}
+    assert writer_input["pengamatan_foto"].startswith("Pengamatan foto: teknik tenun ikat; motif kuda, udang")
+    # the critic judged the 'foto' sentences against that observation
+    assert llm.calls[1][1][0]["teks_dikutip"][0].startswith("Pengamatan foto:")
 
-    public = client.get(f"{API}/listings/{listing.id}").json()["data"]
-    assert public["story"] is None  # nothing public until the seller publishes
+    assert client.get(f"{API}/listings/{listing.id}").json()["data"]["story"] is None  # private until published
     assert client.post(f"{API}/listings/{listing.id}/story/{story['id']}/publish",
                        headers=auth_header(user)).status_code == 200
-    public = client.get(f"{API}/listings/{listing.id}").json()["data"]
-    assert public["story"]["body"] == story["body"]
+    public = client.get(f"{API}/listings/{listing.id}").json()["data"]["story"]
+    assert public["body"] == story["body"] and public["sentences"] == story["sentences"]
+    assert public["reference_photos"] == []  # none approved and displayable for this entry yet
 
-    again = _draft(client, auth_header(user), listing, FakeTextLLM(
-        writer=[{"claims": [{"text": KUDA, "chunk_ids": [chunks["kuda"]]}]}], critic=[_ok(1)])).json()["data"]
-    client.post(f"{API}/listings/{listing.id}/story/{again['id']}/publish", headers=auth_header(user))
-    statuses = sorted(s.status for s in session.scalars(select(ProductStory)))
-    assert statuses == ["published", "superseded"]
-    mine = client.get(f"{API}/listings/{listing.id}/story", headers=auth_header(user)).json()["data"]
-    assert mine["published"]["id"] == again["id"] and mine["draft"] is None
+
+def test_a_second_request_while_one_is_queued_reuses_the_job(client, session, seller, auth_header, chunks):
+    user, listing = seller
+    _scan(client, auth_header, user, listing)
+    first = client.post(f"{API}/listings/{listing.id}/story", headers=auth_header(user)).json()["data"]["job"]
+    second = client.post(f"{API}/listings/{listing.id}/story", headers=auth_header(user)).json()["data"]["job"]
+    assert first["id"] == second["id"]
+
+
+def test_a_photo_sentence_cannot_carry_a_motif_or_name_the_scan_did_not_see(client, session, seller, auth_header,
+                                                                          chunks, run_story):
+    user, listing = seller
+    _scan(client, auth_header, user, listing)
+    llm = FakeTextLLM(writer=[{"claims": [_c(1, "Pada kain ini, naga Majapahit melingkar di tepi.", "foto"),
+                                          _c(3, KUDA, chunks["kuda"])]}], critic=[_ok(1)])
+    _, mine = run_story(auth_header(user), listing, llm)
+    assert "naga" not in mine["draft"]["body"] and KUDA in mine["draft"]["body"]
 
 
 @pytest.mark.parametrize(("sentence", "why"), [
@@ -119,60 +153,78 @@ def test_story_is_claim_plus_scan_plus_cited_culture_and_seller_publishes_it(
     ("Kuda dan udang selalu muncul bersama.", "motif"),  # cites the kuda chunk only: 'udang' is not in it
 ])
 def test_code_gates_drop_unsupported_sentences_before_the_critic(client, session, seller, auth_header, chunks,
-                                                                sentence, why):
+                                                                run_story, sentence, why):
     user, listing = seller
     _scan(client, auth_header, user, listing)
-    llm = FakeTextLLM(writer=[{"claims": [{"text": KUDA, "chunk_ids": [chunks["kuda"]]},
-                                          {"text": sentence, "chunk_ids": [chunks["kuda"]]}]}],
+    llm = FakeTextLLM(writer=[{"claims": [_c(3, KUDA, chunks["kuda"]), _c(3, sentence, chunks["kuda"])]}],
                       critic=[_ok(1)])
-    story = _draft(client, auth_header(user), listing, llm).json()["data"]
+    _, mine = run_story(auth_header(user), listing, llm)
+    story = mine["draft"]
     assert sentence not in story["body"] and KUDA in story["body"]
     assert len(llm.calls[1][1]) == 1  # the critic only saw the sentence that passed the gates
     assert story["notes"] and "dibuang" in story["notes"][0]
 
 
-def test_invented_or_pending_source_ids_are_dropped(client, session, seller, auth_header, chunks):
+def test_ids_copied_into_the_sentence_are_removed_not_mistaken_for_numbers(client, session, seller, auth_header,
+                                                                         chunks, run_story):
     user, listing = seller
     _scan(client, auth_header, user, listing)
-    llm = FakeTextLLM(writer=[{"claims": [{"text": KUDA, "chunk_ids": ["k99"]},
-                                          {"text": "Kuda ditenun sejak tahun 1200 oleh Raja X.",
-                                           "chunk_ids": [chunks["pending"]]}]}])
-    story = _draft(client, auth_header(user), listing, llm).json()["data"]
-    assert "\n\n" not in story["body"] and [c[0] for c in llm.calls] == ["writer"]
+    cid = chunks["kuda"]
+    llm = FakeTextLLM(writer=[{"claims": [_c(3, f"{KUDA[:-1]} [{cid}].", cid)]}], critic=[_ok(1)])
+    _, mine = run_story(auth_header(user), listing, llm)
+    assert mine["draft"]["body"].endswith(KUDA) and cid not in mine["draft"]["body"]
+
+
+def test_invented_or_pending_source_ids_are_dropped(client, session, seller, auth_header, chunks, run_story):
+    user, listing = seller
+    _scan(client, auth_header, user, listing)
+    llm = FakeTextLLM(writer=[{"claims": [_c(3, KUDA, "k99"),
+                                          _c(3, "Kuda ditenun sejak tahun 1200 oleh Raja X.", chunks["pending"])]}])
+    _, mine = run_story(auth_header(user), listing, llm)
+    story = mine["draft"]
+    assert story["body"].startswith("Menurut penjual") and "Dari foto terlihat" in story["body"]  # plain fallback
+    assert [c[0] for c in llm.calls] == ["writer"] and story["sentences"] == []
     assert any("Tidak ada kalimat budaya" in n for n in story["notes"])
 
 
+def test_only_photo_sentences_are_not_a_story(client, session, seller, auth_header, chunks, run_story):
+    user, listing = seller
+    _scan(client, auth_header, user, listing)
+    llm = FakeTextLLM(writer=[{"claims": [_c(1, LOOK, "foto")]}], critic=[_ok(1)])
+    _, mine = run_story(auth_header(user), listing, llm)
+    assert mine["draft"]["sentences"] == [] and any("budaya" in n for n in mine["draft"]["notes"])
+
+
 def test_critic_rejection_gets_one_revision_then_whatever_still_fails_is_dropped(
-        client, session, seller, auth_header, chunks):
+        client, session, seller, auth_header, chunks, run_story):
     user, listing = seller
     _scan(client, auth_header, user, listing)
     overreach = "Kuda adalah lambang utama seluruh kebudayaan Sumba."
     llm = FakeTextLLM(
-        writer=[{"claims": [{"text": KUDA, "chunk_ids": [chunks["kuda"]]},
-                            {"text": overreach, "chunk_ids": [chunks["kuda"]]}]},
-                {"claims": [{"text": KUDA, "chunk_ids": [chunks["kuda"]]},
-                            {"text": MERAH, "chunk_ids": [chunks["merah"]]},
-                            {"text": "Kuda adalah lambang terpenting di Sumba.", "chunk_ids": [chunks["kuda"]]}]}],
+        writer=[{"claims": [_c(3, KUDA, chunks["kuda"]), _c(3, overreach, chunks["kuda"])]},
+                {"claims": [_c(3, KUDA, chunks["kuda"]), _c(2, MERAH, chunks["merah"]),
+                            _c(3, "Kuda adalah lambang terpenting di Sumba.", chunks["kuda"])]}],
         critic=[{"verdicts": [{"index": 0, "supported": True}, {"index": 1, "supported": False, "reason": "generalisasi"}]},
                 {"verdicts": [{"index": 0, "supported": True}, {"index": 1, "supported": True},
                               {"index": 2, "supported": False, "reason": "tidak di sumber"}]}])
-    story = _draft(client, auth_header(user), listing, llm).json()["data"]
+    _, mine = run_story(auth_header(user), listing, llm)
     assert [c[0] for c in llm.calls] == ["writer", "critic", "writer", "critic"]  # at most one revision
     assert "generalisasi" in json.dumps(llm.calls[2][1]["perbaiki"])
-    assert story["body"].endswith(f"{KUDA} {MERAH}") and "terpenting" not in story["body"]
+    body = mine["draft"]["body"]
+    assert MERAH in body and KUDA in body and "terpenting" not in body
 
 
-def test_a_missing_critic_verdict_counts_as_unsupported(client, session, seller, auth_header, chunks):
+def test_a_missing_critic_verdict_counts_as_unsupported(client, session, seller, auth_header, chunks, run_story):
     user, listing = seller
     _scan(client, auth_header, user, listing)
-    claims = {"claims": [{"text": KUDA, "chunk_ids": [chunks["kuda"]]}]}
+    claims = {"claims": [_c(3, KUDA, chunks["kuda"])]}
     llm = FakeTextLLM(writer=[claims, claims], critic=[{"verdicts": []}, {"verdicts": [{"index": 0}]}])
-    story = _draft(client, auth_header(user), listing, llm).json()["data"]
-    assert KUDA not in story["body"]
+    _, mine = run_story(auth_header(user), listing, llm)
+    assert KUDA not in mine["draft"]["body"]
 
 
 def test_no_approved_sources_means_no_culture_part_and_no_model_call(client, session, make_partner, make_listing,
-                                                                    ai, auth_header):
+                                                                    ai, auth_header, run_story):
     from app.models import ListingImage
     from app.services.files import create_file
 
@@ -185,24 +237,65 @@ def test_no_approved_sources_means_no_culture_part_and_no_model_call(client, ses
     session.add(ListingImage(listing_id=listing.id, file_id=f.id))
     session.flush()
     _scan(client, auth_header, user, listing)
-    story = _draft(client, auth_header(user), listing, None).json()["data"]  # no model configured: still fine
+    _, mine = run_story(auth_header(user), listing, None)  # no model configured: still a plain draft
+    story = mine["draft"]
     assert "\n\n" not in story["body"] and story["citations"] == [] and story["model"] == "tanpa-model"
 
 
-def test_provider_problems_are_503_and_only_the_owner_can_draft(client, session, seller, auth_header, chunks,
-                                                               make_partner):
+def test_provider_failures_retry_then_fail_honestly(client, session, seller, auth_header, chunks, run_story):
     user, listing = seller
     _scan(client, auth_header, user, listing)
-    assert _draft(client, auth_header(user), listing, FakeTextLLM(writer=["bukan json"])).status_code == 503
-    assert _draft(client, auth_header(user), listing, None).status_code == 503
+    _, mine = run_story(auth_header(user), listing, FakeTextLLM(writer=["bukan json"]))
+    assert mine["job"]["status"] == "queued" and mine["draft"] is None  # retried later by the queue
+    job = session.get(Job, mine["job"]["id"])
+    job.attempts = jobs.MAX_ATTEMPTS
+    job.status = "processing"
+    jobs.run_job(session, job)
+    assert job.status == "failed" and mine["draft"] is None
+    queued, _ = run_story(auth_header(user), listing, None)
+    retry = session.get(Job, queued.json()["data"]["job"]["id"])
+    assert retry.status == "failed" and "dikonfigurasi" in retry.error  # not configured: no pointless retries
+
+
+def test_only_the_owner_can_queue_read_or_publish(client, session, seller, auth_header, chunks, make_partner):
+    user, listing = seller
     other, _ = make_partner("merchant", shop="Toko Lain")
-    assert _draft(client, auth_header(other), listing, FakeTextLLM()).status_code == 404
+    assert client.post(f"{API}/listings/{listing.id}/story", headers=auth_header(other)).status_code == 404
+    assert client.get(f"{API}/listings/{listing.id}/story", headers=auth_header(other)).status_code == 404
+    draft = ProductStory(listing_id=listing.id, body="x", model="m", created_by=user.id)
+    session.add(draft)
+    session.flush()
+    url = f"{API}/listings/{listing.id}/story/{draft.id}/publish"
+    assert client.post(url, headers=auth_header(other)).status_code == 404
+    assert client.post(url, headers=auth_header(user)).status_code == 200
+    assert client.post(url, headers=auth_header(user)).status_code == 422  # only a draft can be published
 
 
-def test_ids_copied_into_the_sentence_are_removed_not_mistaken_for_numbers(client, session, seller, auth_header, chunks):
+def test_published_story_shows_curated_reference_photos_of_the_claimed_tradition(
+        client, session, seller, auth_header, chunks, run_story, storage):
+    from app.ml.vision import photo_match
+    from app.ml.vision.photo_match import FakePhotoEmbedder
+    from app.services.files import create_file
+
     user, listing = seller
+    entry_ = session.get(GalleryEntry, listing.entry_id)
+    for allowed in (True, False):
+        f = create_file(session, storage, owner_id=user.id, kind="reference_photo", data=_fabric_png(),
+                        content_type="image/png", visibility="public")
+        ref = photo_match.add_reference(session, FakePhotoEmbedder(), entry=entry_, image=_fabric_png(),
+                                        style="archival", source_label="museum", file_id=f.id,
+                                        credit=f"Museum {allowed}", license="CC0", display_allowed=allowed)
+        ref.approval_status = "approved"
+    session.flush()
     _scan(client, auth_header, user, listing)
-    cid = chunks["kuda"]
-    llm = FakeTextLLM(writer=[{"claims": [{"text": f"{KUDA[:-1]} [{cid}].", "chunk_ids": [cid]}]}], critic=[_ok(1)])
-    story = _draft(client, auth_header(user), listing, llm).json()["data"]
-    assert story["body"].endswith(KUDA) and cid not in story["body"]
+    llm = FakeTextLLM(writer=[{"claims": [_c(3, KUDA, chunks["kuda"])]}], critic=[_ok(1)])
+    _, mine = run_story(auth_header(user), listing, llm)
+    client.post(f"{API}/listings/{listing.id}/story/{mine['draft']['id']}/publish", headers=auth_header(user))
+    photos = client.get(f"{API}/listings/{listing.id}").json()["data"]["story"]["reference_photos"]
+    assert [p["credit"] for p in photos] == ["Museum True"] and photos[0]["url"].startswith("/api/v1/files/")
+
+
+def test_writer_and_critic_prompts_keep_the_safety_rules():
+    w, c = product_story.WRITER_SYSTEM, product_story.CRITIC_SYSTEM
+    assert "DATA TIDAK" in w and "Belum pasti" in w and "asli" in w and "'foto'" in w
+    assert "Metafora" in c and "Tolak HANYA" in c and "Belum pasti" in c

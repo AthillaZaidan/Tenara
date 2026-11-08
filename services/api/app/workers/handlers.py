@@ -7,7 +7,11 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.ml.vision import body_measure, render
+from app.core.errors import AppValidationError, ServiceUnavailable
+from app.ml.text import product_story
+from app.ml.text.embedding import get_embedder
+from app.ml.text.story_gen import get_story_llm
+from app.ml.vision import body3d, body_measure, render
 from app.ml.vision.body_measure import MeasurementFailure
 from app.ml.vision.pose import get_pose_detector
 from app.models import (
@@ -21,10 +25,12 @@ from app.models import (
     MeasurementSet,
     MeasurementValue,
     Preview,
+    User,
 )
 from app.services import jobs, photos
 from app.services.files import create_file
 from app.services.jobs import PermanentJobError
+from app.services.measurements import DIMENSION_RANGES
 from app.services.storage import get_storage
 
 PRODUCT_METHOD = "pillow_flat_composite_v1"
@@ -36,14 +42,66 @@ def _storage():
     return get_storage()
 
 
-def handle_measurement_estimate(session: Session, job: Job) -> dict:
-    data = job.input
-    photo = session.get(BodyPhoto, uuid.UUID(data["photo_id"]))
+def _owned_stored_photo(session: Session, job: Job, photo_id: str) -> BodyPhoto:
+    photo = session.get(BodyPhoto, uuid.UUID(photo_id))
     if photo is None or photo.owner_id != job.owner_id or photo.status != "stored":
         raise PermanentJobError("Foto tidak tersedia (mungkin sudah dihapus atau masa simpan habis)")
+    return photo
+
+
+def _body_model(gender: str):
+    return body3d.get_body_model(gender)
+
+
+def _estimate_two_views(session: Session, job: Job, front: BodyPhoto, side: BodyPhoto, body, detector) -> dict:
+    """SMPL-X fitted to a front and a side photo: all seven dimensions, plus where to draw them."""
+    data = job.input
+    result = body3d.estimate_two_views(body, detector, photos.load_image(session, _storage(), front),
+                                       photos.load_image(session, _storage(), side), float(data["height_cm"]))
+    if result["problems"]:
+        raise PermanentJobError(" ".join(result["problems"]))
+    model_version = f"{body3d.MODEL_VERSION}+{detector.model_version}"
+    mset = MeasurementSet(owner_id=job.owner_id, height_cm=data["height_cm"])
+    session.add(mset)
+    session.flush()
+    warnings = ["buyer_review_required",
+                "loose_clothing: baju longgar ikut terukur sehingga lingkar bisa lebih besar; cek dengan meteran"]
+    supported, manual = [], []
+    for key, (lo, hi) in DIMENSION_RANGES.items():
+        value = result["values"].get(key)
+        if value is not None and lo <= value <= hi:
+            source, flag, cm = "estimated", "review_required", value
+            supported.append(key)
+        else:
+            source, flag, cm = "manual_required", "implausible" if value is not None else "unsupported", None
+            manual.append(key)
+            if value is not None:
+                warnings.append(f"{key}_implausible: hasil di luar rentang wajar, isi manual")
+        session.add(MeasurementValue(set_id=mset.id, key=key, value_cm=cm, source=source, quality_flag=flag,
+                                     model_version=model_version, history=[]))
+    job.model_version = model_version
+    session.flush()
+    visual = {kind: {"photo_id": str(photo.id), **result["visual"][kind]}
+              for kind, photo in (("front", front), ("side", side))}
+    return {"measurement_set_id": str(mset.id), "method": "smplx_two_view", "scale_basis": "full_height",
+            "supported": supported, "manual_required": manual, "warnings": warnings, "visual": visual,
+            "fit_loss": result["fit_loss"]}
+
+
+def handle_measurement_estimate(session: Session, job: Job) -> dict:
+    data = job.input
+    photo = _owned_stored_photo(session, job, data["photo_id"])
     detector = get_pose_detector()
     if detector is None:
         raise PermanentJobError("Model pose belum terpasang di server; isi ukuran secara manual")
+    fallback_warnings = []
+    if data.get("side_photo_id"):
+        side = _owned_stored_photo(session, job, data["side_photo_id"])
+        body = _body_model(data.get("gender") or "neutral")
+        if body is not None:
+            return _estimate_two_views(session, job, photo, side, body, detector)
+        fallback_warnings.append("smplx_unavailable: model tubuh 3D belum terpasang di server; hanya ukuran dari "
+                                 "foto depan yang diperkirakan")
     image = photos.load_image(session, _storage(), photo)
     try:
         estimate = body_measure.estimate(detector.detect(image), float(data["height_cm"]), image.size)
@@ -63,7 +121,7 @@ def handle_measurement_estimate(session: Session, job: Job) -> dict:
             "supported": [k for k, v in estimate["values"].items() if v["source"] == "estimated"],
             "manual_required": [k for k, v in estimate["values"].items()
                                 if v["source"] == "manual_required"],
-            "warnings": estimate["warnings"]}
+            "method": "pose_front_only", "warnings": estimate["warnings"] + fallback_warnings}
 
 
 def _design(session: Session, preview: Preview):
@@ -123,6 +181,33 @@ def handle_on_body_preview(session: Session, job: Job) -> dict:
     return _save(session, preview, cust, composite, ONBODY_METHOD, rendered.warnings, job)
 
 
+def _story_llm():
+    return get_story_llm()
+
+
+def _embedder():
+    return get_embedder()
+
+
+def handle_story_generate(session: Session, job: Job) -> dict:
+    """Writer + critic story for a listing; long prose takes 30-60 s, so it runs here, not in the request."""
+    listing = session.get(FabricListing, uuid.UUID(job.input["listing_id"]))
+    user = session.get(User, job.owner_id)
+    if listing is None or user is None:
+        raise PermanentJobError("Listing tidak ditemukan")
+    llm = _story_llm()
+    try:
+        story = product_story.generate(session, user, listing, llm, _embedder())
+    except AppValidationError as exc:
+        raise PermanentJobError(exc.message) from exc
+    except ServiceUnavailable as exc:
+        if llm is None:
+            raise PermanentJobError(exc.message) from exc
+        raise RuntimeError(exc.message) from exc  # provider hiccup: the job queue retries
+    return {"story_id": str(story.id)}
+
+
 jobs.register_handler("measurement.estimate", handle_measurement_estimate)
 jobs.register_handler("preview.product", handle_product_preview)
 jobs.register_handler("preview.on_body", handle_on_body_preview)
+jobs.register_handler("story.generate", handle_story_generate)

@@ -9,8 +9,9 @@ from PIL import Image
 from app.core.config import settings
 
 LANDMARK_INDEX = {"nose": 0, "l_shoulder": 11, "r_shoulder": 12, "l_elbow": 13, "r_elbow": 14,
-                  "l_wrist": 15, "r_wrist": 16, "l_hip": 23, "r_hip": 24, "l_ankle": 27,
-                  "r_ankle": 28}
+                  "l_wrist": 15, "r_wrist": 16, "l_hip": 23, "r_hip": 24, "l_knee": 25, "r_knee": 26,
+                  "l_ankle": 27, "r_ankle": 28, "l_heel": 29, "r_heel": 30, "l_foot_index": 31,
+                  "r_foot_index": 32}
 
 
 @dataclass
@@ -25,6 +26,7 @@ class PoseResult:
     pose_count: int
     landmarks: dict[str, Landmark]
     model_version: str
+    mask: object | None = None  # person mask (H x W bool numpy array) of the first person, when available
 
 
 class PoseDetector(Protocol):
@@ -47,7 +49,8 @@ class MediaPipePoseDetector:
             from mediapipe.tasks.python import vision
 
             options = vision.PoseLandmarkerOptions(
-                base_options=mp_python.BaseOptions(model_asset_path=self.model_path), num_poses=2)
+                base_options=mp_python.BaseOptions(model_asset_path=self.model_path), num_poses=2,
+                output_segmentation_masks=True)
             self._landmarker = vision.PoseLandmarker.create_from_options(options)
         return self._landmarker
 
@@ -63,7 +66,10 @@ class MediaPipePoseDetector:
         first = result.pose_landmarks[0]
         marks = {name: Landmark(first[i].x, first[i].y, float(first[i].visibility or 0.0))
                  for name, i in LANDMARK_INDEX.items()}
-        return PoseResult(len(result.pose_landmarks), marks, self.model_version)
+        mask = None
+        if result.segmentation_masks:
+            mask = np.asarray(result.segmentation_masks[0].numpy_view()).squeeze() > 0.5
+        return PoseResult(len(result.pose_landmarks), marks, self.model_version, mask)
 
 
 @lru_cache

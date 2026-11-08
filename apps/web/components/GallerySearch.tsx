@@ -8,30 +8,28 @@ import type { Entry } from "@/lib/types";
 /** The page's one live thing: type a place, a motif or a technique and the Gallery answers. */
 export function GallerySearch({ entries }: { entries: Entry[] }) {
   const [q, setQ] = useState("");
-  const [rows, setRows] = useState<Entry[]>(entries);
+  const [found, setFound] = useState<Entry[] | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const seq = useRef(0);
+  const searching = q.trim().length >= 2;
+  const rows = searching && found ? found : entries;
 
   useEffect(() => {
     const text = q.trim();
-    if (text.length < 2) {
-      setRows(entries);
-      setNote(null);
-      return;
-    }
+    if (text.length < 2) return;
     const mine = ++seq.current;
     const t = setTimeout(async () => {
       try {
         const res = await api<{ mode: string; results: { entry: Entry }[] }>("/search/semantic", { body: { query: text }, token: null });
         if (mine !== seq.current) return;
-        setRows(res.results.map((r) => r.entry));
+        setFound(res.results.map((r) => r.entry));
         setNote(res.results.length ? null : "Belum ada entri Gallery yang cocok. Coba nama daerah atau teknik.");
       } catch {
         if (mine === seq.current) setNote("Pencarian sedang tidak tersedia; daftar lengkap ditampilkan.");
       }
     }, 250);
     return () => clearTimeout(t);
-  }, [q, entries]);
+  }, [q]);
 
   return (
     <div>
@@ -45,7 +43,7 @@ export function GallerySearch({ entries }: { entries: Entry[] }) {
         onChange={(e) => setQ(e.target.value)}
         autoComplete="off"
       />
-      <p className="mt-3 min-h-6 text-base" role="status" aria-live="polite">{note}</p>
+      <p className="mt-3 min-h-6 text-base" role="status" aria-live="polite">{searching ? note : null}</p>
       <ul className="mt-6 grid list-none gap-0 p-0">
         {rows.map((e) => (
           <li key={e.id}>

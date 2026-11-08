@@ -11,6 +11,7 @@ from app.core.errors import AppValidationError, NotFound
 from app.core.ownership import get_owned_or_404
 from app.core.responses import ok
 from app.db.base import get_session
+from app.ml.text.embedding import Embedder, get_embedder
 from app.ml.vision import vlm
 from app.ml.vision.vlm import VLMClient, get_vlm
 from app.models import (
@@ -150,7 +151,8 @@ def photo_try_on(cust_id: uuid.UUID, body: TryOnIn, user: User = Depends(current
 def analyze_fabric(body: AnalyzeIn, user: User = Depends(current_user),
                    session: Session = Depends(get_session),
                    storage: Storage = Depends(get_storage),
-                   client: VLMClient | None = Depends(get_vlm)):
+                   client: VLMClient | None = Depends(get_vlm),
+                   embedder: Embedder | None = Depends(get_embedder)):
     merchant = active_merchant(session, user)
     listing = listings_svc.owned_listing(session, merchant, body.listing_id)
     file_id = body.file_id
@@ -161,10 +163,8 @@ def analyze_fabric(body: AnalyzeIn, user: User = Depends(current_user),
     file = session.get(File, file_id) if file_id else None
     if file is None or file.owner_id != user.id or file.deleted_at is not None:
         raise AppValidationError("Foto kain tidak ditemukan", field="file_id")
-    candidates = [name for (name,) in session.execute(
-        select(GalleryEntry.name).where(GalleryEntry.status == "published").limit(60))]
     row = vlm.run_analysis(session, user, listing, file.id, storage.open(file.storage_key),
-                           file.content_type, client, candidates)
+                           file.content_type, client, embedder)
     session.commit()
     return ok(vlm.analysis_out(row))
 

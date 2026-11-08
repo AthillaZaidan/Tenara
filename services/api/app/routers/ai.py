@@ -197,6 +197,18 @@ def motif_review(listing_id: uuid.UUID, body: MotifReviewIn, user: User = Depend
     return ok(listings_svc.listing_out(session, listing, include_merchant=False))
 
 
+@router.get("/admin/listings/{listing_id}/claim-check")
+def listing_claim_check(listing_id: uuid.UUID, user: User = Depends(require_role("admin")),
+                        session: Session = Depends(get_session)):
+    """The latest photo claim check of a listing, for the curator (it is not in the public view)."""
+    listing = session.get(FabricListing, listing_id)
+    if listing is None:
+        raise NotFound("Listing not found")
+    entry = session.get(GalleryEntry, listing.entry_id)
+    return ok({"claim_check": (listing.visual_match or {}).get("claim_check"),
+               "entry": {"id": entry.id, "name": entry.name} if entry else None})
+
+
 @router.post("/admin/listings/{listing_id}/verify-origin")
 def verify_origin(listing_id: uuid.UUID, body: VerifyOriginIn,
                   user: User = Depends(require_role("admin")),

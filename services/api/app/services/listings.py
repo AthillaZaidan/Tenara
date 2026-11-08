@@ -182,7 +182,12 @@ def images_out(session: Session, listing_id: uuid.UUID) -> list[dict]:
 
 
 def listing_out(session: Session, listing: FabricListing, *, include_merchant: bool = True) -> dict:
+    """include_merchant=True is the public view: it also leaves out the photo claim check, which is
+    a signal for the merchant and the curator, not a public label on the seller."""
     missing = missing_for_custom(listing)
+    visual_match = listing.visual_match
+    if include_merchant and visual_match:
+        visual_match = {k: v for k, v in visual_match.items() if k != "claim_check"}
     out = {
         "id": listing.id, "entry_id": listing.entry_id, "title": listing.title,
         "description": listing.description, "material": listing.material or "tidak diketahui",
@@ -194,7 +199,7 @@ def listing_out(session: Session, listing: FabricListing, *, include_merchant: b
         "motif_orientation": listing.motif_orientation,
         "pattern_repeat_cm": listing.pattern_repeat_cm, "city": listing.city,
         "province": listing.province, "dispatch_days": listing.dispatch_days,
-        "origin": {"visual_match": listing.visual_match,
+        "origin": {"visual_match": visual_match,
                    "merchant_claimed_origin": listing.merchant_claimed_origin,
                    "curator_verified_origin": listing.curator_verified_origin},
         "status": listing.status, "revision": listing.revision,

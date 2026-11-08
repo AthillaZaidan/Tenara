@@ -207,3 +207,22 @@ def test_admin_reviews_reference_photos_by_source_and_sees_coverage(client, sess
     assert session.scalar(select(AuditEvent).where(AuditEvent.action == "reference_photos.approved"))
     assert client.post(f"{API}/admin/reference-photos/decision", headers=admin,
                        json={"decision": "reject"}).status_code == 422
+
+
+def test_claim_check_is_private_to_the_merchant_and_curators(client, session, seller, auth_header, make_user):
+    user, listing = seller
+    listing.status = "published"
+    _analyze(client, auth_header(user), listing, FakeVLM())
+    session.refresh(listing)
+    assert "claim_check" in listing.visual_match
+    from app.services import listings as listings_svc
+
+    public = listings_svc.listing_out(session, listing)
+    assert "claim_check" not in public["origin"]["visual_match"]
+    own = listings_svc.listing_out(session, listing, include_merchant=False)
+    assert own["origin"]["visual_match"]["claim_check"]["status"] == "belum_ada_referensi"
+    url = f"{API}/admin/listings/{listing.id}/claim-check"
+    assert client.get(url, headers=auth_header(user)).status_code == 403
+    admin = auth_header(make_user("curator@example.com", roles=(("admin", "active"),)))
+    data = client.get(url, headers=admin).json()["data"]
+    assert data["claim_check"]["status"] == "belum_ada_referensi" and data["entry"]["id"] == str(listing.entry_id)

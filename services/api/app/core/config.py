@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     photo_max_retention_days: int = 7
     photo_max_bytes: int = 8_000_000
     vlm_timeout_seconds: int = 90
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"  # comma separated
+    upload_max_bytes: int = 8_000_000
     claim_window_days: int = 14  # demo policy: claims open until N days after delivery
     partner_response_sla_hours: int = 48  # demo policy: partner must react within N hours
 

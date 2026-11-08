@@ -29,6 +29,7 @@ from app.ml.vision import vlm
 
 SIKKA = ROOT / "data/tenun_datasets/mendeley_sikka_v3/extracted/sikka_motif_512"
 IMG = ROOT / "web/public/img"
+TEST = ROOT / "experiments/vlm_eval/testset/assets"  # downloaded, credited in credits.json, git-ignored
 # Known origins: Sikka photos are GI-registered Sikka ikat motifs; KITLV titles say "uit Soemba";
 # the songket is catalogued as Palembang. Region counts as right if any keyword appears.
 CASES = [
@@ -39,6 +40,21 @@ CASES = [
     ("sumba_kitlv_5636", IMG / "ikat-1.jpg", "ikat", ["sumba"]),
     ("sumba_laoe_komboe", IMG / "ikat-3.jpg", "ikat", ["sumba"]),
     ("songket_palembang", IMG / "songket.jpg", "songket", ["palembang", "sumatera selatan", "south sumatra"]),
+    # more Sikka motif classes (GI-registered), and museum pieces with recorded provenance
+    ("sikka_dala_mawarani", SIKKA / "dala_mawarani/dalamawarani_outdoor_morning_046_png.rf.20fdf267cbaa3424f63c7851c6021e38.jpg",
+     "ikat", ["sikka", "maumere", "flores"]),
+    ("sikka_manu_hutu", SIKKA / "manu_hutu/manu_hutu_outdoor_morning_012_png.rf.711707d8df8dd26c9ab531a3781cd371.jpg",
+     "ikat", ["sikka", "maumere", "flores"]),
+    ("sikka_rempe_sikka", SIKKA / "rempe_sikka/rempe_sikka_outdoor_morning_074_png.rf.89359e0adb6a273d21fcdc8e1c5db538.jpg",
+     "ikat", ["sikka", "maumere", "flores"]),
+    ("sikka_sese_weor", SIKKA / "sese_weor/sese_weor_outdoor_morning_002_png.rf.a611a3c480cd938ced3dc45efe3e61dc.jpg",
+     "ikat", ["sikka", "maumere", "flores"]),
+    ("tapis_lampung_met", TEST / "woman-s-ceremonial-skirt-tapis-met-dp145517.jpg", "other", ["lampung", "tapis"]),
+    ("geringsing_honolulu", TEST / "geringsing-selendang-from-bali-honolulu-museum-of.jpg", "ikat",
+     ["gringsing", "geringsing", "tenganan"]),
+    ("kalumpang_kitlv", TEST / "ikatweefsel-afkomsting-uit-galoempang-in-de-toradjalanden.jpg", "ikat",
+     ["kalumpang", "sekomandi", "mamuju"]),
+    ("timor_heirloom", TEST / "heirloom-ikat-textile-from-timor.jpg", "ikat", ["timor", "amarasi", "insana"]),
 ]
 DEFAULT_MODELS = ["google/gemma-4-31b-it", "google/gemma-4-26b-a4b-it", "xiaomi/mimo-v2.6-flash",
                   "openai/gpt-6-luna"]
@@ -82,9 +98,9 @@ class _StepTagged:
     def __init__(self, client):
         self.client, self.name = client, client.name
 
-    def complete(self, system, user):
+    def complete(self, system, user, image=None, content_type=None):
         STATE["step"] = "writer" if vlm.WRITER in system else "critic"
-        return self.client.complete(system, user)
+        return self.client.complete(system, user, image, content_type)
 
 
 def run(models: list[str], budget: float, out_dir: Path) -> None:
@@ -114,7 +130,8 @@ def run(models: list[str], budget: float, out_dir: Path) -> None:
                 obs = vlm.normalize_observation(client.describe(image, ctype))
                 candidates = vlm.retrieve(session, embedder, obs)
                 STATE["step"] = "writer_critic"
-                suggestion, _evidence = vlm.identify(_StepTagged(client), obs, candidates)
+                suggestion, _evidence = vlm.identify(_StepTagged(client), obs, candidates, image=image,
+                                                    content_type=ctype)
                 said = " ".join(filter(None, [suggestion["tradition"], suggestion["region"]])).lower()
                 ranked = [c["tradition"] for c in candidates]
                 row.update(seconds=round(time.time() - t0, 1), technique=obs["technique"],

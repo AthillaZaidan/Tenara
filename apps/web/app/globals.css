@@ -78,6 +78,8 @@ a { color: inherit; }
 }
 .field::placeholder { color: var(--muted); }
 textarea.field { min-height: 7rem; resize: vertical; }
+/* A field inside a surface panel steps back to the page tone so it stays visible */
+.bg-surface .field { background: var(--bg); }
 
 /* Entrances: rise and fade once, content visible without script */
 @media (prefers-reduced-motion: no-preference) {

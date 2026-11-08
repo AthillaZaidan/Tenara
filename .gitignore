@@ -38,3 +38,8 @@ services/api/storage/
 
 # Downloaded ML model weights
 services/api/models/
+
+# Web app: generated agent notes and design-tool working files stay local
+apps/web/*.md
+.taste-skill/
+apps/web/.taste-skill/

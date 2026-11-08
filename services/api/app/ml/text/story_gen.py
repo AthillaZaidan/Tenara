@@ -9,18 +9,15 @@ Safeguards, in order:
 Source text is treated as untrusted data and is never executed as instructions.
 """
 import json
-import urllib.error
-import urllib.request
 from dataclasses import dataclass
 from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.core.errors import AppValidationError, ServiceUnavailable
+from app.ml import llm_client
 from app.ml.text.embedding import Embedder
-from app.ml.vision.vlm import OpenAICompatVLM
 from app.models import CulturalSource, GalleryEntry, SourceChunk, Story, User
 from app.services import audit
 from app.services import gallery as gallery_svc
@@ -50,36 +47,15 @@ class TextLLM(Protocol):
 
 class OpenAICompatTextLLM:
     def __init__(self):
-        self._vlm = OpenAICompatVLM()
-        self.name = self._vlm.name
+        self.name = llm_client.provider_name()
 
     def complete(self, system: str, user: str) -> str:
-        base, key = self._vlm._endpoint()
-        body = {"model": settings.llm_model, "temperature": 0,
-                "response_format": {"type": "json_object"},
-                "messages": [{"role": "system", "content": system},
-                             {"role": "user", "content": user}]}
-        headers = {"Content-Type": "application/json"}
-        if key:
-            headers["Authorization"] = f"Bearer {key}"
-        req = urllib.request.Request(f"{base}/chat/completions", data=json.dumps(body).encode(),
-                                     headers=headers, method="POST")
-        try:
-            with urllib.request.urlopen(req, timeout=settings.vlm_timeout_seconds) as resp:
-                return json.load(resp)["choices"][0]["message"]["content"]
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode(errors="replace")[:200]
-            raise RuntimeError(f"Penyedia LLM menolak permintaan (HTTP {exc.code}): {detail}") from exc
-        except (OSError, KeyError, ValueError) as exc:
-            raise RuntimeError(f"Penyedia LLM tidak dapat dihubungi/dibaca: {exc}") from exc
+        messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+        return llm_client.chat(messages).content
 
 
 def get_story_llm() -> TextLLM | None:
-    provider = settings.llm_provider
-    configured = provider == "ollama" or (
-        provider == "openai" and settings.openai_api_key) or (
-        provider == "openrouter" and settings.openrouter_api_key)
-    return OpenAICompatTextLLM() if configured else None
+    return OpenAICompatTextLLM() if llm_client.configured() else None
 
 
 @dataclass

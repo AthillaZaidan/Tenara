@@ -7,6 +7,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
     String,
@@ -120,6 +121,7 @@ class ProductStory(Base):
     __table_args__ = (
         CheckConstraint("status in ('draft','published','superseded')",
                         name="ck_product_stories_status_valid"),
+        Index("ix_product_stories_listing", "listing_id", "status"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)

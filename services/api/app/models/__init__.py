@@ -45,7 +45,7 @@ from app.models.gallery import (
 )
 from app.models.idempotency import IdempotencyKey
 from app.models.job import Job
-from app.models.listing import FabricListing, FabricStockUnit, ListingImage
+from app.models.listing import FabricListing, FabricStockUnit, ListingImage, ProductStory
 from app.models.partner import (
     MerchantProfile,
     PartnerApplication,
@@ -110,6 +110,7 @@ __all__ = [
     "PartnerReview",
     "PhotoConsent",
     "Preview",
+    "ProductStory",
     "ProductionSpec",
     "PromptRequest",
     "Quote",

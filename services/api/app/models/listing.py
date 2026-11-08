@@ -107,3 +107,35 @@ class FabricStockUnit(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class ProductStory(Base):
+    """A cultural story for one listing, written from approved catalog chunks (writer + critic).
+
+    The seller reviews a draft and publishes it; publishing supersedes the previous published story.
+    citations hold the catalog chunks (and their source URLs) behind the culture sentences.
+    """
+
+    __tablename__ = "product_stories"
+    __table_args__ = (
+        CheckConstraint("status in ('draft','published','superseded')",
+                        name="ck_product_stories_status_valid"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    listing_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("fabric_listings.id", ondelete="CASCADE"), nullable=False
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    citations: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
+    notes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="draft")
+    model: Mapped[str] = mapped_column(String(120), nullable=False)
+    seconds: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

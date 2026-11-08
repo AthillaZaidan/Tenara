@@ -50,7 +50,7 @@ def ntt_label(kab: str) -> str:
     return "Flores (lainnya)"
 
 
-def dataset(museum: bool = False) -> list[dict]:
+def dataset(museum: bool = False, commons: bool = False) -> list[dict]:
     items = []
     for x in json.loads((DATA / "mendeley_ntt_534/534 NTT motifs.json").read_text()):
         p = DATA / "mendeley_ntt_534/originals" / x["file_original"].split("/")[-1]
@@ -71,6 +71,11 @@ def dataset(museum: bool = False) -> list[dict]:
     if museum and manifest.exists():
         for m in json.loads(manifest.read_text()):
             items.append({"path": DATA / "museum" / m["file"], "label": m["label"], "group": m["id"],
+                          "source": m["source"]})
+    manifest = DATA / "commons/manifest.json"  # fetch_commons.py; source = group = uploader
+    if commons and manifest.exists():
+        for m in json.loads(manifest.read_text()):
+            items.append({"path": DATA / "commons" / m["file"], "label": m["label"], "group": m["id"],
                           "source": m["source"]})
     return items
 
@@ -98,15 +103,41 @@ def crop_files(paths: list[Path], workdir: Path) -> tuple[list[str], list[int]]:
     return files, owner
 
 
+# models without a fastembed build: Hugging Face repo -> (vision ONNX file, input size, mean, std)
+ONNX_MODELS = {"Marqo/marqo-fashionSigLIP": ("onnx/vision_model.onnx", 224, 0.5, 0.5)}
+
+
+def _onnx_encoder(model: str):
+    import onnxruntime as ort
+    from huggingface_hub import hf_hub_download
+    from PIL import Image
+
+    file, side, mean, std = ONNX_MODELS[model]
+    sess = ort.InferenceSession(hf_hub_download(model, file), providers=["CPUExecutionProvider"])
+    name = sess.get_inputs()[0].name
+
+    class Enc:
+        def embed(self, files, batch_size=16):
+            for k in range(0, len(files), batch_size):
+                batch = np.stack([(np.asarray(Image.open(f).convert("RGB").resize((side, side), Image.BICUBIC),
+                                              dtype=np.float32) / 255.0 - mean) / std for f in files[k:k + batch_size]])
+                yield from sess.run(None, {name: batch.transpose(0, 3, 1, 2)})[0]
+
+    return Enc()
+
+
 def embed(model: str, paths: list[Path], crops: bool = False) -> np.ndarray:
     tag = "crops" if crops else "full"
     key = int(hashlib.sha1("\n".join(str(p) for p in paths).encode()).hexdigest(), 16) % 10**8  # stable across runs
     cache = CACHE / f"emb_{model.replace('/', '_')}_{tag}_{len(paths)}_{key}.npy"
     if cache.exists():
         return np.load(cache)
-    from fastembed import ImageEmbedding
+    if model in ONNX_MODELS:
+        enc = _onnx_encoder(model)
+    else:
+        from fastembed import ImageEmbedding
 
-    enc = ImageEmbedding(model)
+        enc = ImageEmbedding(model)
     if crops:
         files, owner = crop_files(paths, CACHE / f"crops_{len(paths)}_{key}")
         raw = np.array(list(enc.embed(files, batch_size=16)), dtype=np.float32)
@@ -195,13 +226,15 @@ def main():
     ap.add_argument("--top-m", type=int, default=3)
     ap.add_argument("--museum", action="store_true", help="add the museum photos (fetch_museum.py)")
     ap.add_argument("--crops", action="store_true", help="embed five motif crops per photo")
+    ap.add_argument("--commons", action="store_true", help="add the Wikimedia Commons photos (fetch_commons.py)")
     ap.add_argument("--cap", type=int, default=None, help="max references per tradition and source")
     ap.add_argument("--cross-source", action="store_true", help="references must come from another source")
-    ap.add_argument("--queries", choices=["all", "museum"], default="all", help="which photos are tested")
+    ap.add_argument("--queries", choices=["all", "museum", "commons", "datasets"], default="all",
+                    help="which photos are tested")
     ap.add_argument("--refs", choices=["all", "datasets"], default="all",
                     help="'datasets' = Mendeley only, to see what the museum references add")
     a = ap.parse_args()
-    items = dataset(museum=a.museum)
+    items = dataset(museum=a.museum, commons=a.commons)
     print("images:", len(items), dict(Counter(i["label"] for i in items)))
     print("sources:", dict(Counter(i["source"] for i in items)), "groups:", len({i["group"] for i in items}))
     summary = []
@@ -209,7 +242,10 @@ def main():
         vecs = embed(m, [i["path"] for i in items], crops=a.crops)
         all_sources = {i["source"] for i in items}
         res = evaluate(items, vecs, a.top_m, cap=a.cap, cross_source=a.cross_source,
-                       query_sources=all_sources - DATASET_SOURCES if a.queries == "museum" else None,
+                       query_sources={"all": None, "datasets": DATASET_SOURCES,
+                                      "commons": {s for s in all_sources if s.startswith("commons/")},
+                                      "museum": {s for s in all_sources - DATASET_SOURCES
+                                                 if not s.startswith("commons/")}}[a.queries],
                        ref_sources=DATASET_SOURCES if a.refs == "datasets" else None)
         summary.append(report(m, res, items))
     print("\nringkas:", sorted(((round(s["macro"], 3), s["model"]) for s in summary), reverse=True))

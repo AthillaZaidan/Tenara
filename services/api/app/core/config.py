@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openrouter_api_key: str = ""
     pose_model_path: str = "./models/pose_landmarker_full.task"
+    smplx_model_dir: str = "./models"  # models/smplx/SMPLX_*.npz (non-commercial licence, git-ignored)
     photo_default_retention_minutes: int = 60  # raw body photos are purged after this by default
     photo_max_retention_days: int = 7
     photo_max_bytes: int = 8_000_000

@@ -1,5 +1,4 @@
 import uuid
-from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -23,12 +22,6 @@ class TryOnIn(BaseModel):
 class AnalyzeIn(BaseModel):
     listing_id: uuid.UUID
     file_id: uuid.UUID | None = None
-
-
-class MotifReviewIn(BaseModel):
-    decision: Literal["confirm", "reject", "correct"]
-    entry_id: uuid.UUID | None = None
-    merchant_claimed_origin: str | None = Field(default=None, max_length=500)
 
 
 class VerifyOriginIn(BaseModel):

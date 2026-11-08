@@ -11,7 +11,6 @@ from app.core.errors import AppValidationError, NotFound
 from app.core.ownership import get_owned_or_404
 from app.core.responses import ok
 from app.db.base import get_session
-from app.ml.text.embedding import Embedder, get_embedder
 from app.ml.vision import photo_match, vlm
 from app.ml.vision.photo_match import PhotoEmbedder, get_photo_embedder
 from app.ml.vision.vlm import VLMClient, get_vlm
@@ -29,7 +28,6 @@ from app.schemas.ai import (
     AnalyzeIn,
     ConsentIn,
     EstimateIn,
-    MotifReviewIn,
     TryOnIn,
     VerifyOriginIn,
 )
@@ -153,7 +151,6 @@ def analyze_fabric(body: AnalyzeIn, user: User = Depends(current_user),
                    session: Session = Depends(get_session),
                    storage: Storage = Depends(get_storage),
                    client: VLMClient | None = Depends(get_vlm),
-                   embedder: Embedder | None = Depends(get_embedder),
                    photo_embedder: PhotoEmbedder | None = Depends(get_photo_embedder)):
     merchant = active_merchant(session, user)
     listing = listings_svc.owned_listing(session, merchant, body.listing_id)
@@ -166,35 +163,9 @@ def analyze_fabric(body: AnalyzeIn, user: User = Depends(current_user),
     if file is None or file.owner_id != user.id or file.deleted_at is not None:
         raise AppValidationError("Foto kain tidak ditemukan", field="file_id")
     row = vlm.run_analysis(session, user, listing, file.id, storage.open(file.storage_key),
-                           file.content_type, client, embedder, photo_embedder)
+                           file.content_type, client, photo_embedder)
     session.commit()
     return ok(vlm.analysis_out(row))
-
-
-@router.patch("/listings/{listing_id}/motif-review")
-def motif_review(listing_id: uuid.UUID, body: MotifReviewIn, user: User = Depends(current_user),
-                 session: Session = Depends(get_session)):
-    merchant = active_merchant(session, user)
-    listing = listings_svc.owned_listing(session, merchant, listing_id)
-    if not listing.visual_match:
-        raise AppValidationError("Belum ada saran visual untuk ditinjau", field="decision")
-    review = {"decision": body.decision, "reviewed_by": str(user.id)}
-    if body.decision == "correct":
-        entry = session.get(GalleryEntry, body.entry_id) if body.entry_id else None
-        if entry is None or entry.status != "published":
-            raise AppValidationError("Pilih entri Gallery yang terbit", field="entry_id")
-        review["entry_id"] = str(entry.id)
-    updated = dict(listing.visual_match)
-    updated["review"] = review
-    updated["needs_merchant_review"] = False
-    listing.visual_match = updated
-    if body.merchant_claimed_origin is not None:
-        listing.merchant_claimed_origin = body.merchant_claimed_origin  # a claim, not a verification
-    session.flush()
-    audit.record(session, actor=user, action=f"listing.motif_{body.decision}",
-                 target_type="fabric_listing", target_id=listing.id)
-    session.commit()
-    return ok(listings_svc.listing_out(session, listing, include_merchant=False))
 
 
 @router.get("/admin/listings/{listing_id}/claim-check")

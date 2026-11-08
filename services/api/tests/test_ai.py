@@ -18,6 +18,7 @@ from test_customization import (  # noqa: F401  (fixtures + helpers shared with 
 
 from app.core.config import settings
 from app.main import app
+from app.ml import llm_client
 from app.ml.vision import render
 from app.ml.vision.pose import Landmark, PoseResult, get_pose_detector
 from app.ml.vision.vlm import get_vlm
@@ -25,6 +26,7 @@ from app.models import (
     AuditEvent,
     BodyPhoto,
     File,
+    GalleryEntry,
     Job,
     ListingImage,
     MeasurementSet,
@@ -501,58 +503,27 @@ def test_real_pose_try_on_on_a_public_domain_photo(client, session, ai, h, make_
 # ---------- seller-side visual analysis ----------
 
 class FakeVLM:
-    """Scripted describe + writer/critic replies; records what each step received."""
+    """Scripted photo description; records what it received."""
 
     name = "fake-vlm"
 
-    def __init__(self, observation=None, writer=None, critic=None, fail=None):
+    def __init__(self, observation=None, fail=None):
         self.observation = observation if observation is not None else OBS
-        self.writer = list(writer) if writer is not None else [PICK_FIRST]
-        self.critic = list(critic) if critic is not None else [{"supported": True, "reason": "cocok"}]
         self.fail = fail
-        self.calls, self.images = [], []
+        self.calls = []
 
     def describe(self, image, content_type):
         self.calls.append(("describe", content_type))
         if self.fail:
             raise RuntimeError(self.fail)
+        if isinstance(self.observation, str):
+            return llm_client.parse_json(self.observation, "deskripsi")
         return self.observation
-
-    def complete(self, system, user, image=None, content_type=None):
-        role = "writer" if "PENULIS" in system else "critic"
-        self.images.append((role, content_type if image is not None else None))
-        self.calls.append((role, json.loads(user)))
-        reply = (self.writer if role == "writer" else self.critic).pop(0)
-        return reply if isinstance(reply, str) else json.dumps(reply)
-
-    def count(self, role):
-        return sum(1 for r, _ in self.calls if r == role)
 
 
 OBS = {"technique": "ikat", "motif_category": "fauna", "motif_elements": ["kuda", "udang"],
        "dominant_colors": ["merah", "biru", "krem", "hitam"], "distinctive_features": ["dasar gelap"],
        "is_traditional_woven_textile": True}
-PICK_FIRST = {"verdict": "match", "candidate_id": "k1", "matched_features": ["kuda", "ikat"],
-              "reason": "Motif kuda dan udang dengan teknik ikat sesuai teks kandidat."}
-CATALOG = {"researched_at": "2026-11-08", "traditions": [
-    {"name": "Tenun Ikat Sumba", "province": "Nusa Tenggara Timur", "region": "Sumba Timur", "technique": "ikat",
-     "visual": "Motif kuda udang manusia, merah kombu, dasar gelap.", "culture": "Kuda lambang keberanian.",
-     "sources": [{"url": "https://www.roots.gov.sg/hinggi", "title": "Man's cloth (hinggi)"},
-                 {"url": "https://rri.co.id/kupang/sumba", "title": "Pesona Tenun Sumba Timur"}]},
-    {"name": "Songket Palembang", "province": "Sumatera Selatan", "region": "Palembang", "technique": "songket",
-     "visual": "Benang emas menutupi hampir seluruh kain, motif bunga tabur.", "culture": "Kain kebesaran.",
-     "sources": [{"url": "https://journal.isi.ac.id/songket", "title": "Kajian songket Palembang"}]},
-]}
-
-
-@pytest.fixture
-def catalog(session, embedder, make_user):
-    from scripts.seed_catalog import approve_catalog, load_catalog
-
-    load_catalog(session, embedder, CATALOG)
-    make_user("curator@example.com", roles=(("admin", "active"),))
-    approve_catalog(session, "curator@example.com", CATALOG)
-    session.flush()
 
 
 @pytest.fixture
@@ -560,6 +531,7 @@ def seller(session, make_partner, make_listing, ai):
     user, profile = make_partner("merchant", shop="Toko Analisis")
     listing = make_listing()
     listing.merchant_id = profile.id
+    session.get(GalleryEntry, listing.entry_id).technique = "Tenun ikat"  # the claimed tradition
     stored = create_file(session, ai, owner_id=user.id, kind="listing_photo", data=_fabric_png(),
                          content_type="image/png", visibility="public")
     session.add(ListingImage(listing_id=listing.id, file_id=stored.id))
@@ -572,106 +544,59 @@ def _analyze(client, headers, listing, vlm):
     return client.post(f"{API}/vision/analyze", headers=headers, json={"listing_id": str(listing.id)})
 
 
-def test_scan_matches_the_curated_catalog_and_stays_a_suggestion(client, session, seller, auth_header, catalog):
+def test_scan_describes_and_checks_the_claim_but_never_names_a_tradition(client, session, seller, auth_header):
     user, listing = seller
     vlm = FakeVLM()
     r = _analyze(client, auth_header(user), listing, vlm)
     assert r.status_code == 200, r.text
     result = r.json()["data"]["result"]
-    s = result["suggestion"]
-    first = vlm.calls[1][1]["kandidat"][0]["tradisi"]  # whatever the retrieval ranked first
-    assert s["verdict"] == "match" and s["tradition"] == first and s["gallery_match"] == first
-    assert s["region"] and s["critic"] == "cocok"
-    assert result["evidence"] and all(e["url"].startswith("https://") for e in result["evidence"])
-    assert s["evidence_ids"] == [e["id"] for e in result["evidence"]]
-    assert [c["tradition"] for c in result["candidates"]] and "Bukan sertifikasi" in r.json()["data"]["notice"]
+    assert vlm.calls == [("describe", "image/jpeg")]  # one call, on the downscaled photo
+    assert result["technique"] == "ikat" and result["motif_elements"] == ["kuda", "udang"]
+    assert result["claimed"] == "Tenun Ikat Sumba"
+    assert result["technique_check"]["status"] == "cocok"
+    assert result["claim_check"]["status"] == "belum_ada_referensi"
+    assert "suggestion" not in result and "Bukan sertifikasi" in r.json()["data"]["notice"]
     session.refresh(listing)
-    assert listing.visual_match["status"] == "suggestion" and listing.visual_match["needs_merchant_review"]
+    assert listing.visual_match["status"] == "scan" and listing.visual_match["claim_check"]
     assert listing.curator_verified_origin is None and listing.merchant_claimed_origin is None
 
 
-def test_flow_is_describe_then_writer_then_critic(client, session, seller, auth_header, catalog):
-    user, listing = seller
-    vlm = FakeVLM()
-    _analyze(client, auth_header(user), listing, vlm)
-    assert [c[0] for c in vlm.calls] == ["describe", "writer", "critic"]
-    assert vlm.calls[0][1] == "image/jpeg"  # the photo is downscaled before upload to the model
-    writer_input = vlm.calls[1][1]
-    assert writer_input["pengamatan"]["technique"] == "ikat"
-    assert {k["tradisi"] for k in writer_input["kandidat"]} == {"Tenun Ikat Sumba", "Songket Palembang"}
-    assert vlm.calls[2][1]["teks_kandidat"].startswith(writer_input["kandidat"][0]["tradisi"])
-    # both judges see the (downscaled) photo, and the critic sees the rival candidates
-    assert vlm.images == [("writer", "image/jpeg"), ("critic", "image/jpeg")]
-    assert [k["tradisi"] for k in vlm.calls[2][1]["kandidat_lain"]] == [writer_input["kandidat"][1]["tradisi"]]
-
-
-def test_pending_catalog_sources_are_never_used(client, session, seller, auth_header, embedder):
-    from scripts.seed_catalog import load_catalog
-
-    load_catalog(session, embedder, CATALOG)  # loaded but nobody approved it
-    user, listing = seller
-    vlm = FakeVLM()
-    result = _analyze(client, auth_header(user), listing, vlm).json()["data"]["result"]
-    assert result["suggestion"]["verdict"] == "insufficient" and result["candidates"] == []
-    assert any("disetujui kurator" in n for n in result["notes"])
-    assert vlm.count("writer") == 0  # no candidates, no paid writer call
-    assert result["technique"] == "ikat"  # the honest visual description is still returned
-
-
-def test_invented_candidate_ids_are_rejected(client, session, seller, auth_header, catalog):
-    user, listing = seller
-    vlm = FakeVLM(writer=[{**PICK_FIRST, "candidate_id": "k99"}])
-    s = _analyze(client, auth_header(user), listing, vlm).json()["data"]["result"]["suggestion"]
-    assert s["verdict"] == "insufficient" and s["tradition"] is None
-    assert vlm.count("critic") == 0
-
-
-def test_writer_may_decline(client, session, seller, auth_header, catalog):
-    user, listing = seller
-    vlm = FakeVLM(writer=[{"verdict": "insufficient", "candidate_id": None}])
-    result = _analyze(client, auth_header(user), listing, vlm).json()["data"]["result"]
-    assert result["suggestion"]["verdict"] == "insufficient"
-    assert any("Belum cukup kecocokan" in n for n in result["notes"])
-
-
-def test_critic_rejection_leads_to_one_revision(client, session, seller, auth_header, catalog):
-    user, listing = seller
-    vlm = FakeVLM(writer=[PICK_FIRST, {**PICK_FIRST, "candidate_id": "k2"}],
-                  critic=[{"supported": False, "reason": "warna tidak cocok"}, {"supported": True, "reason": "ok"}])
-    s = _analyze(client, auth_header(user), listing, vlm).json()["data"]["result"]["suggestion"]
-    assert s["verdict"] == "match" and s["confidence"] == "medium"  # not the retrieval top-1
-    assert "warna tidak cocok" in vlm.calls[3][1]["catatan_kritikus"]
-
-
-@pytest.mark.parametrize("critic", [
-    [{"supported": False, "reason": "x"}, {"supported": False, "reason": "y"}],
-    [{"reason": "lupa memberi verdict"}, {"supported": "ya"}],
+@pytest.mark.parametrize(("seen", "entry_technique", "status"), [
+    ("ikat", "Tenun ikat", "cocok"),
+    ("songket", "Tenun ikat", "berbeda"),
+    ("ikat", "Songket", "berbeda"),
+    ("plain_weave", "Tenun polos atau lurik", "cocok"),
+    ("printed_or_batik", "Tenun ikat", "berbeda"),
+    ("unknown", "Tenun ikat", "tidak_jelas"),
+    ("other", "Tenun ikat", "tidak_jelas"),
+    ("ikat", "Tenun", "tidak_jelas"),  # the catalog does not name one technique (e.g. tapis)
+    ("ikat", None, "tidak_jelas"),
 ])
-def test_unsupported_or_unclear_critic_means_no_claim(client, session, seller, auth_header, catalog, critic):
+def test_technique_check_rule(seen, entry_technique, status):
+    from app.ml.vision.vlm import technique_check
+
+    entry = GalleryEntry(name="Tradisi X", technique=entry_technique)
+    out = technique_check({"technique": seen}, entry)
+    assert out["status"] == status and "Tradisi X" in out["message"]
+    if status == "berbeda":
+        assert "kurator perlu" in out["message"]
+    assert technique_check({"technique": seen}, None) is None
+
+
+def test_a_photo_that_may_not_be_a_woven_textile_is_noted(client, session, seller, auth_header):
     user, listing = seller
-    s = _analyze(client, auth_header(user), listing, FakeVLM(writer=[PICK_FIRST, PICK_FIRST], critic=critic)) \
-        .json()["data"]["result"]["suggestion"]
-    assert s["verdict"] == "insufficient" and s["tradition"] is None and s["confidence"] == "low"
+    obs = {**OBS, "is_traditional_woven_textile": False}
+    result = _analyze(client, auth_header(user), listing, FakeVLM(observation=obs)).json()["data"]["result"]
+    assert any("bukan kain tenun" in n for n in result["notes"])
 
 
-def test_confidence_rule():
-    from app.ml.vision.vlm import confidence_from
-
-    cands = [{"id": "k1", "score": 0.80, "technique": "ikat"}, {"id": "k2", "score": 0.70, "technique": "ikat"}]
-    obs = {"technique": "ikat"}
-    assert confidence_from(True, cands[0], cands, obs) == "high"
-    assert confidence_from(True, cands[1], cands, obs) == "medium"  # not the top retrieval hit
-    assert confidence_from(True, cands[0], [cands[0], {**cands[1], "score": 0.79}], obs) == "medium"  # thin margin
-    assert confidence_from(True, cands[0], cands, {"technique": "songket"}) == "medium"
-    assert confidence_from(False, cands[0], cands, obs) == "low"
-
-
-def test_unknown_values_become_unknown_and_lists_are_capped(client, session, seller, auth_header, catalog):
+def test_unknown_values_become_unknown_and_lists_are_capped(client, session, seller, auth_header):
     user, listing = seller
     obs = {**OBS, "technique": "teleportation", "motif_category": "??", "motif_elements": [str(i) for i in range(20)]}
     result = _analyze(client, auth_header(user), listing, FakeVLM(observation=obs)).json()["data"]["result"]
     assert result["technique"] == "unknown" and result["motif_category"] == "unknown"
     assert len(result["motif_elements"]) == 6 and len(result["dominant_colors"]) == 3
+    assert result["technique_check"]["status"] == "tidak_jelas"
 
 
 def test_photos_are_downscaled_before_any_provider_call():
@@ -683,11 +608,11 @@ def test_photos_are_downscaled_before_any_provider_call():
     assert ctype == "image/jpeg" and max(Image.open(io.BytesIO(data)).size) == MAX_SIDE
 
 
-def test_malformed_writer_output_is_a_provider_failure(client, session, seller, auth_header, catalog):
+def test_malformed_description_is_a_provider_failure(client, session, seller, auth_header):
     from app.models import CvAnalysis
 
     user, listing = seller
-    r = _analyze(client, auth_header(user), listing, FakeVLM(writer=["bukan json"]))
+    r = _analyze(client, auth_header(user), listing, FakeVLM(observation="bukan json"))
     assert r.status_code == 503
     assert session.scalar(select(CvAnalysis)).status == "failed"
 
@@ -719,18 +644,16 @@ def test_only_the_listing_owner_can_analyze(client, session, seller, auth_header
     assert _analyze(client, auth_header(buyer), listing, FakeVLM()).status_code == 403
 
 
-def test_merchant_reviews_the_suggestion_without_touching_curator_data(client, session, seller, auth_header, catalog):
+def test_merchant_edits_the_claimed_origin_without_touching_curator_data(client, session, seller, auth_header):
     user, listing = seller
     h = auth_header(user)
-    url = f"{API}/listings/{listing.id}/motif-review"
-    assert client.patch(url, headers=h, json={"decision": "confirm"}).status_code == 422  # nothing to review yet
     _analyze(client, h, listing, FakeVLM())
-    r = client.patch(url, headers=h, json={"decision": "confirm", "merchant_claimed_origin": "Tenun Sumba Timur"})
+    r = client.patch(f"{API}/listings/{listing.id}", headers=h,
+                     json={"merchant_claimed_origin": "Tenun Sumba Timur", "expected_revision": listing.revision})
+    assert r.status_code == 200, r.text
     origin = r.json()["data"]["origin"]
-    assert origin["visual_match"]["review"]["decision"] == "confirm"
-    assert origin["visual_match"]["needs_merchant_review"] is False
     assert origin["merchant_claimed_origin"] == "Tenun Sumba Timur"
-    assert origin["curator_verified_origin"] is None  # three distinct fields stay distinct
+    assert origin["curator_verified_origin"] is None  # distinct fields stay distinct
 
 
 # ---------- the OpenRouter client itself (network replaced) ----------

@@ -46,3 +46,4 @@ web/.taste-skill/
 
 # Model comparison outputs (local)
 experiments/vlm_eval/results/
+experiments/vlm_eval/testset/

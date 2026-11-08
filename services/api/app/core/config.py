@@ -1,12 +1,17 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_JWT_SECRET = "dev-only-jwt-secret-change-me-before-any-real-use"
 DEFAULT_FILE_SECRET = "dev-only-file-secret-change-me-before-any-real-use"
 
 
+ROOT_ENV = Path(__file__).resolve().parents[4] / ".env"  # repo root: the only .env
+
+
 class Settings(BaseSettings):
-    # Reads the repo-root .env (two levels above services/api) or real env vars.
-    model_config = SettingsConfigDict(env_file=("../../.env", ".env"), extra="ignore")
+    # Reads the single repo-root .env (see ROOT_ENV) or real environment variables.
+    model_config = SettingsConfigDict(env_file=ROOT_ENV, extra="ignore")
 
     app_env: str = "development"
     database_url: str = "postgresql+psycopg://tenara:tenara@localhost:5432/tenara"

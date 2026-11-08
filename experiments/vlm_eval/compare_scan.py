@@ -56,8 +56,7 @@ CASES = [
      ["kalumpang", "sekomandi", "mamuju"]),
     ("timor_heirloom", TEST / "heirloom-ikat-textile-from-timor.jpg", "ikat", ["timor", "amarasi", "insana"]),
 ]
-DEFAULT_MODELS = ["google/gemma-4-31b-it", "google/gemma-4-26b-a4b-it", "xiaomi/mimo-v2.6-flash",
-                  "openai/gpt-6-luna"]
+DEFAULT_MODELS = ["google/gemma-4-26b-a4b-it", "google/gemma-4-31b-it"]  # focus: cheapest + fastest
 
 
 def key_usage() -> float | None:

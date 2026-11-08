@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Compare vision models on the real fabric-scan pipeline (describe -> web search -> judge).
+"""Compare vision models on the real fabric-scan pipeline (describe -> pgvector RAG -> writer -> critic).
 
-Runs the production code in services/api/app/ml/vision/vlm.py once per model, with each model doing
-all three steps, and records the cost OpenRouter bills for every call (`usage.cost`, which includes
-the web-plugin fee on search calls). Spend is also cross-checked against the key's usage before/after.
+Runs the production code in services/api/app/ml/vision/vlm.py once per model (each model does the
+vision description and the writer/critic steps; retrieval is local and free) and records the cost
+OpenRouter bills for every call (`usage.cost`). Spend is also cross-checked against the key's usage
+before/after. Needs the catalog loaded AND approved by a curator (scripts.seed_catalog).
 
 Run from services/api (needs the app package, Postgres for Gallery names, and OPENROUTER_API_KEY in
 the repo-root .env):
@@ -19,13 +20,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "services" / "api"))
 
-from sqlalchemy import select  # noqa: E402
 
-from app.core.config import settings  # noqa: E402
-from app.db.base import SessionLocal  # noqa: E402
-from app.ml import llm_client  # noqa: E402
-from app.ml.vision import vlm  # noqa: E402
-from app.models import GalleryEntry  # noqa: E402
+from app.core.config import settings
+from app.db.base import SessionLocal
+from app.ml import llm_client
+from app.ml.text.embedding import get_embedder
+from app.ml.vision import vlm
 
 SIKKA = ROOT / "data/tenun_datasets/mendeley_sikka_v3/extracted/sikka_motif_512"
 IMG = ROOT / "web/public/img"
@@ -76,15 +76,29 @@ def recording_chat(messages, **kw):
         CALLS.append(rec)
 
 
-def run(models: list[str], queries: int, budget: float, out_dir: Path) -> None:
+class _StepTagged:
+    """Tags writer vs critic calls so costs can be reported per task."""
+
+    def __init__(self, client):
+        self.client, self.name = client, client.name
+
+    def complete(self, system, user):
+        STATE["step"] = "writer" if vlm.WRITER in system else "critic"
+        return self.client.complete(system, user)
+
+
+def run(models: list[str], budget: float, out_dir: Path) -> None:
     llm_client.chat = recording_chat  # the pipeline calls llm_client.chat; we only observe it
     settings.llm_provider = "openrouter"
-    with SessionLocal() as s:
-        candidates = [n for (n,) in s.execute(select(GalleryEntry.name).where(GalleryEntry.status == "published"))]
+    embedder = get_embedder()
+    session = SessionLocal()
     before = key_usage()
     results = []
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    live = (out_dir / f"compare-{stamp}.jsonl").open("a")  # one line per scan, so a stopped run keeps its data
     for model in models:
-        settings.llm_model = settings.llm_search_model = model
+        settings.llm_model = model
         client = vlm.OpenAICompatVLM()
         for case, path, tech, keywords in CASES:
             spent = sum(c["cost"] for c in CALLS)
@@ -96,34 +110,32 @@ def run(models: list[str], queries: int, budget: float, out_dir: Path) -> None:
             row = {"model": model, "case": case, "expected_technique": tech, "error": None}
             try:
                 STATE["step"] = "describe"
+                t0 = time.time()
                 obs = vlm.normalize_observation(client.describe(image, ctype))
-                STATE["step"] = "search"
-                try:
-                    evidence = vlm.clean_evidence(client.search(obs["search_queries"][:queries]))
-                except RuntimeError as exc:
-                    evidence, row["search_error"] = [], str(exc)[:200]
-                public = {k: v for k, v in obs.items() if k != "search_queries"}
-                sources = [{k: e[k] for k in ("id", "domain", "title", "excerpt", "tradition", "region",
-                                              "motif_notes")} for e in evidence]
-                STATE["step"] = "judge"
-                judgment = (vlm.normalize_judgment(client.judge(image, ctype, public, sources, candidates),
-                                                   evidence, candidates)
-                            if evidence else vlm.normalize_judgment({}, [], candidates))
-                said = " ".join(filter(None, [judgment["tradition"], judgment["region"]])).lower()
-                row.update(technique=obs["technique"], queries=obs["search_queries"][:queries],
-                           evidence=[(e["domain"], e["tier"]) for e in evidence], verdict=judgment["verdict"],
-                           tradition=judgment["tradition"], region=judgment["region"],
-                           confidence=judgment["confidence"], reason=judgment["reason"],
+                candidates = vlm.retrieve(session, embedder, obs)
+                STATE["step"] = "writer_critic"
+                suggestion, _evidence = vlm.identify(_StepTagged(client), obs, candidates)
+                said = " ".join(filter(None, [suggestion["tradition"], suggestion["region"]])).lower()
+                ranked = [c["tradition"] for c in candidates]
+                row.update(seconds=round(time.time() - t0, 1), technique=obs["technique"],
+                           shortlist=ranked, verdict=suggestion["verdict"],
+                           tradition=suggestion["tradition"], region=suggestion["region"],
+                           confidence=suggestion["confidence"], reason=suggestion["reason"],
                            technique_ok=obs["technique"] == tech,
+                           in_shortlist=any(any(k in (t or "").lower() for k in keywords) for t in ranked),
                            region_ok=any(k in said for k in keywords) if said else None)
             except RuntimeError as exc:
                 row["error"] = str(exc)[:200]
+            row["cost"] = round(sum(c["cost"] for c in CALLS if c["model"] == model and c["case"] == case), 6)
             results.append(row)
+            live.write(json.dumps(row, ensure_ascii=False) + "\n")
+            live.flush()
             print(f"{model:28s} {case:20s} tech={row.get('technique')} verdict={row.get('verdict')} "
-                  f"said={row.get('tradition')}/{row.get('region')} ok={row.get('region_ok')} err={row['error']}")
+                  f"said={row.get('tradition')}/{row.get('region')} ok={row.get('region_ok')} "
+                  f"${row['cost']:.5f} {row.get('seconds')}s err={row['error']}", flush=True)
+    live.close()
+    session.close()
     after = key_usage()
-    out_dir.mkdir(parents=True, exist_ok=True)
-    stamp = time.strftime("%Y%m%d-%H%M%S")
     (out_dir / f"compare-{stamp}.json").write_text(json.dumps(
         {"calls": CALLS, "results": results, "key_usage_before": before, "key_usage_after": after},
         indent=1, ensure_ascii=False))
@@ -139,24 +151,23 @@ def summary(models, results, before, after) -> None:
             continue
         n = len(rows)
 
-        def avg(step):
+        def avg(step, calls=calls):
             xs = [c["cost"] for c in calls if c["step"] == step]
             return (sum(xs) / len(xs)) if xs else 0.0
 
         scan_costs = {}
         for c in calls:
             scan_costs[c["case"]] = scan_costs.get(c["case"], 0) + c["cost"]
-        secs = {}
-        for c in calls:
-            secs[c["case"]] = secs.get(c["case"], 0) + (c["seconds"] or 0)
+        secs = {r["case"]: r.get("seconds") or 0 for r in rows}
         print(f"\n{m}")
-        print(f"  teknik benar      : {sum(1 for r in rows if r.get('technique_ok'))}/{n}")
+        print(f"  teknik benar      : {sum(1 for r in rows if r.get('technique_ok'))}/{n}"
+              f"   tradisi benar ada di daftar kandidat: {sum(1 for r in rows if r.get('in_shortlist'))}/{n}")
         print(f"  daerah benar      : {sum(1 for r in rows if r.get('region_ok'))}/{n}"
               f"   salah: {sum(1 for r in rows if r.get('region_ok') is False)}"
               f"   abstain: {sum(1 for r in rows if r.get('verdict') == 'insufficient')}"
               f"   error: {sum(1 for r in rows if r['error'])}")
-        print(f"  biaya rata-rata   : deskripsi ${avg('describe'):.5f} | per query search ${avg('search'):.5f}"
-              f" | penilaian ${avg('judge'):.5f}")
+        print(f"  biaya rata-rata   : deskripsi ${avg('describe'):.5f} | penulis ${avg('writer'):.5f}"
+              f" | kritikus ${avg('critic'):.5f}")
         print(f"  biaya per scan    : ${sum(scan_costs.values()) / max(len(scan_costs), 1):.5f}"
               f"   waktu per scan: {sum(secs.values()) / max(len(secs), 1):.1f} s")
     total = sum(c["cost"] for c in CALLS)
@@ -168,8 +179,7 @@ def summary(models, results, before, after) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="*", default=DEFAULT_MODELS)
-    ap.add_argument("--queries", type=int, default=2)
     ap.add_argument("--budget", type=float, default=2.0)
     ap.add_argument("--out", type=Path, default=ROOT / "experiments/vlm_eval/results")
     a = ap.parse_args()
-    run(a.models, a.queries, a.budget, a.out)
+    run(a.models, a.budget, a.out)

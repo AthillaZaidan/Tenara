@@ -138,7 +138,8 @@ def test_upload_requires_valid_consent_and_a_good_photo(client, ai, h, make_user
     assert _upload(client, h, c["id"], ctype="application/pdf").status_code == 422
     assert _upload(client, h, c["id"], data=b"not an image").status_code == 422
     assert _upload(client, h, c["id"], data=_jpeg((200, 300))).status_code == 422  # too small
-    assert _upload(client, h, c["id"], data=_jpeg((900, 500))).status_code == 422  # landscape
+    # landscape is fine (laptop webcams): framing is checked by the measurement job (feet, edges, pose)
+    assert _upload(client, h, c["id"], data=_jpeg((900, 500))).status_code == 201
     assert _upload(client, h, c["id"], data=b"x" * (settings.photo_max_bytes + 5)).status_code == 422
     assert _upload(client, h, c["id"]).status_code == 201
     assert client.post(f"{API}/body-photos", headers=h, data={"consent_id": c["id"]}).status_code == 422

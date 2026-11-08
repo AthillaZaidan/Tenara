@@ -67,9 +67,6 @@ def upload_photo(session: Session, storage: Storage, user: User, data: bytes, co
     if min(image.size) < 300:
         raise AppValidationError("Resolusi foto terlalu kecil (minimal 300 px pada sisi pendek)",
                                  field="file")
-    if image.height < image.width * 0.9:
-        raise AppValidationError("Gunakan foto potret: berdiri, seluruh badan, menghadap depan",
-                                 field="file")
     clean = io.BytesIO()  # re-encoding drops EXIF (including any GPS location)
     image.save(clean, format="JPEG", quality=90)
     file = create_file(session, storage, owner_id=user.id, kind="body_photo", data=clean.getvalue(),

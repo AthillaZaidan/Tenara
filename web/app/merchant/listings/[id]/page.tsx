@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import type { Listing } from "@/components/ListingCard";
+import { ScanPanel } from "@/components/ScanPanel";
 import { Upload } from "@/components/Upload";
+import type { VisualMatchData } from "@/components/VisualMatch";
 import { Field, Notice, Page, RequireAuth, useAction, useLoad } from "@/components/ui";
 import { api, fileUrl, idr } from "@/lib/api";
 
@@ -37,6 +39,7 @@ function Manage() {
         <div className="grid gap-4 sm:grid-cols-3">{x.images.map((im) => <img key={im.url} src={fileUrl(im.url)} alt={im.caption ?? x.title} className="aspect-square w-full object-cover" />)}</div>
         <Upload kind="listing_photo" label="Tambah foto kain (JPG, PNG, atau WebP)" accept="image/jpeg,image/png,image/webp" onUploaded={(f) => go(() => api(`/listings/${id}/images`, { body: { file_id: f.id, caption: x.title } }))} />
       </section>
+      <ScanPanel listingId={id} current={(x.origin.visual_match as VisualMatchData | null) ?? null} hasPhoto={x.images.length > 0} onChanged={refresh} />
       <section className="grid gap-4">
         <h3 className="text-xl font-medium" style={{ fontFamily: "var(--font-hanken)" }}>Stok</h3>
         <p className="text-base">{meter ? `Total ${x.stock.total_length_m ?? 0} m, potongan utuh terpanjang ${x.stock.longest_continuous_m ?? 0} m.` : `${x.stock.pieces} potong.`} Pembeli menahan satu potongan utuh selama pembayaran.</p>

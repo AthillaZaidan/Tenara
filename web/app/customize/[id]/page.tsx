@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PhotoMeasure } from "@/components/PhotoMeasure";
 import { Field, Notice, Page, RequireAuth, useAction, useLoad } from "@/components/ui";
 import { api, fileUrl, idr } from "@/lib/api";
 import { DIM_LABEL, OPTION_LABEL, VALUE_LABEL, label, type OptionDef } from "@/lib/design";
@@ -128,7 +129,8 @@ function Measurements({ cust, onChanged }: { cust: Customization; onChanged: () 
   };
   return (
     <div className="grid gap-5">
-      <p className="text-base">Ukur dengan meteran dan isi dalam sentimeter. Ukuran Anda hanya dibagikan ke penjahit yang Anda pilih.</p>
+      <PhotoMeasure custId={cust.id} onMeasured={() => { existing.reload(); onChanged(); }} />
+      <p className="text-base">Ukur dengan meteran dan isi dalam sentimeter, atau koreksi hasil dari foto. Ukuran Anda hanya dibagikan ke penjahit yang Anda pilih.</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Tinggi badan (cm)"><input className="field" inputMode="decimal" value={height || String(set?.height_cm ?? "")} onChange={(e) => setHeight(e.target.value)} /></Field>
         {cust.template.required_dimensions.map((k) => (

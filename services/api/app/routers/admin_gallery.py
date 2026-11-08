@@ -9,6 +9,9 @@ from app.core.errors import NotFound
 from app.core.pagination import paginate
 from app.core.responses import ok
 from app.db.base import get_session
+from app.ml.text import story_gen
+from app.ml.text.embedding import Embedder, get_embedder
+from app.ml.text.story_gen import TextLLM, get_story_llm
 from app.models import CulturalSource, GalleryEntry, Story, StoryCitation, User
 from app.schemas.gallery import (
     ChunkCreate,
@@ -20,9 +23,6 @@ from app.schemas.gallery import (
     StoryCreate,
 )
 from app.services import gallery as svc
-from app.services import story_gen
-from app.services.embedding import Embedder, get_embedder
-from app.services.story_gen import TextLLM, get_story_llm
 
 router = APIRouter(prefix="/admin", tags=["admin-gallery"])
 Admin = Depends(require_role("admin"))

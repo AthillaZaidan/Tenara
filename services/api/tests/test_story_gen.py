@@ -3,9 +3,9 @@ import json
 import pytest
 
 from app.main import app
+from app.ml.text.story_gen import CRITIC, WRITER, get_story_llm
 from app.models import Story
 from app.services import gallery as g
-from app.services.story_gen import CRITIC, WRITER, get_story_llm
 
 API = "/api/v1"
 

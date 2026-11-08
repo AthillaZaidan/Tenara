@@ -7,6 +7,9 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.ml.vision import body_measure, render
+from app.ml.vision.body_measure import MeasurementFailure
+from app.ml.vision.pose import get_pose_detector
 from app.models import (
     BodyPhoto,
     Customization,
@@ -19,11 +22,9 @@ from app.models import (
     MeasurementValue,
     Preview,
 )
-from app.services import body_measure, jobs, photos, render
-from app.services.body_measure import MeasurementFailure
+from app.services import jobs, photos
 from app.services.files import create_file
 from app.services.jobs import PermanentJobError
-from app.services.pose import get_pose_detector
 from app.services.storage import get_storage
 
 PRODUCT_METHOD = "pillow_flat_composite_v1"

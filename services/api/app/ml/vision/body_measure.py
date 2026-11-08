@@ -5,8 +5,8 @@ NOT inferred; they are returned as manual_required so nothing is invented.
 """
 import math
 
+from app.ml.vision.pose import PoseResult
 from app.services.measurements import DIMENSION_RANGES
-from app.services.pose import PoseResult
 
 # Anthropometric ratios (fraction of stature) used only for scale calibration.
 NOSE_TO_ANKLE = 0.897
@@ -24,7 +24,7 @@ def _px(a, b, size) -> float:
 
 
 def _mid(a, b):
-    from app.services.pose import Landmark
+    from app.ml.vision.pose import Landmark
 
     return Landmark((a.x + b.x) / 2, (a.y + b.y) / 2, min(a.visibility, b.visibility))
 

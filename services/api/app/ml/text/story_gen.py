@@ -19,11 +19,11 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.errors import AppValidationError, ServiceUnavailable
+from app.ml.text.embedding import Embedder
+from app.ml.vision.vlm import OpenAICompatVLM
 from app.models import CulturalSource, GalleryEntry, SourceChunk, Story, User
 from app.services import audit
 from app.services import gallery as gallery_svc
-from app.services.embedding import Embedder
-from app.services.vlm import OpenAICompatVLM
 
 MAX_WORDS = 180
 MAX_CHUNKS = 8

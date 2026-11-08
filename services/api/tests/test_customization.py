@@ -4,10 +4,10 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import select
 
+from app.ml.text.prompt_interpreter import InterpretationFailed, LLMInterpreter
 from app.models import FabricListing, FabricStockUnit, MeasurementValue
 from app.services import jobs
 from app.services import templates as templates_svc
-from app.services.prompt_interpreter import InterpretationFailed, LLMInterpreter
 
 API = "/api/v1"
 DIMS = {"chest_circumference": 96, "shoulder_width": 42, "back_length": 70, "sleeve_length": 22}
@@ -345,7 +345,7 @@ def test_llm_failure_falls_back_to_rules(client, h, make_listing, monkeypatch):
     cust = _create(client, h, make_listing())
     monkeypatch.setattr("app.services.customization.get_interpreters",
                         lambda: [LLMInterpreter(boom), __import__(
-                            "app.services.prompt_interpreter", fromlist=["x"]).RuleBasedInterpreter()])
+                            "app.ml.text.prompt_interpreter", fromlist=["x"]).RuleBasedInterpreter()])
     p = _prompt(client, h, cust["id"], "kancing kayu")
     assert p["interpreter"] == "rules" and p["changes"][0]["value"] == "wood_option_01"
     with pytest.raises(InterpretationFailed):

@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 from app.core.pagination import paginate
 from app.core.responses import ok
 from app.db.base import get_session
+from app.ml.text.embedding import Embedder, get_embedder
 from app.models import GalleryEntry
 from app.schemas.gallery import SearchIn
 from app.services import gallery as svc
-from app.services.embedding import Embedder, get_embedder
 
 router = APIRouter(tags=["gallery"])
 

@@ -17,9 +17,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.base import SessionLocal
+from app.ml.text.embedding import Embedder, get_embedder
 from app.models import GalleryEntry
 from app.services import gallery as svc
-from app.services.embedding import Embedder, get_embedder
 
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DATA = ROOT / "data" / "tenun_datasets"

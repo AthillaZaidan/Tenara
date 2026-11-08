@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.errors import AppValidationError, NotFound
 from app.core.revision import check_revision
+from app.ml.text.embedding import Embedder
 from app.models import (
     CulturalSource,
     File,
@@ -20,7 +21,6 @@ from app.models import (
     User,
 )
 from app.services import audit
-from app.services.embedding import Embedder
 
 EDITABLE_FIELDS = {"name", "kind", "aliases", "textile_type", "technique", "region", "community",
                    "summary"}

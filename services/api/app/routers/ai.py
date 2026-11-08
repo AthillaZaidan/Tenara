@@ -11,6 +11,8 @@ from app.core.errors import AppValidationError, NotFound
 from app.core.ownership import get_owned_or_404
 from app.core.responses import ok
 from app.db.base import get_session
+from app.ml.vision import vlm
+from app.ml.vision.vlm import VLMClient, get_vlm
 from app.models import (
     BodyPhoto,
     FabricListing,
@@ -29,13 +31,12 @@ from app.schemas.ai import (
     TryOnIn,
     VerifyOriginIn,
 )
-from app.services import audit, jobs, photos, vlm
+from app.services import audit, jobs, photos
 from app.services import customization as cust_svc
 from app.services import listings as listings_svc
 from app.services import measurements as meas_svc
 from app.services.partners import active_merchant
 from app.services.storage import Storage, get_storage
-from app.services.vlm import VLMClient, get_vlm
 
 router = APIRouter(tags=["ai"])
 

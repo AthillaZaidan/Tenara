@@ -12,8 +12,8 @@ from app.core.config import settings
 from app.core.security import create_access_token, hash_password
 from app.db.base import get_session
 from app.main import app
+from app.ml.text.embedding import FakeEmbedder, get_embedder
 from app.models import RoleAssignment, User
-from app.services.embedding import FakeEmbedder, get_embedder
 
 API_DIR = Path(__file__).resolve().parent.parent
 

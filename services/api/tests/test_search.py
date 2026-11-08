@@ -109,7 +109,7 @@ def test_unpublished_entries_are_never_returned(client, session, make_user, seed
 
 def test_keyword_mode_without_embedder(client, session, seeded):
     from app.main import app
-    from app.services.embedding import get_embedder
+    from app.ml.text.embedding import get_embedder
 
     app.dependency_overrides[get_embedder] = lambda: None
     data = _search(client, query="songket").json()["data"]

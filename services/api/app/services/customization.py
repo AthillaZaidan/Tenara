@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import AppValidationError, NotFound, StaleRevision
 from app.core.revision import check_revision
+from app.ml.text.prompt_interpreter import InterpretationFailed, get_interpreters
 from app.models import (
     Customization,
     DesignRevision,
@@ -18,7 +19,6 @@ from app.models import (
 from app.services import audit, jobs
 from app.services import listings as listings_svc
 from app.services import templates as templates_svc
-from app.services.prompt_interpreter import InterpretationFailed, get_interpreters
 from app.services.signing import make_token
 from app.services.template_defs import defaults
 

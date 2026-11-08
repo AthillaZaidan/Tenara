@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 from PIL import Image, ImageDraw, ImageOps, ImageStat
 
-from app.services.pose import PoseResult
+from app.ml.vision.pose import PoseResult
 
 W, H = 600, 800
 CX = 300

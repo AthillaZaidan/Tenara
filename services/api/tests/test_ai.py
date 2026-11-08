@@ -17,6 +17,9 @@ from test_customization import (  # noqa: F401  (fixtures + helpers shared with 
 
 from app.core.config import settings
 from app.main import app
+from app.ml.vision import render
+from app.ml.vision.pose import Landmark, PoseResult, get_pose_detector
+from app.ml.vision.vlm import get_vlm
 from app.models import (
     AuditEvent,
     BodyPhoto,
@@ -27,11 +30,9 @@ from app.models import (
     MeasurementSet,
     Preview,
 )
-from app.services import jobs, photos, render, template_defs
+from app.services import jobs, photos, template_defs
 from app.services.files import create_file
-from app.services.pose import Landmark, PoseResult, get_pose_detector
 from app.services.storage import get_storage
-from app.services.vlm import get_vlm
 from app.workers import handlers
 
 API = "/api/v1"

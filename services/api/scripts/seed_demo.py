@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
 from app.db.base import SessionLocal
+from app.ml.text.embedding import Embedder, get_embedder
 from app.models import (
     DeliveryAddress,
     FabricListing,
@@ -29,7 +30,6 @@ from app.models import (
 )
 from app.services import gallery as gallery_svc
 from app.services import templates as templates_svc
-from app.services.embedding import Embedder, get_embedder
 from app.services.files import create_file
 from app.services.storage import Storage, get_storage
 from scripts.seed_admin import seed_admin

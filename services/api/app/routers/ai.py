@@ -11,6 +11,9 @@ from app.core.errors import AppValidationError, NotFound
 from app.core.ownership import get_owned_or_404
 from app.core.responses import ok
 from app.db.base import get_session
+from app.ml.text import product_story
+from app.ml.text.embedding import Embedder, get_embedder
+from app.ml.text.story_gen import TextLLM, get_story_llm
 from app.ml.vision import photo_match, vlm
 from app.ml.vision.photo_match import PhotoEmbedder, get_photo_embedder
 from app.ml.vision.vlm import VLMClient, get_vlm
@@ -22,6 +25,7 @@ from app.models import (
     Job,
     ListingImage,
     MeasurementSet,
+    ProductStory,
     User,
 )
 from app.schemas.ai import (
@@ -166,6 +170,42 @@ def analyze_fabric(body: AnalyzeIn, user: User = Depends(current_user),
                            file.content_type, client, photo_embedder)
     session.commit()
     return ok(vlm.analysis_out(row))
+
+
+@router.post("/listings/{listing_id}/story", status_code=201)
+def draft_product_story(listing_id: uuid.UUID, user: User = Depends(current_user),
+                        session: Session = Depends(get_session),
+                        llm: TextLLM | None = Depends(get_story_llm),
+                        embedder: Embedder | None = Depends(get_embedder)):
+    """Writer + critic draft of the listing's cultural story (after a scan; the seller publishes it)."""
+    listing = listings_svc.owned_listing(session, active_merchant(session, user), listing_id)
+    story = product_story.generate(session, user, listing, llm, embedder)
+    session.commit()
+    return ok(product_story.story_out(story))
+
+
+@router.get("/listings/{listing_id}/story")
+def listing_stories(listing_id: uuid.UUID, user: User = Depends(current_user),
+                    session: Session = Depends(get_session)):
+    listing = listings_svc.owned_listing(session, active_merchant(session, user), listing_id)
+    rows = list(session.scalars(select(ProductStory).where(ProductStory.listing_id == listing.id,
+                                                            ProductStory.status != "superseded")
+                                .order_by(ProductStory.created_at.desc())))
+    draft = next((s for s in rows if s.status == "draft"), None)
+    published = next((s for s in rows if s.status == "published"), None)
+    return ok({"draft": product_story.story_out(draft), "published": product_story.story_out(published)})
+
+
+@router.post("/listings/{listing_id}/story/{story_id}/publish")
+def publish_product_story(listing_id: uuid.UUID, story_id: uuid.UUID, user: User = Depends(current_user),
+                          session: Session = Depends(get_session)):
+    listing = listings_svc.owned_listing(session, active_merchant(session, user), listing_id)
+    story = session.get(ProductStory, story_id)
+    if story is None or story.listing_id != listing.id:
+        raise NotFound("Story not found")
+    product_story.publish(session, user, story)
+    session.commit()
+    return ok(product_story.story_out(story))
 
 
 @router.get("/admin/listings/{listing_id}/claim-check")

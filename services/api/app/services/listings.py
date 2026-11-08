@@ -14,6 +14,7 @@ from app.models import (
     GalleryEntry,
     ListingImage,
     MerchantProfile,
+    ProductStory,
     User,
 )
 from app.services import audit
@@ -181,6 +182,13 @@ def images_out(session: Session, listing_id: uuid.UUID) -> list[dict]:
     return [{"url": f"/api/v1/files/{r.file_id}", "caption": r.caption} for r in rows]
 
 
+def _published_story(session: Session, listing_id) -> dict | None:
+    story = session.scalar(select(ProductStory).where(ProductStory.listing_id == listing_id,
+                                                      ProductStory.status == "published"))
+    return {"body": story.body, "citations": story.citations,
+            "published_at": story.published_at} if story else None
+
+
 def listing_out(session: Session, listing: FabricListing, *, include_merchant: bool = True) -> dict:
     """include_merchant=True is the public view: it also leaves out the photo claim check, which is
     a signal for the merchant and the curator, not a public label on the seller."""
@@ -205,6 +213,7 @@ def listing_out(session: Session, listing: FabricListing, *, include_merchant: b
         "status": listing.status, "revision": listing.revision,
         "images": images_out(session, listing.id), "stock": stock_summary(session, listing),
         "custom_order_ready": not missing, "missing_for_custom": missing,
+        "story": _published_story(session, listing.id),
     }
     if include_merchant:
         merchant = session.get(MerchantProfile, listing.merchant_id)

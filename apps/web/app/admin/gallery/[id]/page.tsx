@@ -25,7 +25,7 @@ function Manage() {
     <div className="grid max-w-3xl gap-10">
       <div>
         <p className="text-base text-muted">{e.status === "published" ? "Terbit" : e.status === "archived" ? "Diarsipkan" : "Draf"} · revisi {e.revision}</p>
-        <h2 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{e.name}</h2>
+        <h1 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{e.name}</h1>
         <p className="text-lg">{[e.technique, e.region, e.community].filter(Boolean).join(" · ")}</p>
       </div>
       {act.error && <Notice tone="error">{act.error}</Notice>}

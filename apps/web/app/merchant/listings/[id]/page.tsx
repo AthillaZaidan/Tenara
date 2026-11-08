@@ -29,7 +29,7 @@ function Manage() {
     <div className="grid max-w-3xl gap-12">
       <div>
         <p className="text-base text-muted">{x.status === "published" ? "Terbit" : x.status === "draft" ? "Draf" : "Diarsipkan"} · {idr(x.price_idr)} per {meter ? "meter" : "potong"}</p>
-        <h2 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{x.title}</h2>
+        <h1 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{x.title}</h1>
       </div>
       {act.error && <Notice tone="error">{act.error}</Notice>}
       <section className="grid gap-4">

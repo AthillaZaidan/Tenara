@@ -35,7 +35,7 @@ function Review() {
       <div className="grid content-start gap-8 md:col-span-7">
         <div>
           <p className="text-base text-muted">{b.appeal.basis === "no_response" ? "Mitra tidak menanggapi dalam batas waktu" : "Penolakan mitra dibanding"} · status {b.appeal.status.replaceAll("_", " ")}</p>
-          <h2 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>Klaim {b.claim.component}</h2>
+          <h1 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>Klaim {b.claim.component}</h1>
           <p className="mt-3 max-w-[60ch]">{b.claim.description}</p>
           <p className="mt-3 max-w-[60ch]"><span className="text-muted">Alasan banding: </span>{b.appeal.reason}</p>
         </div>

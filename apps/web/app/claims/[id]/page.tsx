@@ -59,7 +59,7 @@ function Detail() {
       <div className="grid content-start gap-10 md:col-span-7">
         <div>
           <p className="text-base text-muted">Klaim terhadap {c.target_role === "tailor" ? "penjahit" : "penjual"} · bagian {c.component} · {when(c.created_at)}</p>
-          <h2 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{STATUS[c.status] ?? c.status}</h2>
+          <h1 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{STATUS[c.status] ?? c.status}</h1>
           <p className="mt-4 max-w-[60ch]">{c.description}</p>
         </div>
 

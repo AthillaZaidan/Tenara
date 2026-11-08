@@ -160,7 +160,7 @@ function Detail() {
       <div className="grid content-start gap-10 md:col-span-7">
         <div>
           <p className="text-base text-muted">Permintaan baju · revisi {req.revision}</p>
-          <h2 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{REQUEST_STATUS[req.status] ?? req.status}</h2>
+          <h1 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{REQUEST_STATUS[req.status] ?? req.status}</h1>
         </div>
         {role === "buyer" && <Buyer req={req} quotes={quotes.data ?? []} reload={() => { reload(); quotes.reload(); }} />}
         {role === "merchant" && <Merchant req={req} reload={reload} />}

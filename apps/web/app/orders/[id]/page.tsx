@@ -74,7 +74,7 @@ function Detail() {
       <div className="grid content-start gap-10 md:col-span-7">
         <div>
           <p className="text-base text-muted">{o.kind === "custom" ? "Baju custom" : "Pembelian kain"} · {when(o.created_at)}</p>
-          <h2 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{statusLabel(o.status)}</h2>
+          <h1 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{statusLabel(o.status)}</h1>
           <p className="mt-2 text-lg">{snap.listing?.title}{snap.merchant?.shop_name ? ` · ${snap.merchant.shop_name}` : ""}</p>
         </div>
 

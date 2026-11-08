@@ -9,6 +9,9 @@ function Overview() {
   const appeals = useLoad(() => api<{ items: { status: string }[] }>("/admin/appeals"), "b");
   const entries = useLoad(() => api<{ items: { status: string }[] }>("/admin/gallery?limit=100"), "c");
   const sources = useLoad(() => api<{ items: { approval_status: string }[] }>("/admin/sources?approval_status=pending&limit=100"), "d");
+  const refs = useLoad(() => api<{ items: { pending: number; gives_verdict: boolean }[] }>("/admin/reference-photos/coverage"), "e");
+  const refPending = refs.data?.items.reduce((n, i) => n + i.pending, 0) ?? 0;
+  const refReady = refs.data?.items.filter((i) => i.gives_verdict).length ?? 0;
   const pendingApps = apps.data?.items.filter((a) => ["submitted", "in_review", "information_requested"].includes(a.status)).length ?? 0;
   const openAppeals = appeals.data?.items.filter((a) => a.status !== "decided").length ?? 0;
   const drafts = entries.data?.items.filter((e) => e.status !== "published").length ?? 0;
@@ -16,6 +19,7 @@ function Overview() {
     ["/admin/partners", "Pendaftaran mitra", `${pendingApps} menunggu`],
     ["/admin/gallery", "Gallery", `${drafts} belum terbit`],
     ["/admin/sources", "Sumber budaya", `${sources.data?.items.length ?? 0} menunggu tinjauan`],
+    ["/admin/references", "Foto referensi", `${refPending} menunggu · ${refReady} tradisi bisa dinilai`],
     ["/admin/appeals", "Banding klaim", `${openAppeals} terbuka`],
     ["/orders?as=admin", "Semua pesanan", "simulasi pengiriman, penyelesaian"],
   ];

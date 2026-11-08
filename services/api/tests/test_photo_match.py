@@ -226,3 +226,13 @@ def test_claim_check_is_private_to_the_merchant_and_curators(client, session, se
     admin = auth_header(make_user("curator@example.com", roles=(("admin", "active"),)))
     data = client.get(url, headers=admin).json()["data"]
     assert data["claim_check"]["status"] == "belum_ada_referensi" and data["entry"]["id"] == str(listing.entry_id)
+
+
+def test_a_thinly_covered_true_tradition_still_competes(session, emb, two_traditions, tradition):
+    """A false claim must not win by default because the true tradition has too few sources."""
+    sumba, _ = two_traditions
+    lamaholot = tradition("Tenun Lamaholot")
+    _refs(session, emb, lamaholot, PURPLE, 8, sources=("satu-sumber",), seed=900)
+    out = check_claim(session, emb, _img(PURPLE, 901), sumba)
+    assert out["status"] == "perlu_dicek" and out["top"][0]["tradition"] == "Tenun Lamaholot"
+    assert check_claim(session, emb, _img(PURPLE, 902), lamaholot)["status"] == "belum_ada_referensi"

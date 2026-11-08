@@ -1,23 +1,29 @@
 """Check a seller's tradition claim against curator-approved reference photos (local, no LLM).
 
 The listing's Gallery entry is the seller's claim. The photo is embedded with SigLIP 2 (five motif
-crops, averaged) and compared with APPROVED reference photos. A tradition is judged only when it has
-at least MIN_REFS modern references from at least MIN_SOURCES different sources; its score is the
-mean similarity of its TOP_M nearest references.
+crops, averaged) and compared with APPROVED reference photos. Each tradition with approved modern references gets a
+score: the mean similarity of its TOP_M nearest ones. Every such tradition competes, but a verdict is
+given only for a claimed tradition with at least MIN_REFS modern references from MIN_SOURCES sources.
+(Leaving thinly covered traditions out of the competition let a false claim win by default: a Sikka
+photo claimed as Sumba came out "konsisten" while Sikka had references from a single source.)
 
-    konsisten            the claimed tradition scores highest among the judged traditions
-    perlu_dicek          another judged tradition scores higher, or the photo is a near-copy of a
+    konsisten            the claimed tradition scores highest of all competing traditions
+    perlu_dicek          another tradition scores higher, or the photo is a near-copy of a
                          reference photo (then it cannot show the seller's own cloth)
-    belum_ada_referensi  the claimed tradition is not judged yet; a curator checks by hand
+    belum_ada_referensi  the claimed tradition does not have enough references yet; a curator
+                         checks by hand
 
 Never a verification: the curator decides; the result only helps them look.
 
 Why these rules (experiments/vlm_eval, strict test: references from another source than the photo):
-  - "claimed tradition ranks first" accepted 63% of true claims and 7% of false ones on museum and
-    Commons photos; accepting anything within 0.01 of the best raised false acceptances to 21%.
+  - With every covered tradition competing, "claimed tradition ranks first" accepted 48% of true
+    claims and 5% of false ones on museum and Commons photos; accepting anything within 0.01 of the
+    best roughly tripled false acceptances.
   - References from museum archives did NOT transfer to modern photos of new cloth: there the same
-    rule accepted 5% of true claims and 19% of false ones, and no similarity floor separated those
+    rule accepted 2% of true claims and 12% of false ones, and no similarity floor separated those
     photos. So only 'modern' references give a verdict; 'archival' ones are shown for comparison.
+  - Not yet measured: modern photos judged against modern references from two or more sources (no
+    tradition had that in the data). Measure before trusting "konsisten" in a demo.
 """
 import io
 import logging
@@ -131,16 +137,13 @@ def judged_entries(session: Session, model: str) -> set:
     return {r[0] for r in rows}
 
 
-def _scores(session: Session, model: str, vec: list[float], entries: set) -> dict:
-    """Mean similarity of each judged entry's TOP_M nearest modern references (near-copies left out)."""
-    if not entries:
-        return {}
+def _scores(session: Session, model: str, vec: list[float]) -> dict:
+    """Mean similarity of each entry's TOP_M nearest approved modern references (near-copies left out)."""
     distance = ReferencePhoto.embedding.cosine_distance(vec)
     ranked = (select(ReferencePhoto.entry_id, (1 - distance).label("sim"),
                      func.row_number().over(partition_by=ReferencePhoto.entry_id,
                                             order_by=distance).label("rn"))
-              .where(_approved(model), ReferencePhoto.style == "modern",
-                     ReferencePhoto.entry_id.in_(entries), distance > 1 - NEAR_COPY)
+              .where(_approved(model), ReferencePhoto.style == "modern", distance > 1 - NEAR_COPY)
               .subquery())
     sims: dict = {}
     for entry_id, sim in session.execute(select(ranked.c.entry_id, ranked.c.sim)
@@ -185,8 +188,8 @@ def check_claim(session: Session, embedder: PhotoEmbedder | None, image: bytes,
             "top": [], "comparisons": [], "notes": []}
     try:
         vec = embedder.embed(image)
-        entries = judged_entries(session, embedder.name)
-        scores = _scores(session, embedder.name, vec, entries)
+        judged = judged_entries(session, embedder.name)
+        scores = _scores(session, embedder.name, vec)
         copy = _near_copy(session, embedder.name, vec)
         comparisons = _comparisons(session, embedder.name, vec, claimed) if claimed else []
     except Exception:
@@ -196,7 +199,7 @@ def check_claim(session: Session, embedder: PhotoEmbedder | None, image: bytes,
     names = {e.id: e.name for e in session.scalars(select(GalleryEntry).where(GalleryEntry.id.in_(ranked)))}
     top = [{"tradition": names.get(e), "score": round(scores[e], 3)} for e in ranked[:3]]
     notes = [NEAR_COPY_NOTE.format(credit=copy.credit or copy.source_label)] if copy else []
-    if claimed is None or claimed.id not in scores:
+    if claimed is None or claimed.id not in judged or claimed.id not in scores:
         status, rank = "belum_ada_referensi", None
     else:
         rank = ranked.index(claimed.id) + 1

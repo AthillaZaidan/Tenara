@@ -144,3 +144,17 @@ def photo_out(photo: BodyPhoto) -> dict:
     return {"id": photo.id, "status": photo.status, "width": photo.width, "height": photo.height,
             "delete_after": photo.delete_after, "consent_id": photo.consent_id,
             "created_at": photo.created_at}
+
+
+def sanitize_image(data: bytes) -> tuple[bytes, str]:
+    """Decode, drop EXIF/metadata and re-encode. Raises AppValidationError for non-images."""
+    try:
+        image = ImageOps.exif_transpose(Image.open(io.BytesIO(data)))
+    except (UnidentifiedImageError, OSError):
+        raise AppValidationError("File bukan gambar yang valid", field="file") from None
+    out = io.BytesIO()
+    if image.mode in ("RGBA", "LA", "P"):
+        image.convert("RGBA").save(out, format="PNG")
+        return out.getvalue(), "image/png"
+    image.convert("RGB").save(out, format="JPEG", quality=90)
+    return out.getvalue(), "image/jpeg"

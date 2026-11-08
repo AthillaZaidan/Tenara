@@ -130,6 +130,8 @@ class ProductStory(Base):
     )
     body: Mapped[str] = mapped_column(Text, nullable=False)
     citations: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
+    # [{"paragraph": 1, "text": "...", "sources": ["foto" | chunk id, ...]}] for per-sentence source chips
+    sentences: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     notes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="draft")
     model: Mapped[str] = mapped_column(String(120), nullable=False)

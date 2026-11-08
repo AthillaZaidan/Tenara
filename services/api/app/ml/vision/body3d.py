@@ -250,6 +250,63 @@ def _profile(view: View, rows: int = 32) -> tuple[np.ndarray, np.ndarray, np.nda
     return np.array(out_y), np.array(out_l), np.array(out_r)
 
 
+YAW_SLACK = 0.25  # rad the body may turn away from facing the camera (front) or from profile (side)
+
+
+def side_yaw(view: View) -> float:
+    """+pi/2 when the person faces image-right in the side photo (nose right of the shoulders), else -pi/2."""
+    nose = view.landmarks.get("nose")
+    shoulders = [view.landmarks[n][0] for n in ("l_shoulder", "r_shoulder") if n in view.landmarks]
+    if nose is None or not shoulders:
+        return math.pi / 2
+    return math.pi / 2 if nose[0] >= float(np.mean(shoulders)) else -math.pi / 2
+
+
+def trim_below_feet(mask: np.ndarray, landmarks: dict[str, tuple[float, float, float]]) -> np.ndarray:
+    """Drop mask rows below the heels. Shiny floors reflect the legs and the segmenter keeps the
+    reflection; and with the camera above the floor the toes project below the heels, while the
+    orthographic model has them level. Either would stretch the figure and shrink the scale."""
+    rows = np.nonzero(mask.any(axis=1))[0]
+    figure_h = float(np.ptp(rows)) if rows.size else 0.0
+    heels = [landmarks[n][1] for n in ("l_heel", "r_heel") if n in landmarks and landmarks[n][2] >= 0.3]
+    ankles = [landmarks[n][1] for n in ("l_ankle", "r_ankle") if n in landmarks and landmarks[n][2] >= 0.5]
+    if heels:
+        bottom = max(heels) + 0.005 * figure_h
+    elif ankles:
+        bottom = max(ankles) + 0.035 * figure_h  # ankle joint to sole, about 4% of stature
+    else:
+        return mask
+    cut = round(bottom) + 1
+    trimmed = mask.copy()
+    trimmed[cut:] = False
+    return trimmed
+
+
+def check_views(views: list[View]) -> list[str]:
+    """Problems that make a photo unusable for measuring; empty when both photos can be used."""
+    problems = []
+    kinds = sorted(v.kind for v in views)
+    if kinds != ["front", "side"]:
+        problems.append("Butuh tepat satu foto depan dan satu foto samping.")
+    for v in views:
+        label = "depan" if v.kind == "front" else "samping"
+        lm = v.landmarks
+        if not v.mask.any():
+            problems.append(f"Foto {label}: badan tidak terdeteksi.")
+            continue
+        ankles = [lm[n][2] for n in ("l_ankle", "r_ankle") if n in lm]
+        if not ankles or max(ankles) < 0.5:
+            problems.append(f"Foto {label}: kaki tidak terlihat jelas; seluruh badan sampai telapak kaki harus masuk foto.")
+        rows = np.nonzero(v.mask.any(axis=1))[0]
+        if rows.min() <= 1 or rows.max() >= v.mask.shape[0] - 2:
+            problems.append(f"Foto {label}: badan terpotong di tepi foto; mundur sedikit dari kamera.")
+        if v.kind == "front":
+            shoulders = [lm[n][2] for n in ("l_shoulder", "r_shoulder", "l_hip", "r_hip") if n in lm]
+            if len(shoulders) < 4 or min(shoulders) < 0.5:
+                problems.append("Foto depan: bahu dan pinggul harus terlihat jelas, menghadap kamera.")
+    return problems
+
+
 TRUNK_JOINTS = (L_SHOULDER, R_SHOULDER, L_HIP, R_HIP, L_KNEE, R_KNEE, L_ANKLE, R_ANKLE)
 
 
@@ -289,7 +346,8 @@ def fit(body: BodyModel, views: list[View], height_cm: float, steps: int = 300,
         h_px = float(np.ptp(np.nonzero(v.mask.any(axis=1))[0])) or float(v.mask.shape[0])
         cx = float(np.nonzero(v.mask.any(axis=0))[0].mean())
         cy = float(np.nonzero(v.mask.any(axis=1))[0].mean())
-        cam = {"yaw": torch.tensor([0.0 if v.kind == "front" else math.pi / 2], requires_grad=True),
+        yaw0 = 0.0 if v.kind == "front" else side_yaw(v)
+        cam = {"yaw": torch.tensor([yaw0], requires_grad=True),
                # relative units so one learning rate suits every parameter: log-scale and an offset in
                # figure heights (pixel units barely moved at lr 0.03 and the shape bent to compensate)
                "log_scale": torch.zeros(1, requires_grad=True),
@@ -297,6 +355,7 @@ def fit(body: BodyModel, views: list[View], height_cm: float, steps: int = 300,
                "arms": torch.tensor([-1.2, 1.2], requires_grad=True)}  # shoulder abduction, rad
         cam_params += list(cam.values())  # only the four learnable tensors above
         cam["s0"], cam["c0"] = _init_camera(model, betas, cam, v, h_px / target_h, (cx, cy))
+        cam["yaw0"] = yaw0
         cams.append(cam)
         rows, left, right = _profile(v)
         cam["rows"], cam["left"], cam["right"] = (torch.as_tensor(a, dtype=torch.float32) for a in (rows, left, right))
@@ -316,7 +375,11 @@ def fit(body: BodyModel, views: list[View], height_cm: float, steps: int = 300,
         tpose = model(betas=betas)
         height = tpose.vertices[0, head, 1] - tpose.vertices[0, heels, 1].mean()
         terms = {"height": 50.0 * (height - target_h) ** 2, "prior": 0.002 * (betas ** 2).sum()}
-        loss = terms["height"] + terms["prior"]
+        for cam in cams:  # real photos let free angles run away: keep the body facing as instructed
+            # and the arms within a human range (abduction about 0.3-1.6 rad from the T-pose)
+            terms["angles"] = terms.get("angles", 0) + 5.0 * torch.relu((cam["yaw"] - cam["yaw0"]).abs() - YAW_SLACK) ** 2 \
+                + 5.0 * (torch.relu(cam["arms"].abs() - 1.6) ** 2 + torch.relu(0.3 - cam["arms"].abs()) ** 2).sum()
+        loss = terms["height"] + terms["prior"] + terms["angles"]
         for v, cam in zip(views, cams, strict=True):
             pose = torch.zeros(1, 63)
             pose[0, (L_SHOULDER - 1) * 3 + 2] = cam["arms"][0]
@@ -358,6 +421,9 @@ def fit(body: BodyModel, views: list[View], height_cm: float, steps: int = 300,
         opt.step()
         last = {"loss": float(loss.detach()), "height_cm": round(float(height.detach()) * 100, 1),
                 "terms": {k: round(float(t.detach()), 5) for k, t in terms.items()},
-                "cams": [{"yaw": round(float(c["yaw"]), 3), "arms": [round(float(x), 3) for x in c["arms"]]}
+                "cams": [{"yaw": float(c["yaw"].detach()), "arms": [float(x) for x in c["arms"].detach()],
+                          "scale": float(c["s0"] * torch.exp(c["log_scale"].detach())),
+                          "t": [float(x) for x in (c["c0"] + c["offset"].detach() * c["h_px"])],
+                          "rows_used": len(c["rows"])}
                          for c in cams]}
     return betas.detach().numpy()[0], last

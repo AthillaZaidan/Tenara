@@ -37,7 +37,7 @@ export default async function EntryPage({ params }: { params: Promise<{ slug: st
       <p className="mb-14 max-w-[52ch] text-lg">{facts}</p>
 
       <div className="grid gap-12 md:grid-cols-12">
-        <article className="md:col-span-7">
+        <article className="rise md:col-span-7">
           <h2 className="t-head mb-6" style={{ fontSize: "clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem)" }}>Ceritanya</h2>
           {story ? (
             <div className="grid max-w-[62ch] gap-4">
@@ -54,7 +54,7 @@ export default async function EntryPage({ params }: { params: Promise<{ slug: st
             </div>
           )}
         </article>
-        <aside className="md:col-span-4 md:col-start-9">
+        <aside className="rise md:col-span-4 md:col-start-9" style={{ ["--d" as string]: "100ms" }}>
           {refs.length > 0 && (
             <div className="mb-10 grid gap-4">
               {refs.map((r) => (

@@ -37,8 +37,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   ];
   return (
     <Page>
-      {l.gallery_entry && <p className="mb-4 mt-6 text-base"><Link href={`/gallery/${l.gallery_entry.slug}`} className="link">← {l.gallery_entry.name}</Link></p>}
-      <h1 className="t-head mb-3 max-w-[20ch]" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 4rem)" }}>{l.title}</h1>
+      <h1 className="t-head mb-3 mt-8 max-w-[20ch]" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 4rem)" }}>{l.title}</h1>
       <p className="mb-10 text-xl">{idr(l.price_idr)} <span className="text-muted">/ {meter ? "meter" : "potong"}</span></p>
       <div className="grid gap-12 md:grid-cols-12">
         <div className="grid content-start gap-8 md:col-span-7">
@@ -62,6 +61,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <p>{[l.merchant.city, l.merchant.province].filter(Boolean).join(", ")}</p>
             <p className="text-muted">{l.merchant.verification_note}</p>
           </div>
+          {l.gallery_entry && <p className="text-base">Cerita kain ini: <Link href={`/gallery/${l.gallery_entry.slug}`} className="link">{l.gallery_entry.name}</Link></p>}
         </div>
         <div className="md:col-span-5"><BuyPanel listing={l} /></div>
       </div>

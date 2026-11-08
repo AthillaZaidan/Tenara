@@ -510,7 +510,7 @@ class FakeVLM:
         self.writer = list(writer) if writer is not None else [PICK_FIRST]
         self.critic = list(critic) if critic is not None else [{"supported": True, "reason": "cocok"}]
         self.fail = fail
-        self.calls = []
+        self.calls, self.images = [], []
 
     def describe(self, image, content_type):
         self.calls.append(("describe", content_type))
@@ -518,8 +518,9 @@ class FakeVLM:
             raise RuntimeError(self.fail)
         return self.observation
 
-    def complete(self, system, user):
+    def complete(self, system, user, image=None, content_type=None):
         role = "writer" if "PENULIS" in system else "critic"
+        self.images.append((role, content_type if image is not None else None))
         self.calls.append((role, json.loads(user)))
         reply = (self.writer if role == "writer" else self.critic).pop(0)
         return reply if isinstance(reply, str) else json.dumps(reply)
@@ -599,6 +600,9 @@ def test_flow_is_describe_then_writer_then_critic(client, session, seller, auth_
     assert writer_input["pengamatan"]["technique"] == "ikat"
     assert {k["tradisi"] for k in writer_input["kandidat"]} == {"Tenun Ikat Sumba", "Songket Palembang"}
     assert vlm.calls[2][1]["teks_kandidat"].startswith(writer_input["kandidat"][0]["tradisi"])
+    # both judges see the (downscaled) photo, and the critic sees the rival candidates
+    assert vlm.images == [("writer", "image/jpeg"), ("critic", "image/jpeg")]
+    assert [k["tradisi"] for k in vlm.calls[2][1]["kandidat_lain"]] == [writer_input["kandidat"][1]["tradisi"]]
 
 
 def test_pending_catalog_sources_are_never_used(client, session, seller, auth_header, embedder):

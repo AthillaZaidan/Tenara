@@ -49,6 +49,7 @@ MP_TO_SMPLX = {"l_shoulder": L_SHOULDER, "r_shoulder": R_SHOULDER, "l_elbow": L_
                "l_wrist": L_WRIST, "r_wrist": R_WRIST, "l_hip": L_HIP, "r_hip": R_HIP,
                "l_knee": L_KNEE, "r_knee": R_KNEE, "l_ankle": L_ANKLE, "r_ankle": R_ANKLE}
 NUM_BETAS = 16
+MODEL_VERSION = "smplx-v1.1-two-view-fit/1"
 BAND_PX = 2.0
 RUN_MARGIN = 0.03  # of the figure height in pixels
 SIL_WEIGHT = 20.0
@@ -427,3 +428,102 @@ def fit(body: BodyModel, views: list[View], height_cm: float, steps: int = 300,
                           "rows_used": len(c["rows"])}
                          for c in cams]}
     return betas.detach().numpy()[0], last
+
+
+# ---------- from two photos to measurements and drawable geometry ----------
+
+MAX_FRAME_H = 1200  # photos are scaled to this height before detection (speed); geometry uses this frame
+VISUAL_RINGS = {"front": ["neck_circumference", "chest_circumference", "waist_circumference", "hip_circumference"],
+                "side": ["chest_circumference", "waist_circumference", "hip_circumference"]}
+
+
+def _largest_blob(mask: np.ndarray) -> np.ndarray:
+    import cv2
+
+    n, labels, stats, _ = cv2.connectedComponentsWithStats(mask.astype("uint8"), connectivity=8)
+    if n <= 2:
+        return mask
+    return labels == (1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA])))
+
+
+def view_from_photo(detector, image, kind: str) -> tuple[View | None, tuple[int, int], list[str]]:
+    """Detect landmarks and the person mask on a photo scaled to MAX_FRAME_H; pixel coordinates."""
+    label = "depan" if kind == "front" else "samping"
+    if image.height > MAX_FRAME_H:
+        image = image.resize((round(image.width * MAX_FRAME_H / image.height), MAX_FRAME_H))
+    pose = detector.detect(image)
+    if pose.pose_count == 0:
+        return None, image.size, [f"Foto {label}: tidak ada orang yang terdeteksi."]
+    if pose.pose_count > 1:
+        return None, image.size, [f"Foto {label}: terdeteksi lebih dari satu orang."]
+    if pose.mask is None:
+        return None, image.size, ["Model pose tidak memberi siluet badan; ukur manual."]
+    w, h = image.size
+    landmarks = {n: (lm.x * w, lm.y * h, lm.visibility) for n, lm in pose.landmarks.items()}
+    mask = trim_below_feet(_largest_blob(np.asarray(pose.mask, dtype=bool)), landmarks)
+    return View(kind=kind, mask=mask, landmarks=landmarks), image.size, []
+
+
+def _posed(body: BodyModel, betas: np.ndarray, cam: dict):
+    torch = body.torch
+    pose = torch.zeros(1, 63)
+    pose[0, (L_SHOULDER - 1) * 3 + 2] = cam["arms"][0]
+    pose[0, (R_SHOULDER - 1) * 3 + 2] = cam["arms"][1]
+    with torch.no_grad():
+        out = body.model(betas=torch.tensor(betas, dtype=torch.float32)[None], body_pose=pose,
+                         global_orient=torch.tensor([[0.0, cam["yaw"], 0.0]]))
+    return out.vertices[0].numpy().astype(np.float64), out.joints[0].numpy().astype(np.float64)
+
+
+def visual_geometry(body: BodyModel, betas: np.ndarray, cam: dict, kind: str) -> dict:
+    """Where to draw each measurement on the photo (frame pixels): rings as ellipses, lengths as lines."""
+    import trimesh
+
+    verts, joints = _posed(body, betas, cam)
+
+    def proj(p):
+        p = np.atleast_2d(p)
+        return np.stack([cam["scale"] * p[:, 0] + cam["t"][0], -cam["scale"] * p[:, 1] + cam["t"][1]], axis=1)
+
+    mesh = trimesh.Trimesh(vertices=verts, faces=body.faces, process=False)
+    rings = []
+    for key in VISUAL_RINGS[kind]:
+        landmarks, (j1, j2), parts = CIRCUMFERENCES[key]
+        point = np.mean([verts[LM[n]] for n in landmarks], axis=0)
+        normal = joints[j2] - joints[j1]
+        segs, fidx = trimesh.intersections.mesh_plane(mesh, normal / np.linalg.norm(normal), point, return_faces=True)
+        pts = segs[np.isin(body.face_part[fidx], list(parts))].reshape(-1, 3)
+        if len(pts) < 3:
+            continue
+        xy = proj(pts)
+        rx = float(xy[:, 0].max() - xy[:, 0].min()) / 2
+        rings.append({"key": key, "cx": round(float(xy[:, 0].min()) + rx, 1), "cy": round(float(xy[:, 1].mean()), 1),
+                      "rx": round(rx, 1), "ry": round(max(6.0, 0.12 * rx), 1)})
+    lines = []
+    if kind == "front":
+        for key, a, b in (("shoulder_width", "LEFT_SHOULDER", "RIGHT_SHOULDER"),
+                          ("sleeve_length", "LEFT_SHOULDER", "LEFT_WRIST")):
+            lines.append({"key": key, "points": proj(np.stack([verts[LM[a]], verts[LM[b]]])).round(1).tolist()})
+    else:  # back length is measured vertically; draw it along the back surface
+        top, low = proj(np.stack([verts[LM["SHOULDER_TOP"]], verts[LM["BACK_BELLY_BUTTON"]]]))
+        lines.append({"key": "back_length", "points": [[round(low[0], 1), round(top[1], 1)],
+                                                        [round(low[0], 1), round(low[1], 1)]]})
+    return {"rings": rings, "lines": lines}
+
+
+def estimate_two_views(body: BodyModel, detector, front_image, side_image, height_cm: float,
+                       steps: int = 300) -> dict:
+    """Measurements (cm) and drawable geometry from a front and a side photo, or the problems found."""
+    front, front_size, p1 = view_from_photo(detector, front_image, "front")
+    side, side_size, p2 = view_from_photo(detector, side_image, "side")
+    problems = p1 + p2
+    if not problems:
+        problems = check_views([front, side])
+    if problems:
+        return {"problems": problems}
+    betas, diag = fit(body, [front, side], height_cm, steps=steps)
+    values = measure(body, betas)
+    visual = {}
+    for view, size, cam in ((front, front_size, diag["cams"][0]), (side, side_size, diag["cams"][1])):
+        visual[view.kind] = {"frame": list(size), **visual_geometry(body, betas, cam, view.kind)}
+    return {"problems": [], "values": values, "visual": visual, "fit_loss": round(diag["loss"], 4)}

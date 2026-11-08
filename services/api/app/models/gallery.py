@@ -8,6 +8,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -132,6 +133,15 @@ class SourceChunk(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+# Retrieval indexes: approximate nearest neighbour on the chunk vectors (cosine) and containment
+# filters on chunk metadata (e.g. {"aspect": "visual"}).
+Index("ix_source_chunks_embedding_hnsw", SourceChunk.embedding, postgresql_using="hnsw",
+      postgresql_with={"m": 16, "ef_construction": 64},
+      postgresql_ops={"embedding": "vector_cosine_ops"})
+Index("ix_source_chunks_metadata_gin", SourceChunk.meta, postgresql_using="gin",
+      postgresql_ops={"metadata": "jsonb_path_ops"})
 
 
 class Story(Base):

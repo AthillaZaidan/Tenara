@@ -197,3 +197,12 @@ def test_provider_problems_are_503_and_only_the_owner_can_draft(client, session,
     assert _draft(client, auth_header(user), listing, None).status_code == 503
     other, _ = make_partner("merchant", shop="Toko Lain")
     assert _draft(client, auth_header(other), listing, FakeTextLLM()).status_code == 404
+
+
+def test_ids_copied_into_the_sentence_are_removed_not_mistaken_for_numbers(client, session, seller, auth_header, chunks):
+    user, listing = seller
+    _scan(client, auth_header, user, listing)
+    cid = chunks["kuda"]
+    llm = FakeTextLLM(writer=[{"claims": [{"text": f"{KUDA[:-1]} [{cid}].", "chunk_ids": [cid]}]}], critic=[_ok(1)])
+    story = _draft(client, auth_header(user), listing, llm).json()["data"]
+    assert story["body"].endswith(KUDA) and cid not in story["body"]

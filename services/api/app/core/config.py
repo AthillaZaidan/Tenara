@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     storage_dir: str = "./storage"
     embedder: str = "fastembed"  # fastembed | fake | none
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    photo_embedder: str = "fastembed"  # fastembed | fake | none (seller claim check by photo)
+    photo_embedding_model: str = "google/siglip2-base-patch16-224"
     search_min_similarity: float = 0.35
     hold_minutes: int = 15
     default_commission_bps: int = 500  # demo value (5%), configurable by admin

@@ -213,6 +213,7 @@ function Tailors({ cust }: { cust: Customization }) {
   return (
     <div className="grid gap-5">
       {!cust.ready_for_tailor_validation && <p className="text-base">Lengkapi ukuran dan estimasi kain dulu supaya desain siap divalidasi penjahit.</p>}
+      <p className="text-base text-muted">Penjahit yang kamu pilih menerima desain, ilustrasi produk terbaru, ukuran (cm), kebutuhan kain, dan alamat pengiriman. Foto badan dan ilustrasi di fotomu tidak dikirim. Penjual kain hanya menerima jumlah kain.</p>
       <Field label="Alamat pengiriman baju">
         <select className="field" value={chosen} onChange={(e) => setAddrId(e.target.value)}>
           {addresses.data?.map((a) => <option key={a.id} value={a.id}>{a.label}: {a.recipient_name}, {a.line1}, {a.city}</option>)}

@@ -691,6 +691,34 @@ def test_chat_client_maps_http_errors_and_reads_annotations(monkeypatch):
     assert llm_client.parse_json('```json\n{"a": 1}\n```', "x") == {"a": 1}
 
 
+def test_scan_describes_on_the_vision_model_while_text_stays_on_llm_model(monkeypatch):
+    from app.ml.vision.vlm import OpenAICompatVLM
+
+    class Resp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    sent = []
+    body = json.dumps({"choices": [{"message": {"content": "{}"}}], "usage": {}}).encode()
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen",
+                        lambda req, timeout: (sent.append(json.loads(req.data)), Resp(body))[1])
+    monkeypatch.setattr(llm_client.settings, "llm_provider", "openrouter")
+    monkeypatch.setattr(settings, "llm_model", "openai/gpt-6-luna")
+    monkeypatch.setattr(settings, "llm_vision_model", "google/gemma-4-26b-a4b-it")
+
+    vlm = OpenAICompatVLM()
+    vlm.describe(b"\x89PNG", "image/png")
+    llm_client.chat([{"role": "user", "content": "tulis cerita"}])
+    assert [s["model"] for s in sent] == ["google/gemma-4-26b-a4b-it", "openai/gpt-6-luna"]
+    assert vlm.name == "openrouter:google/gemma-4-26b-a4b-it"  # recorded on the analysis row
+
+    monkeypatch.setattr(settings, "llm_vision_model", "")  # unset: the scan falls back to LLM_MODEL
+    assert OpenAICompatVLM().model == "openai/gpt-6-luna"
+
+
 def test_only_curators_can_verify_origin(client, session, seller, auth_header, make_user):
     user, listing = seller
     admin = auth_header(make_user("curator@example.com", roles=(("admin", "active"),)))

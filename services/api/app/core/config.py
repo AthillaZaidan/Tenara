@@ -32,7 +32,10 @@ class Settings(BaseSettings):
     buyer_service_fee_idr: int = 0  # buyer-visible platform fee; zero until configured
     prompt_interpreter: str = "rules"  # rules | llm (llm always falls back to rules on failure)
     llm_provider: str = "openrouter"  # openai | openrouter | ollama
-    llm_model: str = "openai/gpt-6-luna"
+    llm_model: str = "openai/gpt-6-luna"  # text: listing story writer + critic, prompt interpreter
+    # fabric scan photo description; empty = LLM_MODEL. Gemma 4 26B read the technique right on 11/13
+    # test photos vs 6/13 for gpt-6-luna (experiments/vlm_eval, 2026-11-08)
+    llm_vision_model: str = ""
     openai_api_key: str = ""
     openrouter_api_key: str = ""
     pose_model_path: str = "./models/pose_landmarker_full.task"

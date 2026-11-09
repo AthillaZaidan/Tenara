@@ -17,11 +17,13 @@ from app.models import (
     Customization,
     DeliveryAddress,
     FabricListing,
+    File,
     MaterialEstimate,
     MeasurementSet,
     MeasurementValue,
     MerchantConfirmation,
     MerchantProfile,
+    Preview,
     ProductionSpec,
     Quote,
     QuoteLine,
@@ -38,6 +40,9 @@ from app.services import material as material_svc
 from app.services.partners import active_merchant, active_tailor
 from app.services.pricing import line_subtotal, validate_quantity
 from app.services.shipping import estimate as shipping_estimate
+from app.services.signing import make_token
+
+PREVIEW_LABEL = "Ilustrasi konseptual; bukan pola potong atau jaminan hasil akhir."
 
 OPEN_STATES = ("draft", "submitted", "validating", "ready_for_quote", "awaiting_buyer", "needs_revision")
 
@@ -146,6 +151,24 @@ def update_request(session: Session, buyer: User, req: CustomRequest, *,
     return req
 
 
+def _design_preview_file(session: Session, cust: Customization) -> str | None:
+    """The newest finished product preview of the submitted design revision, shared with the tailor
+    as a visual reference. On-body try-ons are never shared: they are drawn on the buyer's photo."""
+    preview = session.scalar(select(Preview).where(
+        Preview.customization_id == cust.id, Preview.design_revision == cust.current_revision,
+        Preview.kind == "product", Preview.file_id.is_not(None),
+        Preview.status.in_(("completed", "completed_with_warnings")))
+        .order_by(Preview.created_at.desc()).limit(1))
+    return str(preview.file_id) if preview else None
+
+
+def _design_preview_out(session: Session, file_id: str | None) -> dict | None:
+    stored = session.get(File, uuid.UUID(file_id)) if file_id else None
+    if stored is None or stored.deleted_at is not None:
+        return None
+    return {"url": f"/api/v1/files/{stored.id}?token={make_token(stored.id)}", "label": PREVIEW_LABEL}
+
+
 def submit_request(session: Session, buyer: User, req: CustomRequest) -> CustomRequest:
     if req.status not in ("draft", "needs_revision"):
         raise InvalidTransition(f"Request is {req.status}")
@@ -166,6 +189,7 @@ def submit_request(session: Session, buyer: User, req: CustomRequest) -> CustomR
         "template": {"code": cust.template_code, "version_id": str(cust.template_version_id)},
         "measurement_set_id": str(mset.id), "measurement_revision": mset.revision,
         "measurements_cm": values, "estimate": est.result, "estimate_id": str(est.id),
+        "design_preview_file_id": _design_preview_file(session, cust),
         "listing": {"id": str(listing.id), "title": listing.title, "price_idr": listing.price_idr,
                     "selling_unit": listing.selling_unit, "revision": listing.revision,
                     "material": listing.material},
@@ -434,7 +458,8 @@ def request_out(session: Session, req: CustomRequest, roles: set[str]) -> dict:
     if roles & {"buyer", "tailor", "admin"}:
         out.update(address=req.address, design_state=snap.get("state"),
                    measurements_cm=snap.get("measurements_cm"), estimate=estimate,
-                   template=snap.get("template"))
+                   template=snap.get("template"),
+                   design_preview=_design_preview_out(session, snap.get("design_preview_file_id")))
     else:  # merchants get fulfilment details only, never body or design data
         out.update(requested_quantity=estimate.get("purchase_quantity"),
                    required_continuous_cut_m=estimate.get("required_continuous_cut_m"),

@@ -255,6 +255,55 @@ def test_partners_see_only_what_they_need(scene, make_partner):
     assert s.client.get(f"{API}/custom-requests/{req['id']}", headers=s.auth(stranger)).status_code == 404
 
 
+def test_tailor_gets_the_product_preview_but_never_the_on_body_try_on(scene, storage):
+    from app.main import app
+    from app.models import Customization, Preview
+    from app.services.files import create_file
+    from app.services.storage import get_storage
+
+    s = scene
+    app.dependency_overrides[get_storage] = lambda: storage
+    _ready_customization(s)
+    cust = s.session.get(Customization, s.cust["id"])
+
+    def preview(kind, revision, data):
+        f = create_file(s.session, storage, owner_id=s.buyer.id, kind="preview", data=data,
+                        content_type="image/png")
+        s.session.add(Preview(customization_id=cust.id, design_revision=revision, kind=kind,
+                              status="completed", file_id=f.id))
+        s.session.flush()
+        return f
+
+    product = preview("product", cust.current_revision, b"\x89PNG product")
+    preview("on_body", cust.current_revision, b"\x89PNG try-on on the buyer's photo")
+    req = _request(s)
+    _submit(s, req["id"])
+    t = s.client.get(f"{API}/custom-requests/{req['id']}", headers=s.h["tailor"]).json()["data"]
+    assert str(product.id) in t["design_preview"]["url"] and "konseptual" in t["design_preview"]["label"]
+    image = s.client.get(t["design_preview"]["url"])  # the signed link works for the tailor
+    assert image.status_code == 200 and image.content == b"\x89PNG product"
+    m = s.client.get(f"{API}/custom-requests/{req['id']}", headers=s.h["merchant"]).json()["data"]
+    assert "design_preview" not in m
+
+
+def test_without_a_current_product_preview_the_tailor_gets_data_only(scene, storage):
+    from app.models import Customization, Preview
+    from app.services.files import create_file
+
+    s = scene
+    _ready_customization(s, collar="mandarin")  # design is now at revision 2
+    cust = s.session.get(Customization, s.cust["id"])
+    old = create_file(s.session, storage, owner_id=s.buyer.id, kind="preview", data=b"\x89PNG old",
+                      content_type="image/png")
+    s.session.add(Preview(customization_id=cust.id, design_revision=cust.current_revision - 1,
+                          kind="product", status="completed", file_id=old.id))
+    s.session.flush()
+    req = _request(s)
+    _submit(s, req["id"])
+    t = s.client.get(f"{API}/custom-requests/{req['id']}", headers=s.h["tailor"]).json()["data"]
+    assert t["design_preview"] is None and t["measurements_cm"]
+
+
 def test_merchant_confirmation_checks_stock_and_records_price(scene):
     s = scene
     _ready_customization(s)

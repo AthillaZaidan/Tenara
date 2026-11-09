@@ -24,6 +24,7 @@ from typing import Protocol
 from PIL import Image
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.errors import ServiceUnavailable
 from app.ml import llm_client
 from app.ml.vision import photo_match
@@ -65,16 +66,17 @@ def _image_part(image: bytes, content_type: str) -> dict:
 
 
 class OpenAICompatVLM:
-    """Describes the photo on LLM_MODEL through the shared OpenAI-compatible client."""
+    """Describes the photo on LLM_VISION_MODEL (falls back to LLM_MODEL) through the shared client."""
 
     def __init__(self):
-        self.name = llm_client.provider_name()
+        self.model = settings.llm_vision_model or settings.llm_model
+        self.name = llm_client.provider_name(self.model)
 
     def describe(self, image: bytes, content_type: str) -> dict:
         prompt = DESCRIBE_PROMPT % (TECHNIQUES, CATEGORIES)
         messages = [{"role": "user", "content": [{"type": "text", "text": prompt},
                                                  _image_part(image, content_type)]}]
-        return llm_client.parse_json(llm_client.chat(messages).content, "deskripsi")
+        return llm_client.parse_json(llm_client.chat(messages, model=self.model).content, "deskripsi")
 
 
 def get_vlm() -> VLMClient | None:

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Field, Notice, Page, RequireAuth, useAction, useLoad } from "@/components/ui";
-import { api, idr, newKey, when } from "@/lib/api";
+import { api, fileUrl, idr, newKey, when } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { DIM_LABEL, OPTION_LABEL, REQUEST_STATUS, VALUE_LABEL, label } from "@/lib/design";
 
@@ -14,6 +14,7 @@ type Req = {
   design_state?: Record<string, string | number>; measurements_cm?: Record<string, number>;
   estimate?: { required_length_cm?: number; purchase_quantity?: string; surplus_m?: string; fits?: boolean };
   template?: { code: string };
+  design_preview?: { url: string; label: string } | null;
   requested_quantity?: string; required_continuous_cut_m?: number; selling_unit?: string;
 };
 type Quote = { id: string; revision: number; status: string; total_idr: number; expires_at: string; acceptable: boolean; lines: { kind: string; description: string; amount_idr: number }[] };
@@ -167,6 +168,12 @@ function Detail() {
         {role === "tailor" && <Tailor req={req} quotes={quotes.data ?? []} reload={() => { reload(); quotes.reload(); }} />}
       </div>
       <aside className="grid content-start gap-6 md:col-span-4 md:col-start-9">
+        {req.design_preview?.url && (
+          <figure className="m-0 grid gap-2">
+            <img src={fileUrl(req.design_preview.url)} alt="Ilustrasi konseptual desain" className="w-full bg-surface" />
+            <figcaption className="text-base text-muted">{req.design_preview.label}</figcaption>
+          </figure>
+        )}
         {req.design_state && (
           <div className="grid gap-1 bg-surface p-5 text-base">
             <h3 className="mb-1 text-lg font-medium" style={H}>Desain</h3>

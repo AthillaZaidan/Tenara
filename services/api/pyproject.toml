@@ -22,6 +22,7 @@ dependencies = [
 
 [project.optional-dependencies]
 body3d = [
+    "scipy>=1.14",
     "smplx>=0.1.28",
     "torch>=2.15.0",
     "trimesh>=5.2.0",

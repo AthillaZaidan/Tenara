@@ -153,7 +153,8 @@ def update_request(session: Session, buyer: User, req: CustomRequest, *,
 
 def _design_preview_file(session: Session, cust: Customization) -> str | None:
     """The newest finished product preview of the submitted design revision, shared with the tailor
-    as a visual reference. On-body try-ons are never shared: they are drawn on the buyer's photo."""
+    as a visual reference. On-body try-ons (drawn on the buyer's photo) and 3D avatars (the buyer's body
+    shape) are never shared."""
     preview = session.scalar(select(Preview).where(
         Preview.customization_id == cust.id, Preview.design_revision == cust.current_revision,
         Preview.kind == "product", Preview.file_id.is_not(None),

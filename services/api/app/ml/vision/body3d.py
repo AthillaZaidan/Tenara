@@ -131,10 +131,18 @@ def get_body_model(gender: str = "neutral") -> BodyModel | None:
 # ---------- measuring a mesh ----------
 
 def _hull_perimeter(points: np.ndarray) -> float:
-    """Perimeter of the 2D convex hull (monotone chain)."""
+    """Perimeter of the 2D convex hull."""
+    hull = convex_hull(points)
+    if len(hull) < 3:
+        return 0.0
+    return float(np.linalg.norm(np.roll(hull, -1, axis=0) - hull, axis=1).sum())
+
+
+def convex_hull(points: np.ndarray) -> np.ndarray:
+    """Vertices of the 2D convex hull, counter-clockwise (monotone chain); fewer than 3 when degenerate."""
     pts = sorted(set(map(tuple, np.round(points, 6))))
     if len(pts) < 3:
-        return 0.0
+        return np.array(pts).reshape(-1, 2)
 
     def cross(o, a, b):
         return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
@@ -148,8 +156,7 @@ def _hull_perimeter(points: np.ndarray) -> float:
         while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
             upper.pop()
         upper.append(p)
-    hull = np.array(lower[:-1] + upper[:-1])
-    return float(np.linalg.norm(np.roll(hull, -1, axis=0) - hull, axis=1).sum())
+    return np.array(lower[:-1] + upper[:-1])
 
 
 def circumference(verts: np.ndarray, faces: np.ndarray, face_part: np.ndarray, point: np.ndarray,

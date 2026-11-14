@@ -35,6 +35,7 @@ from app.services import templates as templates_svc
 from app.services.files import create_file
 from app.services.storage import Storage, get_storage
 from scripts.seed_admin import seed_admin
+from scripts.seed_marketplace import seed_marketplace
 
 DOMAIN = "tenara.demo"
 ALL_TEMPLATES = ("T01", "T02", "T03", "T04", "T05")
@@ -223,7 +224,9 @@ def seed_demo(session: Session, storage: Storage, embedder: Embedder | None, pas
 def main() -> None:
     password = os.environ.get("DEMO_PASSWORD") or f"demo-{uuid.uuid4().hex[:8]}"
     with SessionLocal() as session:
-        result = seed_demo(session, get_storage(), get_embedder(), password)
+        storage, embedder = get_storage(), get_embedder()
+        result = seed_demo(session, storage, embedder, password)
+        result["marketplace"] = seed_marketplace(session, storage, embedder, password)
         session.commit()
     print(result)
     print(f"Demo accounts (admin@, buyer@, merchant-sumba@, tailor-bandung@ ... {DOMAIN}) "

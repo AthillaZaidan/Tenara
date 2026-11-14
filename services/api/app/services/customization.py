@@ -18,7 +18,7 @@ from app.models import (
     TemplateVersion,
     User,
 )
-from app.services import audit, jobs
+from app.services import audit, fabric_maps, jobs, motif_layout
 from app.services import listings as listings_svc
 from app.services import templates as templates_svc
 from app.services.signing import make_token
@@ -78,12 +78,19 @@ def create_customization(session: Session, buyer: User, listing_id: uuid.UUID,
 
 # ---------- prompt -> proposal ----------
 
-def _validate_candidates(defn: dict, listing: FabricListing, state: dict, raw: dict) -> dict:
+def _checked(defn: dict, listing: FabricListing, fmap, state: dict, field: str, value):
+    """validate_value, with a motif layout's region ids first turned into snapshots of the fabric map."""
+    if field == "motif_layout" and field in defn["options"]:
+        value = motif_layout.from_ids(value, fmap, state.get(field))
+    return templates_svc.validate_value(defn, field, value, listing)
+
+
+def _validate_candidates(defn: dict, listing: FabricListing, fmap, state: dict, raw: dict) -> dict:
     changes, unsupported, clarifications = [], [], []
     for cand in raw.get("changes", []):
         field = cand.get("field")
         try:
-            value = templates_svc.validate_value(defn, field, cand.get("value"), listing)
+            value = _checked(defn, listing, fmap, state, field, cand.get("value"))
         except ValueError as exc:
             spec = defn["options"].get(field, {})
             unsupported.append({"text": f"{field}={cand.get('value')}", "reason": str(exc),
@@ -106,14 +113,16 @@ def propose(session: Session, user: User, cust: Customization, expected_revision
     listing = session.get(FabricListing, cust.listing_id)
     defn = definition_of(session, cust)
     state = get_revision(session, cust, cust.current_revision).state
+    fmap = fabric_maps.current_map(session, listing)
+    regions = motif_layout.usable(fmap)
     raw, used = None, None
     for interpreter in get_interpreters():
         try:
-            raw, used = interpreter.interpret(prompt, defn, state), interpreter.name
+            raw, used = interpreter.interpret(prompt, defn, state, regions), interpreter.name
             break
         except InterpretationFailed:
             continue
-    body = _validate_candidates(defn, listing, state, raw or {})
+    body = _validate_candidates(defn, listing, fmap, state, raw or {})
     understood = bool(body["changes"] or body["clarifications"])
     proposal = {
         "base_design_revision": cust.current_revision, **body,
@@ -145,9 +154,10 @@ def _diff(old: dict, new: dict) -> list[dict]:
     return [{"field": k, "from": old.get(k), "to": v} for k, v in new.items() if old.get(k) != v]
 
 
-def _validated(defn: dict, listing: FabricListing, field: str, value, error_field: str):
+def _validated(defn: dict, listing: FabricListing, field: str, value, error_field: str, fmap=None,
+               state: dict | None = None):
     try:
-        return templates_svc.validate_value(defn, field, value, listing)
+        return _checked(defn, listing, fmap, state or {}, field, value)
     except ValueError as exc:
         raise AppValidationError(str(exc), field=error_field) from None
 
@@ -163,6 +173,7 @@ def apply_revision(session: Session, user: User, cust: Customization, expected_r
     defn = definition_of(session, cust)
     current = get_revision(session, cust, cust.current_revision)
     state = dict(current.state)
+    fmap = fabric_maps.current_map(session, listing)
     applied: dict = {}
     carried = list(current.open_clarifications)
     open_clar: list = []
@@ -187,13 +198,25 @@ def apply_revision(session: Session, user: User, cust: Customization, expected_r
                 if choice not in clar["choices"]:
                     raise AppValidationError("Pilihan tidak valid", field=f"resolutions.{clar['id']}")
                 field, value = choice, (state.get(choice, 0) or 0) + clar["direction"]
+            elif clar["field"] == "motif_layout":  # which garment part a named fabric region goes on
+                if choice not in clar["choices"]:
+                    raise AppValidationError("Pilihan tidak valid", field=f"resolutions.{clar['id']}")
+                base = applied.get("motif_layout", state.get("motif_layout"))
+                ids = motif_layout.to_ids(base)
+                ids["panels"][choice] = clar["region"]
+                ids["avoid"] = [r for r in ids["avoid"] if r != clar["region"]]
+                field, value = "motif_layout", ids
+                state_for_layout = {**state, "motif_layout": base}
+                applied[field] = _validated(defn, listing, field, value, f"resolutions.{clar['id']}", fmap,
+                                            state_for_layout)
+                continue
             else:
                 field, value = clar["field"], choice
-            applied[field] = _validated(defn, listing, field, value, f"resolutions.{clar['id']}")
+            applied[field] = _validated(defn, listing, field, value, f"resolutions.{clar['id']}", fmap, state)
         source, prompt_text, interpretation = "prompt", request.prompt, proposal
     elif changes is not None:
         for field, value in changes.items():
-            applied[field] = _validated(defn, listing, field, value, f"changes.{field}")
+            applied[field] = _validated(defn, listing, field, value, f"changes.{field}", fmap, state)
     else:
         target = get_revision(session, cust, revert_to)
         if revert_to == cust.current_revision:

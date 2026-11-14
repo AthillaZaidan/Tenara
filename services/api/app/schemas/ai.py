@@ -21,6 +21,8 @@ class EstimateIn(BaseModel):
 
 class TryOnIn(BaseModel):
     body_photo_id: uuid.UUID
+    # the buyer agrees to send this photo to an AI image service for this one request
+    use_ai: bool = False
 
 
 class AvatarIn(BaseModel):

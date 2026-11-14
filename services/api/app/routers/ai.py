@@ -7,12 +7,12 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.deps import current_user, require_role
-from app.core.errors import AppValidationError, NotFound
+from app.core.errors import AppValidationError, NotFound, ServiceUnavailable
 from app.core.ownership import get_owned_or_404
 from app.core.responses import ok
 from app.db.base import get_session
 from app.ml.text import product_story
-from app.ml.vision import photo_match, vlm
+from app.ml.vision import photo_match, tryon_ai, vlm
 from app.ml.vision.photo_match import PhotoEmbedder, get_photo_embedder
 from app.ml.vision.vlm import VLMClient, get_vlm
 from app.models import (
@@ -52,6 +52,7 @@ def consent_notice():
     return ok({"version": photos.NOTICE_VERSION, "text": photos.CONSENT_TEXT,
                "default_retention_minutes": settings.photo_default_retention_minutes,
                "max_retention_days": settings.photo_max_retention_days,
+               "ai_tryon": {"available": tryon_ai.available(), "notice": tryon_ai.NOTICE},
                "guidance": ["Seluruh badan, satu orang, menghadap depan",
                             "Pakaian pas badan, bahu dan pinggul terlihat jelas",
                             "Foto dari depan setinggi pinggang, cahaya cukup",
@@ -159,7 +160,9 @@ def photo_try_on(cust_id: uuid.UUID, body: TryOnIn, user: User = Depends(current
                  session: Session = Depends(get_session)):
     cust = cust_svc.owned_customization(session, user, cust_id)
     photos.owned_photo(session, user, body.body_photo_id)
-    preview = cust_svc.request_on_body_preview(session, user, cust, body.body_photo_id)
+    if body.use_ai and not tryon_ai.available():
+        raise ServiceUnavailable("Fit On dengan AI belum dikonfigurasi di server ini; pakai Fit On biasa")
+    preview = cust_svc.request_on_body_preview(session, user, cust, body.body_photo_id, body.use_ai)
     session.commit()
     return ok(cust_svc.preview_out(session, preview))
 

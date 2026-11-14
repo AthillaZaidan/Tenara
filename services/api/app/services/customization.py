@@ -271,13 +271,13 @@ def request_preview(session: Session, user: User, cust: Customization) -> Previe
 
 
 def request_on_body_preview(session: Session, user: User, cust: Customization,
-                            photo_id: uuid.UUID) -> Preview:
+                            photo_id: uuid.UUID, use_ai: bool = False) -> Preview:
     preview = Preview(customization_id=cust.id, design_revision=cust.current_revision,
                       kind="on_body", body_photo_id=photo_id)
     session.add(preview)
     session.flush()
     job = jobs.enqueue(session, "preview.on_body", user.id,
-                       {"preview_id": str(preview.id), "photo_id": str(photo_id)},
+                       {"preview_id": str(preview.id), "photo_id": str(photo_id), "use_ai": use_ai},
                        subject_type="customization", subject_id=cust.id,
                        subject_revision=cust.current_revision)
     preview.job_id = job.id

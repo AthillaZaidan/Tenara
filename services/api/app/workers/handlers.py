@@ -9,11 +9,12 @@ from PIL import Image, ImageOps
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.errors import AppValidationError, ServiceUnavailable
 from app.ml.text import product_story
 from app.ml.text.embedding import get_embedder
 from app.ml.text.story_gen import get_story_llm
-from app.ml.vision import avatar, body3d, body_measure, fabric_map, render
+from app.ml.vision import avatar, body3d, body_measure, fabric_map, render, tryon_ai
 from app.ml.vision.body_measure import MeasurementFailure
 from app.ml.vision.pose import get_pose_detector
 from app.models import (
@@ -184,9 +185,41 @@ def handle_on_body_preview(session: Session, job: Job) -> dict:
     for name in ("l_shoulder", "r_shoulder"):
         if pose.landmarks[name].visibility < body_measure.MIN_VISIBILITY:
             raise PermanentJobError("Bahu tidak terlihat jelas; ambil ulang fotonya")
-    rendered = render.render_garment(cust.template_code, revision.state, _texture(session, listing))
+    texture = _texture(session, listing)
+    rendered = render.render_garment(cust.template_code, revision.state, texture)
+    if job.input.get("use_ai"):
+        try:
+            return _on_body_with_ai(session, preview, cust, revision, image, rendered, texture, job)
+        except RuntimeError as exc:  # the provider failed; say so instead of passing the fallback off as AI
+            rendered.warnings.append(f"ai_failed: Fit On AI gagal ({exc}); yang tampil adalah tempelan sederhana")
     composite = render.compose_on_body(image, pose, rendered.image)
     return _save(session, preview, cust, composite, ONBODY_METHOD, rendered.warnings, job)
+
+
+def _on_body_with_ai(session: Session, preview: Preview, cust: Customization, revision, image: Image.Image,
+                     rendered: render.Rendered, texture: Image.Image, job: Job) -> dict:
+    """The buyer's photo dressed in the design by an image model (opt-in: the photo leaves the server)."""
+    if not tryon_ai.available():
+        raise RuntimeError("model gambar belum dikonfigurasi")
+    from app.services import audit, template_defs
+
+    audit.record(session, actor=job.owner_id, action="photo.sent_to_ai_image_service", target_type="body_photo",
+                 target_id=job.input["photo_id"], metadata={"model": settings.llm_image_model,
+                                                          "preview_id": str(preview.id)})
+    name = template_defs.DEFINITIONS[cust.template_code]["name"]
+    result = tryon_ai.generate(image, rendered.image, texture, name, revision.state,
+                               model=settings.llm_image_model)
+    try:
+        output = Image.open(io.BytesIO(result.png)).convert("RGB")
+    except (OSError, ValueError) as exc:  # a reply that is not an image is a provider failure like any other
+        raise RuntimeError("gambar dari penyedia tidak dapat dibaca") from exc
+    method = f"{tryon_ai.METHOD_PREFIX}:{settings.llm_image_model}"
+    job.model_version = method
+    notes = [w for w in rendered.warnings if not w.startswith("Tata letak")]
+    cost = result.usage.get("cost")
+    if cost is not None:
+        notes.append(f"ai_cost_usd: {cost}")
+    return _save(session, preview, cust, output, method, notes, job, label=tryon_ai.LABEL)
 
 
 AVATAR_LABEL = ("Avatar dibentuk dari angka ukuran saja (tanpa foto). Baju digambar mengikuti badan dengan "

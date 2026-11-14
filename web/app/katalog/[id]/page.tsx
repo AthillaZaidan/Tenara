@@ -4,7 +4,7 @@ import { CatalogTraditionDetail } from "@/components/CatalogTraditionDetail";
 import { Footer } from "@/components/Footer";
 import { Nav } from "@/components/Nav";
 import { api } from "@/lib/api";
-import { catalogSamplesForTradition, findCatalogTradition } from "@/lib/catalog-data";
+import { catalogSamplesForTradition, findCatalogTradition, findEntryForTradition } from "@/lib/catalog-data";
 import type { Entry } from "@/lib/types";
 import type { Listing } from "@/components/ListingCard";
 import type { GalleryVariant } from "@/lib/variants";
@@ -29,9 +29,7 @@ export default async function CatalogTraditionPage({ params, searchParams }: { p
   let offersUnavailable = false;
   try {
     const entries = (await api<{ items: Entry[] }>("/gallery?limit=100", { token: null })).items;
-    const names = tradition.apiNames.map((name) => name.trim().toLocaleLowerCase("id-ID"));
-    const entry = entries.find((candidate) => [candidate.name, ...candidate.aliases]
-      .some((name) => names.includes(name.trim().toLocaleLowerCase("id-ID"))));
+    const entry = findEntryForTradition(entries, tradition.apiNames);
     if (entry) {
       apiSlug = entry.slug;
       const [offersResult, storyResult, variantsResult] = await Promise.allSettled([

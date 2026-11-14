@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CatalogBrowser, type CatalogRecord } from "@/components/CatalogBrowser";
 import { Footer } from "@/components/Footer";
 import { Nav } from "@/components/Nav";
-import { catalogSamplesForTradition, catalogTraditions } from "@/lib/catalog-data";
+import { catalogSamplesForTradition, catalogTraditions, findEntryForTradition } from "@/lib/catalog-data";
 import { api } from "@/lib/api";
 import type { Entry } from "@/lib/types";
 import { entriesForRegion, regions } from "@/lib/regions";
@@ -37,13 +37,9 @@ async function loadCatalog(): Promise<CatalogRecord[]> {
     batch.forEach(([id, detail]) => detailsById.set(id, detail));
   }
 
-  const matchesTradition = (entry: Entry, apiNames: string[]) => {
-    const names = [entry.name, ...entry.aliases].map((name) => name.trim().toLocaleLowerCase("id-ID"));
-    return apiNames.some((name) => names.includes(name.trim().toLocaleLowerCase("id-ID")));
-  };
   const matchedEntryIds = new Set<string>();
   const traditionRecords: CatalogRecord[] = catalogTraditions.map((tradition) => {
-    const entry = entries.find((candidate) => matchesTradition(candidate, tradition.apiNames));
+    const entry = findEntryForTradition(entries.filter((candidate) => !matchedEntryIds.has(candidate.id)), tradition.apiNames);
     if (entry) matchedEntryIds.add(entry.id);
     const detail = entry ? detailsById.get(entry.id) : undefined;
     return {
@@ -86,7 +82,10 @@ async function loadCatalog(): Promise<CatalogRecord[]> {
       };
     }));
 
-  return [...traditionRecords, ...additionalEntries];
+  // A Gallery entry with nothing to look at or buy is an empty card here; it stays in the Gallery.
+  const shownEntries = additionalEntries.filter((record) =>
+    record.availability.listing_count > 0 || record.reference_images.length > 0 || (record.listing_images?.length ?? 0) > 0);
+  return [...traditionRecords, ...shownEntries];
 }
 
 export default async function CatalogPage({

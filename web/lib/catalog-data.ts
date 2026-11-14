@@ -103,3 +103,14 @@ export const featuredCatalogSample = (traditionId: string) =>
 
 export const findCatalogTradition = (id: string) =>
   catalogTraditions.find((tradition) => tradition.id === id || tradition.galleryId === id);
+
+/** The Gallery entry for a catalog tradition: the first API name that any entry carries wins, so a
+ * broader alias ("Tenun Ikat Flores") never shadows the tradition's own entry ("Tenun Ikat Sikka"). */
+export function findEntryForTradition<T extends { name: string; aliases: string[] }>(entries: T[], apiNames: string[]): T | undefined {
+  const norm = (name: string) => name.trim().toLocaleLowerCase("id-ID");
+  for (const wanted of apiNames.map(norm)) {
+    const entry = entries.find((candidate) => [candidate.name, ...candidate.aliases].some((name) => norm(name) === wanted));
+    if (entry) return entry;
+  }
+  return undefined;
+}

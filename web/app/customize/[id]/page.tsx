@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AvatarViewer } from "@/components/AvatarViewer";
 import { PhotoMeasure } from "@/components/PhotoMeasure";
 import { Field, Notice, Page, RequireAuth, useAction, useLoad } from "@/components/ui";
 import { api, fileUrl, idr } from "@/lib/api";
@@ -174,15 +175,21 @@ function EstimateBox({ cust, onChanged }: { cust: Customization; onChanged: () =
   );
 }
 
-function PreviewBox({ cust }: { cust: Customization }) {
-  const act = useAction();
+/** A preview job: polled until the worker has finished it. */
+function usePreview() {
   const [preview, setPreview] = useState<Preview | null>(null);
-  const pending = preview && ["queued", "processing"].includes(preview.status);
+  const pending = !!preview && ["queued", "processing"].includes(preview.status);
   useEffect(() => {
     if (!preview || !pending) return;
     const t = setInterval(async () => { try { setPreview(await api<Preview>(`/previews/${preview.id}`)); } catch { /* retry on next tick */ } }, 2500);
     return () => clearInterval(t);
   }, [preview, pending]);
+  return { preview, setPreview, pending };
+}
+
+function PreviewBox({ cust }: { cust: Customization }) {
+  const act = useAction();
+  const { preview, setPreview, pending } = usePreview();
   return (
     <div className="grid gap-4">
       <button className="btn btn-quiet w-fit" disabled={act.busy || !!pending} onClick={async () => { const p = await act.run(() => api<Preview>(`/customizations/${cust.id}/product-previews`, { method: "POST" })); if (p) setPreview(p); }}>Buat ilustrasi desain</button>
@@ -191,6 +198,47 @@ function PreviewBox({ cust }: { cust: Customization }) {
       {preview?.status === "failed" && <Notice tone="error">Ilustrasi gagal dibuat.</Notice>}
       {preview?.url && <figure className="m-0 grid max-w-md gap-2"><img src={fileUrl(preview.url)} alt="Ilustrasi konseptual desain" className="w-full bg-surface" /><figcaption className="text-base text-muted">{preview.label}</figcaption></figure>}
       {preview?.warnings.map((w) => <p key={w} className="text-base text-muted">{w}</p>)}
+    </div>
+  );
+}
+
+const GENDERS = [["neutral", "Netral"], ["female", "Perempuan"], ["male", "Laki-laki"]] as const;
+
+function AvatarBox({ cust }: { cust: Customization }) {
+  const act = useAction();
+  const { preview, setPreview, pending } = usePreview();
+  const [gender, setGender] = useState("neutral");
+  const mset = cust.measurement_set;
+  const make = async () => {
+    if (!mset) return;
+    const p = await act.run(() => api<Preview>(`/customizations/${cust.id}/avatar-previews`, { body: { measurement_set_id: mset.id, gender } }));
+    if (p) setPreview(p);
+  };
+  // warnings start with a machine code ("avatar_mismatch:back_length: ..."); show the sentence after it
+  const notes = preview?.warnings.map((w) => w.replace(/^[a-z_]+(:[a-z_]+)?: /, "")) ?? [];
+  return (
+    <div className="grid gap-4">
+      <p className="text-base">Lihat baju ini dipakai badan 3D yang dibentuk dari ukuranmu: tinggi, lingkar, dan panjang yang kamu isi. Avatar dibuat dari angka saja, tanpa foto, dan hanya bisa dilihat olehmu; penjahit tidak menerimanya.</p>
+      {!mset && <p className="text-base text-muted">Isi dan simpan ukuran badan (termasuk tinggi) dulu.</p>}
+      <div className="flex flex-wrap items-end gap-3">
+        <Field label="Bentuk dasar badan">
+          <select className="field" value={gender} onChange={(e) => setGender(e.target.value)}>
+            {GENDERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </Field>
+        <button className="btn btn-quiet w-fit" disabled={act.busy || pending || !mset} onClick={make}>{preview?.url ? "Buat ulang avatar 3D" : "Buat avatar 3D"}</button>
+      </div>
+      {act.error && <Notice tone="error">{act.error}</Notice>}
+      {pending && <p role="status">Avatar sedang dibentuk dari ukuranmu…</p>}
+      {preview?.status === "failed" && <Notice tone="error">Avatar gagal dibuat.</Notice>}
+      {preview?.status === "stale" && <Notice tone="error">Desain atau ukuran sudah berubah sejak avatar ini dibuat. Buat ulang.</Notice>}
+      {preview?.url && (
+        <figure className="m-0 grid gap-2">
+          <AvatarViewer src={fileUrl(preview.url)} alt="Avatar 3D dari ukuranmu memakai baju rancangan" />
+          <figcaption className="text-base text-muted">{preview.label} Seret untuk memutar, cubit atau gulir untuk memperbesar.</figcaption>
+        </figure>
+      )}
+      {notes.map((w) => <p key={w} className="text-base text-muted">{w}</p>)}
     </div>
   );
 }
@@ -253,6 +301,7 @@ function Workspace() {
       <Section title="Ukuran badan"><Measurements cust={cust} onChanged={reload} /></Section>
       <Section title="Kebutuhan kain"><EstimateBox cust={cust} onChanged={reload} /></Section>
       <Section title="Ilustrasi"><PreviewBox cust={cust} /></Section>
+      <Section title="Coba di badanmu (3D)"><AvatarBox cust={cust} /></Section>
       <Section title="Pilih penjahit"><Tailors cust={cust} /></Section>
     </div>
   );

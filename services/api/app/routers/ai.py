@@ -28,6 +28,7 @@ from app.models import (
 )
 from app.schemas.ai import (
     AnalyzeIn,
+    AvatarIn,
     ConsentIn,
     EstimateIn,
     TryOnIn,
@@ -159,6 +160,18 @@ def photo_try_on(cust_id: uuid.UUID, body: TryOnIn, user: User = Depends(current
     cust = cust_svc.owned_customization(session, user, cust_id)
     photos.owned_photo(session, user, body.body_photo_id)
     preview = cust_svc.request_on_body_preview(session, user, cust, body.body_photo_id)
+    session.commit()
+    return ok(cust_svc.preview_out(session, preview))
+
+
+# ----- 3D avatar from measurements -----
+
+@router.post("/customizations/{cust_id}/avatar-previews", status_code=202)
+def avatar_preview(cust_id: uuid.UUID, body: AvatarIn, user: User = Depends(current_user),
+                   session: Session = Depends(get_session)):
+    cust = cust_svc.owned_customization(session, user, cust_id)
+    mset = meas_svc.owned_set(session, user, body.measurement_set_id)
+    preview = cust_svc.request_avatar_preview(session, user, cust, mset, body.gender)
     session.commit()
     return ok(cust_svc.preview_out(session, preview))
 

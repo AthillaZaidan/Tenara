@@ -23,6 +23,11 @@ class TryOnIn(BaseModel):
     body_photo_id: uuid.UUID
 
 
+class AvatarIn(BaseModel):
+    measurement_set_id: uuid.UUID
+    gender: str = "neutral"  # body model: neutral, female or male
+
+
 class AnalyzeIn(BaseModel):
     listing_id: uuid.UUID
     file_id: uuid.UUID | None = None

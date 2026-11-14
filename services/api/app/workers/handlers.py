@@ -193,6 +193,15 @@ AVATAR_LABEL = ("Avatar dibentuk dari angka ukuran saja (tanpa foto). Baju digam
                 "kelonggaran template; bukan simulasi jatuhnya kain atau pola potong.")
 
 
+def _cut_box(region: dict) -> list[float]:
+    """Zones are boxed to the photo's edges by the model; step inside so the mount does not show as a stripe."""
+    x0, y0, x1, y1 = region["box"]
+    if region["kind"] != "zone":
+        return [x0, y0, x1, y1]
+    dx, dy = 0.04 * (x1 - x0), 0.02 * (y1 - y0)
+    return [x0 + dx, y0 + dy, x1 - dx, y1 - dy]
+
+
 def _layout_textures(session: Session, listing: FabricListing, state: dict, photo_bytes: bytes):
     """Fabric for the garment parts named in the design's motif layout, cut from the listing photo."""
     layout = state.get("motif_layout") or {}
@@ -203,7 +212,7 @@ def _layout_textures(session: Session, listing: FabricListing, state: dict, phot
     zones = [r for r in (fmap.regions if fmap else []) if r["kind"] == "zone"]
     cm_per_px, assumed = avatar.photo_scale(photo.width, [z["box"][2] - z["box"][0] for z in zones],
                                             listing.piece_width_cm or listing.usable_width_cm)
-    panels = {p: avatar.region_texture(photo, snap["box"], cm_per_px, snap["label"])
+    panels = {p: avatar.region_texture(photo, _cut_box(snap), cm_per_px, snap["label"])
               for p, snap in layout.get("panels", {}).items()}
     avoided = {snap["region"] for snap in layout.get("avoid", [])}
     default = None
@@ -212,7 +221,7 @@ def _layout_textures(session: Session, listing: FabricListing, state: dict, phot
         pick = next((z for z in left if z["label"] == "badan kain"), None) or max(
             left, key=lambda z: (z["box"][2] - z["box"][0]) * (z["box"][3] - z["box"][1]), default=None)
         if pick is not None:
-            default = avatar.region_texture(photo, pick["box"], cm_per_px, pick["label"])
+            default = avatar.region_texture(photo, _cut_box(pick), cm_per_px, pick["label"])
     notes = [f"motif_layout: tata letak kain: {motif_layout.describe(layout)}"]
     if fmap is None or fmap.status != "confirmed":
         notes.append("map_estimate: letak motif memakai peta kain perkiraan AI yang belum dikonfirmasi penjual; "

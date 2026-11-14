@@ -6,12 +6,12 @@ import { Suspense, useState } from "react";
 import { Field, Notice, Page, RequireAuth, useAction, useLoad } from "@/components/ui";
 import { api, fileUrl, idr, newKey, when } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { DIM_LABEL, OPTION_LABEL, REQUEST_STATUS, VALUE_LABEL, label } from "@/lib/design";
+import { DIM_LABEL, OPTION_LABEL, REQUEST_STATUS, label, optionText } from "@/lib/design";
 
 type Req = {
   id: string; status: string; revision: number; customization_id: string; tailor_id: string; reject_reason: string | null;
   address?: { id: string; recipient_name: string; line1: string; city: string; province: string };
-  design_state?: Record<string, string | number>; measurements_cm?: Record<string, number>;
+  design_state?: Record<string, unknown>; measurements_cm?: Record<string, number>;
   estimate?: { required_length_cm?: number; purchase_quantity?: string; surplus_m?: string; fits?: boolean };
   template?: { code: string };
   design_preview?: { url: string; label: string } | null;
@@ -177,7 +177,7 @@ function Detail() {
         {req.design_state && (
           <div className="grid gap-1 bg-surface p-5 text-base">
             <h3 className="mb-1 text-lg font-medium" style={H}>Desain</h3>
-            {Object.entries(req.design_state).map(([k, v]) => <p key={k} className="flex justify-between gap-4"><span className="text-muted">{label(OPTION_LABEL, k)}</span><span>{label(VALUE_LABEL, String(v))}</span></p>)}
+            {Object.entries(req.design_state).map(([k, v]) => <p key={k} className="flex justify-between gap-4"><span className="text-muted">{label(OPTION_LABEL, k)}</span><span>{optionText(v)}</span></p>)}
           </div>
         )}
         {req.measurements_cm && (

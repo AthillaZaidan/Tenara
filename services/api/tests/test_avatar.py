@@ -24,7 +24,7 @@ def fake_avatar(monkeypatch):
     """SMPL-X stand-in (no model files needed): records what the builder got."""
     calls = []
 
-    def build(body, code, state, ease_cm, height_cm, values, texture):
+    def build(body, code, state, ease_cm, height_cm, values, texture, panels=None, default=None):
         calls.append({"body": body, "code": code, "state": state, "ease": ease_cm, "height": height_cm,
                       "values": values, "texture": texture.size})
         return avatar.Avatar(glb=GLB, fitted={**values, "height": height_cm},

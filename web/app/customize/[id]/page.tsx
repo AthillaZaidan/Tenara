@@ -175,10 +175,16 @@ function EstimateBox({ cust, onChanged }: { cust: Customization; onChanged: () =
   );
 }
 
-/** A preview job: polled until the worker has finished it. */
-function usePreview() {
+/** A preview job: polled until the worker has finished it, and read again whenever `refreshKey`
+ * changes (a new design or measurement revision can make it stale). */
+function usePreview(refreshKey: string) {
   const [preview, setPreview] = useState<Preview | null>(null);
   const pending = !!preview && ["queued", "processing"].includes(preview.status);
+  const id = preview?.id;
+  useEffect(() => {
+    if (!id) return;
+    api<Preview>(`/previews/${id}`).then(setPreview).catch(() => { /* keep the last known state */ });
+  }, [id, refreshKey]);
   useEffect(() => {
     if (!preview || !pending) return;
     const t = setInterval(async () => { try { setPreview(await api<Preview>(`/previews/${preview.id}`)); } catch { /* retry on next tick */ } }, 2500);
@@ -189,13 +195,14 @@ function usePreview() {
 
 function PreviewBox({ cust }: { cust: Customization }) {
   const act = useAction();
-  const { preview, setPreview, pending } = usePreview();
+  const { preview, setPreview, pending } = usePreview(String(cust.current_revision));
   return (
     <div className="grid gap-4">
       <button className="btn btn-quiet w-fit" disabled={act.busy || !!pending} onClick={async () => { const p = await act.run(() => api<Preview>(`/customizations/${cust.id}/product-previews`, { method: "POST" })); if (p) setPreview(p); }}>Buat ilustrasi desain</button>
       {act.error && <Notice tone="error">{act.error}</Notice>}
       {pending && <p role="status">Ilustrasi sedang dibuat…</p>}
       {preview?.status === "failed" && <Notice tone="error">Ilustrasi gagal dibuat.</Notice>}
+      {preview?.status === "stale" && <Notice tone="error">Desain sudah berubah sejak ilustrasi ini dibuat. Buat ulang.</Notice>}
       {preview?.url && <figure className="m-0 grid max-w-md gap-2"><img src={fileUrl(preview.url)} alt="Ilustrasi konseptual desain" className="w-full bg-surface" /><figcaption className="text-base text-muted">{preview.label}</figcaption></figure>}
       {preview?.warnings.map((w) => <p key={w} className="text-base text-muted">{w}</p>)}
     </div>
@@ -206,7 +213,7 @@ const GENDERS = [["neutral", "Netral"], ["female", "Perempuan"], ["male", "Laki-
 
 function AvatarBox({ cust }: { cust: Customization }) {
   const act = useAction();
-  const { preview, setPreview, pending } = usePreview();
+  const { preview, setPreview, pending } = usePreview(`${cust.current_revision}-${cust.measurement_set?.revision ?? 0}`);
   const [gender, setGender] = useState("neutral");
   const mset = cust.measurement_set;
   const make = async () => {

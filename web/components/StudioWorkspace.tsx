@@ -5,24 +5,25 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, LoaderCircle, Scissors, Sparkles } from "lucide-react";
 import { GarmentDrawing, ModelChoices, STUDIO_STEPS, StudioCanvas, StudioLoading, StudioShell, type StudioTemplate } from "@/components/Studio";
+import { AvatarViewer } from "@/components/AvatarViewer";
 import { PhotoMeasure } from "@/components/PhotoMeasure";
 import { PhotoTryOn } from "@/components/PhotoTryOn";
 import { AddressForm } from "@/components/AddressForm";
 import type { Listing } from "@/components/ListingCard";
 import { Field, Notice, useAction, useLoad } from "@/components/ui";
-import { api, idr } from "@/lib/api";
-import { DIM_LABEL, OPTION_LABEL, VALUE_LABEL, label, type OptionDef } from "@/lib/design";
+import { api, fileUrl, idr } from "@/lib/api";
+import { DIM_LABEL, OPTION_LABEL, VALUE_LABEL, label, layoutText, optionText, type MotifLayout, type OptionDef } from "@/lib/design";
 
 type Customization = {
   id: string; listing_id: string; template: { code: string; name: string; required_dimensions: string[] };
-  current_revision: number; state: Record<string, string | number>;
+  current_revision: number; state: Record<string, string | number | MotifLayout>;
   open_clarifications: { id: string; field: string; question: string; choices: string[] }[];
   measurement_set: { id: string; status: string; revision: number } | null;
   material_estimate: { id: string; stale: boolean } | null; ready_for_tailor_validation: boolean;
 };
 type Proposal = {
   proposal_id: string;
-  changes: { field: string; value: string | number; from: string | number; status: string }[];
+  changes: { field: string; value: unknown; from: unknown; status: string }[];
   unsupported_requests: { text: string; reason: string }[];
   clarifications: { id: string; field: string; text: string; question: string; choices: string[]; direction: number }[];
   fallback: string | null;
@@ -48,7 +49,8 @@ function DesignOptions({ cust, initialTemplate, onChanged, onDirtyChange }: { cu
   const act = useAction();
   const [draft, setDraft] = useState<Record<string, string | number>>({});
   const template = tpl.data ?? initialTemplate;
-  const options = template?.options ?? {};
+  // the motif layout has its own controls (FabricMapBox); here only the plain options
+  const options = Object.fromEntries(Object.entries(template?.options ?? {}).filter(([, d]) => d.type !== "layout"));
   const changed = Object.fromEntries(Object.entries(draft).filter(([k, v]) => String(v) !== String(cust.state[k])));
   const dirty = Object.keys(changed).length > 0;
   useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
@@ -64,7 +66,8 @@ function DesignOptions({ cust, initialTemplate, onChanged, onDirtyChange }: { cu
       <div className="studio-group-heading"><h3>{group.title}</h3><span>{group.number}</span></div>
       <div className="studio-fields">
         {group.entries.map(([key, def]) => {
-          const value = draft[key] ?? cust.state[key] ?? def.default;
+          if (def.type === "layout") return null;
+          const value = draft[key] ?? (cust.state[key] as string | number | undefined) ?? def.default;
           return (
             <Field key={key} label={label(OPTION_LABEL, key)} hint={def.type === "number" ? `${def.min} sampai ${def.max} ${def.unit ?? ""}` : undefined}>
               {def.type === "enum" ? (
@@ -89,6 +92,65 @@ function DesignOptions({ cust, initialTemplate, onChanged, onDirtyChange }: { cu
   );
 }
 
+type Region = { id: string; kind: "zone" | "motif"; label: string; box: number[]; repeats: number | null };
+type FabricMap = { id: string; status: string; error: string | null; regions: Region[]; photo_url: string; label: string };
+
+/** The listing photo with where its zones and motifs sit, so the buyer knows what to name in a prompt. */
+function FabricMapBox({ cust, onChanged }: { cust: Customization; onChanged: () => void }) {
+  const act = useAction();
+  const map = useLoad(() => api<FabricMap | null>(`/listings/${cust.listing_id}/fabric-map`), cust.listing_id);
+  const m = map.data;
+  const pending = m?.status === "pending";
+  const { reload } = map;
+  useEffect(() => {
+    if (!pending) return;
+    const t = setInterval(reload, 2500);
+    return () => clearInterval(t);
+  }, [pending, reload]);
+  const layout = cust.state.motif_layout as MotifLayout | undefined;
+  const hasLayout = !!layout && (Object.keys(layout.panels ?? {}).length > 0 || (layout.avoid ?? []).length > 0);
+  const usable = (m?.regions ?? []).filter((r) => r.label !== "rumbai");
+  return (
+    <div className="grid gap-4">
+      <h3 className="text-xl font-medium" style={H}>Peta motif kain</h3>
+      <p className="text-base">Petakan dulu bagian-bagian kain asli ini (kepala kain, badan kain, motif-motifnya). Setelah itu kamu bisa menulis bagian kain mana yang ditaruh di bagian baju mana.</p>
+      {(!m || m.status === "failed") && (
+        <button className="btn btn-quiet w-fit" disabled={act.busy} onClick={async () => { const r = await act.run(() => api(`/listings/${cust.listing_id}/fabric-map`, { method: "POST" })); if (r) reload(); }}>
+          {m?.status === "failed" ? "Coba petakan lagi" : "Petakan motif kain"}
+        </button>
+      )}
+      {act.error && <Notice tone="error">{act.error}</Notice>}
+      {m?.status === "failed" && <Notice tone="error">Peta kain gagal dibuat{m.error ? `: ${m.error}` : "."}</Notice>}
+      {pending && <p role="status">Kain sedang dipetakan…</p>}
+      {m && (m.status === "estimated" || m.status === "confirmed") && (
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,260px)_1fr] sm:items-start">
+          <div className="relative">
+            <img src={fileUrl(m.photo_url)} alt="Foto kain dengan bagian-bagian yang dipetakan" className="block w-full" />
+            {m.regions.map((r) => (
+              <span key={r.id} title={r.label}
+                className={`absolute ${r.kind === "zone" ? "border border-dashed border-surface" : "border-2 border-ink"}`}
+                style={{ left: `${r.box[0] * 100}%`, top: `${r.box[1] * 100}%`, width: `${(r.box[2] - r.box[0]) * 100}%`, height: `${(r.box[3] - r.box[1]) * 100}%` }}>
+                <span className={`absolute left-0 top-0 px-1 text-xs leading-5 ${r.kind === "zone" ? "bg-surface text-ink" : "bg-ink text-bg"}`}>{r.label}</span>
+              </span>
+            ))}
+          </div>
+          <div className="grid gap-2 text-base">
+            <p>Bagian kain yang bisa kamu sebut:</p>
+            <ul className="flex flex-wrap gap-2 p-0">{usable.map((r) => <li key={r.id} className="list-none bg-surface px-3 py-1">{r.label}{r.repeats ? ` ×${r.repeats}` : ""}</li>)}</ul>
+            <p className="text-muted">{m.label}</p>
+          </div>
+        </div>
+      )}
+      {hasLayout && (
+        <div className="flex flex-wrap items-center gap-3 bg-surface p-4 text-base">
+          <span>Tata letak kain: {layoutText(layout)}</span>
+          <button className="btn btn-quiet" disabled={act.busy} onClick={async () => { const r = await act.run(() => api(`/customizations/${cust.id}/revisions`, { body: { expected_design_revision: cust.current_revision, changes: { motif_layout: {} } } })); if (r) onChanged(); }}>Kembalikan otomatis</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => void }) {
   const act = useAction();
   const [prompt, setPrompt] = useState("");
@@ -97,7 +159,7 @@ function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => 
   return (
     <div className="studio-prompt grid gap-4">
       <div className="studio-group-heading"><h3><Sparkles size={16} /> Ceritakan idemu</h3><span>03</span></div>
-      <Field label="Ceritakan perubahan dengan kalimat biasa" hint="Contoh: tambah saku dada kiri, kancing kayu, pendekkan hem 3 cm. Sistem hanya menerapkan opsi yang didukung pola ini.">
+      <Field label="Ceritakan perubahan dengan kalimat biasa" hint="Contoh: tambah saku dada kiri, kancing kayu, pendekkan hem 3 cm. Setelah kain dipetakan: motif manusianya taruh di dada, burung di bawahan, kepala kainnya jangan dipakai. Sistem hanya menerapkan opsi yang didukung pola ini.">
         <textarea className="field" placeholder="Misalnya, tambahkan saku dada kiri dan kancing kayu…" value={prompt} onChange={(e) => setPrompt(e.target.value)} />
       </Field>
       {act.error && <Notice tone="error">{act.error}</Notice>}
@@ -110,13 +172,13 @@ function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => 
           <h3 className="text-xl font-medium" style={H}>Usulan perubahan</h3>
           {proposal.fallback && <p className="text-base">{proposal.fallback}</p>}
           {proposal.changes.length > 0 ? (
-            <ul className="grid list-disc gap-1 pl-5">{proposal.changes.map((c) => <li key={c.field}>{label(OPTION_LABEL, c.field)}: {label(VALUE_LABEL, String(c.from))} → {label(VALUE_LABEL, String(c.value))}</li>)}</ul>
+            <ul className="grid list-disc gap-1 pl-5">{proposal.changes.map((c) => <li key={c.field}>{label(OPTION_LABEL, c.field)}: {optionText(c.from)} → {optionText(c.value)}</li>)}</ul>
           ) : <p className="text-base">Belum ada perubahan yang bisa diterapkan.</p>}
           {proposal.clarifications.map((c) => (
             <Field key={c.id} label={`${c.question} (“${c.text}”)`}>
               <select className="field" value={picks[c.id] ?? ""} onChange={(e) => setPicks({ ...picks, [c.id]: e.target.value })}>
                 <option value="">Pilih…</option>
-                {c.choices.map((v) => <option key={v} value={v}>{label(OPTION_LABEL, v)}</option>)}
+                {c.choices.map((v) => <option key={v} value={v}>{OPTION_LABEL[v] ?? label(VALUE_LABEL, v)}</option>)}
               </select>
             </Field>
           ))}
@@ -134,7 +196,7 @@ function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => 
   );
 }
 
-type DesignRevision = { revision: number; source: string; state: Record<string, string | number>; prompt_text: string | null; created_at: string };
+type DesignRevision = { revision: number; source: string; state: Record<string, string | number | MotifLayout>; prompt_text: string | null; created_at: string };
 
 function RevisionHistory({ cust, onChanged }: { cust: Customization; onChanged: () => void }) {
   const versions = useLoad(() => api<DesignRevision[]>(`/customizations/${cust.id}/revisions`), `${cust.id}-${cust.current_revision}`);
@@ -144,7 +206,7 @@ function RevisionHistory({ cust, onChanged }: { cust: Customization; onChanged: 
     <ul className="mt-4 grid list-none gap-4 p-0">{versions.data?.map((v) => <li key={v.revision} className="grid gap-2 border-t border-current/20 pt-4">
       <p>Revisi {v.revision}{v.revision === cust.current_revision && " · aktif"}</p>
       {v.prompt_text && <p className="text-base">Permintaan: {v.prompt_text}</p>}
-      <ul className="list-disc pl-5 text-base">{Object.entries(v.state).map(([key, value]) => <li key={key}>{label(OPTION_LABEL, key)}: {label(VALUE_LABEL, String(value))}</li>)}</ul>
+      <ul className="list-disc pl-5 text-base">{Object.entries(v.state).map(([key, value]) => <li key={key}>{label(OPTION_LABEL, key)}: {optionText(value)}</li>)}</ul>
       {v.revision !== cust.current_revision && <button className="btn btn-quiet w-fit" disabled={act.busy} onClick={async () => {
         const result = await act.run(() => api(`/customizations/${cust.id}/revisions`, { body: { expected_design_revision: cust.current_revision, revert_to_revision: v.revision } }));
         if (result) onChanged();
@@ -239,6 +301,65 @@ function PreviewBox({ cust, model, listing, loading, dirty }: { cust: Customizat
       {preview && (preview.design_revision !== cust?.current_revision || preview.status === "stale") && <Notice>Desain berubah. Buat ulang ilustrasi untuk revisi terbaru.</Notice>}
       {preview?.warnings.map((w) => <p key={w} className="text-base text-muted">{w}</p>)}
     </StudioCanvas>
+  );
+}
+
+/** A preview job: polled until the worker has finished it, and read again whenever `refreshKey`
+ * changes (a new design or measurement revision can make it stale). */
+function usePreview(refreshKey: string) {
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const pending = !!preview && ["queued", "processing"].includes(preview.status);
+  const id = preview?.id;
+  useEffect(() => {
+    if (!id) return;
+    api<Preview>(`/previews/${id}`).then(setPreview).catch(() => { /* keep the last known state */ });
+  }, [id, refreshKey]);
+  useEffect(() => {
+    if (!preview || !pending) return;
+    const t = setInterval(async () => { try { setPreview(await api<Preview>(`/previews/${preview.id}`)); } catch { /* retry on next tick */ } }, 2500);
+    return () => clearInterval(t);
+  }, [preview, pending]);
+  return { preview, setPreview, pending };
+}
+
+const GENDERS = [["neutral", "Netral"], ["female", "Perempuan"], ["male", "Laki-laki"]] as const;
+
+function AvatarBox({ cust }: { cust: Customization }) {
+  const act = useAction();
+  const { preview, setPreview, pending } = usePreview(`${cust.current_revision}-${cust.measurement_set?.revision ?? 0}`);
+  const [gender, setGender] = useState("neutral");
+  const mset = cust.measurement_set;
+  const make = async () => {
+    if (!mset) return;
+    const p = await act.run(() => api<Preview>(`/customizations/${cust.id}/avatar-previews`, { body: { measurement_set_id: mset.id, gender } }));
+    if (p) setPreview(p);
+  };
+  // warnings start with a machine code ("avatar_mismatch:back_length: ..."); show the sentence after it
+  const notes = preview?.warnings.map((w) => w.replace(/^[a-z_]+(:[a-z0-9_]+)?: /, "")) ?? [];
+  return (
+    <div className="grid gap-4">
+      <p className="text-base">Lihat baju ini dipakai badan 3D yang dibentuk dari ukuranmu: tinggi, lingkar, dan panjang yang kamu isi. Avatar dibuat dari angka saja, tanpa foto, dan hanya bisa dilihat olehmu; penjahit tidak menerimanya.</p>
+      {!mset && <p className="text-base text-muted">Isi dan simpan ukuran badan (termasuk tinggi) dulu.</p>}
+      <div className="flex flex-wrap items-end gap-3">
+        <Field label="Bentuk dasar badan">
+          <select className="field" value={gender} onChange={(e) => setGender(e.target.value)}>
+            {GENDERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </Field>
+        <button className="btn btn-quiet w-fit" disabled={act.busy || pending || !mset} onClick={make}>{preview?.url ? "Buat ulang avatar 3D" : "Buat avatar 3D"}</button>
+      </div>
+      {act.error && <Notice tone="error">{act.error}</Notice>}
+      {pending && <p role="status">Avatar sedang dibentuk dari ukuranmu…</p>}
+      {preview?.status === "failed" && <Notice tone="error">Avatar gagal dibuat.</Notice>}
+      {preview?.status === "stale" && <Notice tone="error">Desain atau ukuran sudah berubah sejak avatar ini dibuat. Buat ulang.</Notice>}
+      {preview?.url && (
+        <figure className="m-0 grid gap-2">
+          <AvatarViewer src={fileUrl(preview.url)} alt="Avatar 3D dari ukuranmu memakai baju rancangan" />
+          <figcaption className="text-base text-muted">{preview.label} Seret untuk memutar, cubit atau gulir untuk memperbesar.</figcaption>
+        </figure>
+      )}
+      {notes.map((w) => <p key={w} className="text-base text-muted">{w}</p>)}
+    </div>
   );
 }
 
@@ -346,8 +467,8 @@ export function StudioWorkspace({ initialListingId, initialCustomizationId }: { 
             {action.error && <Notice tone="error">{action.error}</Notice>}
           </Section></div>
           {cust && <div key={cust.id} className="studio-design-panels">
-          <div hidden={step !== 1}><Section title="Desain"><div className="studio-selected-model"><GarmentDrawing code={cust.template.code} /><div><span>MODEL PILIHANMU</span><strong>{cust.template.name}</strong><button type="button" onClick={() => setStep(0)}>Pilih model lain <ArrowRight size={12} /></button></div><span className="studio-selected-check"><Check size={15} /></span></div><DesignOptions cust={cust} initialTemplate={initialTemplate} onChanged={reload} onDirtyChange={setDirty} /><PromptBox cust={cust} onChanged={reload} /><RevisionHistory cust={cust} onChanged={reload} /></Section></div>
-          <div hidden={step !== 2}><Section title="Ukuran & Fit On"><Measurements cust={cust} onChanged={reload} onFrontUploaded={setFrontPhotoId} /><PhotoTryOn key={frontPhotoId ?? "no-photo"} custId={cust.id} revision={cust.current_revision} frontPhotoId={frontPhotoId} /></Section></div>
+          <div hidden={step !== 1}><Section title="Desain"><div className="studio-selected-model"><GarmentDrawing code={cust.template.code} /><div><span>MODEL PILIHANMU</span><strong>{cust.template.name}</strong><button type="button" onClick={() => setStep(0)}>Pilih model lain <ArrowRight size={12} /></button></div><span className="studio-selected-check"><Check size={15} /></span></div><DesignOptions cust={cust} initialTemplate={initialTemplate} onChanged={reload} onDirtyChange={setDirty} /><FabricMapBox cust={cust} onChanged={reload} /><PromptBox cust={cust} onChanged={reload} /><RevisionHistory cust={cust} onChanged={reload} /></Section></div>
+          <div hidden={step !== 2}><Section title="Ukuran & Fit On"><Measurements cust={cust} onChanged={reload} onFrontUploaded={setFrontPhotoId} /><PhotoTryOn key={frontPhotoId ?? "no-photo"} custId={cust.id} revision={cust.current_revision} frontPhotoId={frontPhotoId} /><div className="studio-option-group"><div className="studio-group-heading"><h3>Coba di badanmu (3D)</h3></div><AvatarBox cust={cust} /></div></Section></div>
           <div hidden={step !== 3}><Section title="Kebutuhan kain"><EstimateBox cust={cust} onChanged={reload} /></Section></div>
           <div hidden={step !== 4}><Section title="Pilih penjahit"><Tailors cust={cust} /></Section></div>
           </div>}

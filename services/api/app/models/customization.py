@@ -197,7 +197,7 @@ class MaterialEstimate(Base):
 class Preview(Base):
     __tablename__ = "previews"
     __table_args__ = (
-        CheckConstraint("kind in ('product','on_body')", name="ck_previews_kind_valid"),
+        CheckConstraint("kind in ('product','on_body','avatar_3d')", name="ck_previews_kind_valid"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -218,5 +218,10 @@ class Preview(Base):
     body_photo_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("body_photos.id", ondelete="SET NULL"), nullable=True
     )
+    # avatar_3d: the measurements the body was rebuilt from; the preview goes stale when they change
+    measurement_set_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("measurement_sets.id", ondelete="SET NULL"), nullable=True
+    )
+    measurement_revision: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = _ts()
     updated_at: Mapped[datetime] = _upd()

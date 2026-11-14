@@ -126,6 +126,9 @@ DEFINITIONS: dict[str, dict] = {
 }
 
 for _code, _def in DEFINITIONS.items():
+    # which part of the actual fabric goes where (see services/motif_layout); empty = automatic
+    _panels = ["front", "back", "hem"] + (["sleeves"] if _def["material_rules"]["sleeve_width_ratio"] else [])
+    _def["options"]["motif_layout"] = {"type": "layout", "panels": _panels, "default": {}}
     _def["code"] = _code
     _def["demo_values_notice"] = DEMO_NOTICE
     _def["preview"] = {"asset": f"{_code.lower()}_flat", "renders": ["product", "on_body"]}

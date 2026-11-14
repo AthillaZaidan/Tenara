@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import FabricListing, GarmentTemplate, TemplateVersion, User
-from app.services import audit
+from app.services import audit, motif_layout
 from app.services.template_defs import DEFINITIONS, definition
 
 
@@ -92,6 +92,8 @@ def validate_value(defn: dict, field: str, value, listing: FabricListing):
     spec = defn["options"].get(field)
     if spec is None:
         raise ValueError(f"Template ini tidak memiliki opsi '{field}'")
+    if spec["type"] == "layout":
+        return motif_layout.check(spec, value)
     if spec["type"] == "enum":
         if value not in spec["values"]:
             raise ValueError(f"Nilai '{value}' tidak didukung; pilihan: {', '.join(spec['values'])}")

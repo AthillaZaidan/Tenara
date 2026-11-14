@@ -120,8 +120,10 @@ def render_garment(code: str, state: dict, texture: Image.Image) -> Rendered:
         out.drawn.append(f"hem_length_delta_cm={state['hem_length_delta_cm']}")
     if "sleeve_length_delta_cm" in state and sleeve_kind:
         out.drawn.append(f"sleeve_length_delta_cm={state['sleeve_length_delta_cm']}")
-    for name in state:
-        if name not in HANDLED:
+    for name, value in state.items():
+        if name == "motif_layout" and value:
+            out.warnings.append("Tata letak motif kain hanya ditampilkan pada avatar 3D")
+        elif name not in HANDLED and value not in ({}, None):
             out.warnings.append(f"Detail '{name}' belum digambar pada pratinjau ini")
     return out
 

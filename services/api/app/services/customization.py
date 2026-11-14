@@ -11,6 +11,8 @@ from app.models import (
     DesignRevision,
     FabricListing,
     Job,
+    MeasurementSet,
+    MeasurementValue,
     Preview,
     PromptRequest,
     TemplateVersion,
@@ -260,6 +262,36 @@ def request_on_body_preview(session: Session, user: User, cust: Customization,
     return preview
 
 
+AVATAR_GENDERS = ("neutral", "female", "male")
+AVATAR_LABEL = ("Perkiraan bentuk badan dari ukuran Anda dengan baju rancangan; bukan simulasi jatuhnya kain, "
+                "pola potong, atau jaminan hasil akhir.")
+
+
+def request_avatar_preview(session: Session, user: User, cust: Customization, mset: MeasurementSet,
+                           gender: str) -> Preview:
+    """The buyer's body rebuilt from a measurement set (numbers only, no photo) wearing the current design."""
+    if gender not in AVATAR_GENDERS:
+        raise AppValidationError(f"gender harus salah satu dari {', '.join(AVATAR_GENDERS)}", field="gender")
+    if mset.height_cm is None:
+        raise AppValidationError("Isi tinggi badan dulu; avatar 3D diskalakan dari tinggi badan",
+                                 field="measurement_set_id")
+    filled = session.scalar(select(MeasurementValue.id).where(MeasurementValue.set_id == mset.id,
+                                                              MeasurementValue.value_cm.is_not(None)).limit(1))
+    if filled is None:
+        raise AppValidationError("Isi minimal satu ukuran badan", field="measurement_set_id")
+    preview = Preview(customization_id=cust.id, design_revision=cust.current_revision, kind="avatar_3d",
+                      measurement_set_id=mset.id, measurement_revision=mset.revision)
+    session.add(preview)
+    session.flush()
+    job = jobs.enqueue(session, "preview.avatar_3d", user.id,
+                       {"preview_id": str(preview.id), "gender": gender},
+                       subject_type="customization", subject_id=cust.id,
+                       subject_revision=cust.current_revision)
+    preview.job_id = job.id
+    session.flush()
+    return preview
+
+
 def owned_preview(session: Session, user: User, preview_id: uuid.UUID) -> Preview:
     preview = session.get(Preview, preview_id)
     cust = session.get(Customization, preview.customization_id) if preview else None
@@ -273,6 +305,9 @@ def preview_out(session: Session, preview: Preview) -> dict:
     job = session.get(Job, preview.job_id) if preview.job_id else None
     status, warnings = preview.status, list(preview.warnings)
     outdated = preview.design_revision != cust.current_revision
+    if preview.kind == "avatar_3d":  # also stale once the measurements it was built from change
+        mset = session.get(MeasurementSet, preview.measurement_set_id) if preview.measurement_set_id else None
+        outdated = outdated or mset is None or mset.revision != preview.measurement_revision
     if job is not None and job.status == "failed":
         status = "failed"
         if job.error:
@@ -286,4 +321,6 @@ def preview_out(session: Session, preview: Preview) -> dict:
     return {"id": preview.id, "kind": preview.kind, "status": status,
             "design_revision": preview.design_revision, "method": preview.method,
             "warnings": warnings, "job_id": preview.job_id, "url": url,
-            "label": "Ilustrasi konseptual; bukan pola potong atau jaminan hasil akhir."}
+            "measurement_set_id": preview.measurement_set_id,
+            "label": AVATAR_LABEL if preview.kind == "avatar_3d"
+            else "Ilustrasi konseptual; bukan pola potong atau jaminan hasil akhir."}

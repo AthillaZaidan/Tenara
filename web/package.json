@@ -9,10 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/model-viewer": "4.4.0",
     "@next/env": "16.4.5",
     "next": "16.4.5",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "three": "0.183.2"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",

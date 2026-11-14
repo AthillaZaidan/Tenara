@@ -11,7 +11,7 @@ from app.core.errors import AppValidationError, ServiceUnavailable
 from app.ml.text import product_story
 from app.ml.text.embedding import get_embedder
 from app.ml.text.story_gen import get_story_llm
-from app.ml.vision import body3d, body_measure, render
+from app.ml.vision import avatar, body3d, body_measure, render
 from app.ml.vision.body_measure import MeasurementFailure
 from app.ml.vision.pose import get_pose_detector
 from app.models import (
@@ -25,6 +25,7 @@ from app.models import (
     MeasurementSet,
     MeasurementValue,
     Preview,
+    TemplateVersion,
     User,
 )
 from app.services import jobs, photos
@@ -132,21 +133,26 @@ def _design(session: Session, preview: Preview):
     return cust, revision, listing
 
 
-def _texture(session: Session, listing: FabricListing):
+def _fabric_photo(session: Session, listing: FabricListing) -> bytes:
     image = session.scalar(select(ListingImage).where(ListingImage.listing_id == listing.id)
                            .order_by(ListingImage.sort_order, ListingImage.id).limit(1))
     file = session.get(File, image.file_id) if image else None
     if file is None or file.deleted_at is not None:
         raise PermanentJobError("Listing tidak memiliki foto kain untuk dipakai sebagai tekstur")
-    return render.load_texture(_storage().open(file.storage_key))
+    return _storage().open(file.storage_key)
+
+
+def _texture(session: Session, listing: FabricListing):
+    return render.load_texture(_fabric_photo(session, listing))
 
 
 def _save(session: Session, preview: Preview, cust: Customization, image, method: str,
-          warnings: list[str], job: Job) -> dict:
+          warnings: list[str], job: Job, *, data: bytes | None = None, content_type: str = "image/png",
+          label: str = VISUAL_LABEL) -> dict:
     stored = create_file(session, _storage(), owner_id=cust.buyer_id, kind="preview",
-                         data=render.to_png(image), content_type="image/png")
+                         data=render.to_png(image) if data is None else data, content_type=content_type)
     preview.file_id, preview.method = stored.id, method
-    preview.warnings = [VISUAL_LABEL, *warnings]
+    preview.warnings = [label, *warnings]
     preview.status = "completed_with_warnings" if warnings else "completed"
     job.model_version = method
     session.flush()
@@ -181,6 +187,30 @@ def handle_on_body_preview(session: Session, job: Job) -> dict:
     return _save(session, preview, cust, composite, ONBODY_METHOD, rendered.warnings, job)
 
 
+AVATAR_LABEL = ("Avatar dibentuk dari angka ukuran saja (tanpa foto). Baju digambar mengikuti badan dengan "
+                "kelonggaran template; bukan simulasi jatuhnya kain atau pola potong.")
+
+
+def handle_avatar_preview(session: Session, job: Job) -> dict:
+    """The buyer's body rebuilt from their measurements (SMPL-X) wearing the design, as a GLB."""
+    preview = session.get(Preview, uuid.UUID(job.input["preview_id"]))
+    mset = session.get(MeasurementSet, preview.measurement_set_id) if preview.measurement_set_id else None
+    if mset is None or mset.owner_id != job.owner_id or mset.revision != preview.measurement_revision:
+        raise PermanentJobError("Ukuran badan sudah berubah atau dihapus; buat avatar lagi")
+    body = _body_model(job.input.get("gender") or "neutral")
+    if body is None:
+        raise PermanentJobError("Model tubuh 3D (SMPL-X) belum terpasang di server; avatar 3D tidak tersedia")
+    cust, revision, listing = _design(session, preview)
+    values = {v.key: float(v.value_cm) for v in session.scalars(
+        select(MeasurementValue).where(MeasurementValue.set_id == mset.id)) if v.value_cm is not None}
+    rules = session.get(TemplateVersion, cust.template_version_id).definition["material_rules"]
+    result = avatar.build(body, cust.template_code, revision.state, float(rules["ease_cm"]),
+                          float(mset.height_cm), values, avatar.fabric_texture(_fabric_photo(session, listing)))
+    out = _save(session, preview, cust, None, avatar.METHOD, result.warnings, job, data=result.glb,
+                content_type="model/gltf-binary", label=AVATAR_LABEL)
+    return {**out, "fitted": result.fitted}
+
+
 def _story_llm():
     return get_story_llm()
 
@@ -210,4 +240,5 @@ def handle_story_generate(session: Session, job: Job) -> dict:
 jobs.register_handler("measurement.estimate", handle_measurement_estimate)
 jobs.register_handler("preview.product", handle_product_preview)
 jobs.register_handler("preview.on_body", handle_on_body_preview)
+jobs.register_handler("preview.avatar_3d", handle_avatar_preview)
 jobs.register_handler("story.generate", handle_story_generate)

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="78" height="78" viewBox="73 45 78 78" overflow="visible"><defs>
+      <linearGradient id="cream-journey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdfbf7" /><stop offset="0.52" stop-color="#f9f4ea" /><stop offset="1" stop-color="#f1ede2" /></linearGradient>
+      <linearGradient id="gold-journey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8d5b9" /><stop offset="1" stop-color="#5f4228" /></linearGradient>
+      <linearGradient id="green-journey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8baf7e" /><stop offset="1" stop-color="#304729" /></linearGradient>
+    </defs>
+    <g transform="translate(112,84) scale(1.08)"><circle cx="0" cy="0" r="30" fill="#f9f4ea" stroke="#8baf7e" stroke-width="4" /><circle r="23" fill="none" stroke="#5f4228" stroke-width="1.5" /><path d="M-14 15 L-5 -10 L17 -17 L8 10 Z" fill="#304729" stroke="#1d1914" stroke-width="2" /><path d="M-5 -10 L8 10 L17 -17 Z" fill="#c8d5b9" /><circle r="3" fill="#f9f4ea" /></g></svg>

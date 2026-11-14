@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 class ListingCreate(BaseModel):
     entry_id: uuid.UUID
+    variant_id: uuid.UUID | None = None
     title: str = Field(min_length=1, max_length=200)
     description: str = ""
     selling_unit: Literal["meter", "piece"]
@@ -29,6 +30,7 @@ class ListingCreate(BaseModel):
 
 class ListingUpdate(BaseModel):
     expected_revision: int
+    variant_id: uuid.UUID | None = None
     title: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = None
     price_idr: int | None = Field(default=None, gt=0)

@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Callable
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.encoders import jsonable_encoder
@@ -23,6 +24,7 @@ from app.models import (
 )
 from app.schemas.commerce import (
     AddressIn,
+    CheckoutAddressUpdate,
     CheckoutConfirm,
     CheckoutCreate,
     CommissionRuleIn,
@@ -86,11 +88,44 @@ def create_checkout(body: CheckoutCreate, user: User = Depends(current_user),
     return ok(svc.checkout_out(session, checkout))
 
 
+@router.post("/fabric-checkouts/continue", status_code=201)
+def continue_checkout(body: CheckoutCreate,
+                      key: str = Depends(require_idempotency_key),
+                      user: User = Depends(current_user), session: Session = Depends(get_session)):
+    """Create the checkout and reserve the requested stock in one idempotent action."""
+    _sweep(session)
+
+    def run() -> tuple[int, dict]:
+        checkout = svc.create_checkout(session, user, body.listing_id, body.quantity,
+                                       body.delivery_address_id)
+        confirmed, _payment = svc.confirm_checkout(session, user, checkout, checkout.total_idr)
+        return 201, jsonable_encoder(ok(svc.checkout_out(session, confirmed)))
+
+    return _idempotent(session, user, key, "/fabric-checkouts/continue", body, run)
+
+
+@router.get("/fabric-checkouts/estimate")
+def estimate_checkout(listing_id: uuid.UUID, quantity: Decimal = Query(gt=0),
+                      delivery_address_id: uuid.UUID = Query(),
+                      user: User = Depends(current_user), session: Session = Depends(get_session)):
+    return ok(svc.preview_checkout(session, user, listing_id, quantity, delivery_address_id))
+
+
 @router.get("/fabric-checkouts/{checkout_id}")
 def get_checkout(checkout_id: uuid.UUID, user: User = Depends(current_user),
                  session: Session = Depends(get_session)):
     _sweep(session)
     return ok(svc.checkout_out(session, svc.owned_checkout(session, user, checkout_id)))
+
+
+@router.patch("/fabric-checkouts/{checkout_id}/address")
+def update_checkout_address(checkout_id: uuid.UUID, body: CheckoutAddressUpdate,
+                            user: User = Depends(current_user), session: Session = Depends(get_session)):
+    _sweep(session)
+    checkout = svc.owned_checkout(session, user, checkout_id)
+    checkout = svc.update_checkout_address(session, user, checkout, body.delivery_address_id)
+    session.commit()
+    return ok(svc.checkout_out(session, checkout))
 
 
 @router.post("/fabric-checkouts/{checkout_id}/confirm")
@@ -200,5 +235,3 @@ def set_rule(body: CommissionRuleIn, user: User = Depends(require_role("admin"))
     rule = svc.set_commission_rule(session, user, body.applies_to, body.rate_bps)
     session.commit()
     return ok({"id": rule.id, "applies_to": rule.applies_to, "rate_bps": rule.rate_bps})
-
-

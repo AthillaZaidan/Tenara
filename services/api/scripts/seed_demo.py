@@ -21,6 +21,8 @@ from app.models import (
     FabricListing,
     FabricStockUnit,
     GalleryEntry,
+    GalleryVariant,
+    GalleryVariantImage,
     ListingImage,
     MerchantProfile,
     RoleAssignment,
@@ -69,6 +71,24 @@ def _fabric_png(base, accent) -> bytes:
         d.rectangle((x, 0, x + 14, 400), fill=accent)
     for y in range(20, 400, 80):
         d.polygon([(0, y), (40, y - 18), (80, y), (40, y + 18)], fill=accent)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _variant_illustration_png(seed: int) -> bytes:
+    """A decorative placeholder only; never represents a documented or sellable textile."""
+    img = Image.new("RGB", (600, 600), (244, 228, 187))
+    draw = ImageDraw.Draw(img)
+    palette = [(95, 50, 39), (184, 75, 49), (46, 91, 75)]
+    accent = palette[seed % len(palette)]
+    for y in range(-40, 660, 80):
+        draw.rectangle((0, y, 600, y + 9), fill=accent)
+    for x in range(-40, 660, 80):
+        offset = (x // 80 + seed) % 2 * 40
+        for y in range(-40 + offset, 660, 80):
+            draw.polygon([(x + 40, y), (x + 68, y + 40), (x + 40, y + 80), (x + 12, y + 40)],
+                         fill=(219, 171, 72), outline=(95, 50, 39), width=3)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
@@ -141,13 +161,39 @@ def seed_demo(session: Session, storage: Storage, embedder: Embedder | None, pas
     listings = 0
     entries = {name: _entry(session, admin, embedder, name) for name in {m[4] for m in MERCHANTS}}
     entry_of = {m[0]: entries[m[4]] for m in MERCHANTS}
+    sumba = entries["Tenun Ikat Sumba"]
+    variants: dict[str, GalleryVariant] = {}
+    for index, name in enumerate(("Kuda", "Andung")):
+        variant = session.scalar(select(GalleryVariant).where(
+            GalleryVariant.entry_id == sumba.id, GalleryVariant.name == name))
+        if variant is None:
+            variant = GalleryVariant(entry_id=sumba.id, name=name,
+                                     description="Varian demo untuk memperlihatkan filter penawaran.")
+            session.add(variant)
+            session.flush()
+        image_exists = session.scalar(select(GalleryVariantImage.id).where(
+            GalleryVariantImage.variant_id == variant.id).limit(1))
+        if image_exists is None:
+            file = create_file(session, storage, owner_id=admin.id, kind="reference_image",
+                               data=_variant_illustration_png(index), content_type="image/png",
+                               visibility="public")
+            session.add(GalleryVariantImage(
+                variant_id=variant.id, file_id=file.id,
+                caption="Ilustrasi demo; bukan foto kain, dokumentasi motif, atau bukti asal-usul.",
+                credit="Tenara · ilustrasi demo", license="Demo", sort_order=0))
+        variants[name] = variant
     for slug, merchant_slug, title, unit, price, width, stock, colours in FABRICS:
         merchant = merchants[merchant_slug]
-        if session.scalar(select(FabricListing.id).where(FabricListing.merchant_id == merchant.id,
-                                                         FabricListing.title == title)):
+        existing_listing = session.scalar(select(FabricListing).where(
+            FabricListing.merchant_id == merchant.id, FabricListing.title == title))
+        if existing_listing:
+            if existing_listing.entry_id == sumba.id and title == "Hinggi merah motif kuda" and existing_listing.variant_id is None:
+                existing_listing.variant_id = variants["Kuda"].id
             continue
         listing = FabricListing(
-            merchant_id=merchant.id, entry_id=entry_of[merchant_slug].id, title=title,
+            merchant_id=merchant.id, entry_id=entry_of[merchant_slug].id,
+            variant_id=variants["Kuda"].id if title == "Hinggi merah motif kuda" else None,
+            title=title,
             description="Listing demo dengan foto ilustrasi.", material="katun" if unit == "meter" else "songket",
             selling_unit=unit, price_idr=price, min_quantity=Decimal(1),
             quantity_increment=Decimal("0.5") if unit == "meter" else Decimal(1),

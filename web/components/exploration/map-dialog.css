@@ -1,0 +1,467 @@
+.map-dialog-theme {
+  display: contents;
+}
+.map-dialog-theme .modal-backdrop {
+  background: #1d191473;
+  backdrop-filter: blur(3px);
+}
+/* A static scrim avoids filtering the full map again on each scroll frame. */
+.map-passport-dialog-theme .modal-backdrop {
+  background: #233c32a6;
+  backdrop-filter: none;
+}
+.map-dialog-theme .modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 736px;
+  max-height: calc(100svh - 48px);
+  padding: 26px;
+  border: 1.5px solid var(--map-forest);
+  border-radius: 14px;
+  background: var(--map-paper);
+  color: var(--map-ink);
+  box-shadow:
+    inset 0 0 0 4px var(--map-paper),
+    inset 0 0 0 5px var(--map-line),
+    0 6px 0 #30472935,
+    0 24px 70px #1d191433;
+  font-family: var(--sans);
+  overflow: hidden;
+  scrollbar-color: var(--map-sage) transparent;
+  scrollbar-width: thin;
+}
+.map-dialog-theme .modal > .row-between {
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 3;
+  gap: 20px;
+  align-items: flex-start;
+  padding-bottom: 16px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--map-line);
+  background: var(--map-paper);
+}
+.map-dialog-theme .modal h2 {
+  margin: 4px 0 0;
+  color: var(--map-forest);
+  font: 700 25px/1.25 var(--sans);
+  letter-spacing: -0.035em;
+}
+.map-dialog-theme .modal > .row-between .icon-button {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--map-forest);
+  border-radius: 8px;
+  background: var(--map-paper);
+  color: var(--map-forest);
+  box-shadow:
+    inset 0 0 0 3px var(--map-paper),
+    inset 0 0 0 4px var(--map-line),
+    0 2px 0 #30472940;
+  transition:
+    background-color 180ms ease,
+    translate 180ms ease;
+}
+.map-dialog-theme .modal > .row-between .icon-button:hover {
+  background: #8baf7e24;
+  translate: 0 -1px;
+}
+.map-dialog-theme :is(a, button, input):focus-visible {
+  outline: 2px solid var(--map-forest);
+  outline-offset: 3px;
+}
+.map-dialog-theme .map-passport-dialog {
+  --map-forest: #205c28;
+  --map-sage: #739451;
+  --map-paper: #fcf5e5;
+  --map-ink: #102b16;
+  --map-coffee: #65351f;
+  --map-line: #c3ad50;
+  isolation: isolate;
+  max-width: 920px;
+  max-height: calc(100svh - 88px);
+  padding: 28px 32px 76px;
+  border: 3px solid #f9f3d9;
+  border-radius: 28px;
+  outline: 3px solid #738d57;
+  /* Pre-rasterized grain keeps the paper finish without a live turbulence filter. */
+  background: url("/assets/exploration/passport-paper-grain.png"),
+    radial-gradient(ellipse at 90% 10%, #e7d7a42b, transparent 55%),
+    #fcf5e5;
+  box-shadow: inset 0 0 0 4px #b8aa5e, inset 0 0 0 7px #fff9e9,
+    0 7px 0 #375b3a80, 0 24px 70px #142b2359;
+}
+.map-passport-dialog::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 8px;
+  border: 1px solid #ad922f;
+  border-radius: 19px;
+  pointer-events: none;
+}
+.map-dialog-theme .map-passport-dialog > .row-between {
+  align-items: center;
+  padding: 0 12px 22px 18px;
+  border: 0;
+  background: transparent;
+}
+.map-dialog-theme .map-passport-dialog h2 {
+  margin: 0;
+  color: #294b23;
+  font: 700 clamp(26px, 3vw, 38px)/1.15 var(--serif);
+  letter-spacing: -.025em;
+}
+.map-dialog-theme .map-passport-dialog > .row-between .icon-button {
+  width: 60px;
+  height: 60px;
+  border: 1.5px solid #356333;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fffbed, #f3e9c9);
+  box-shadow: inset 0 0 0 4px #fff8e5, inset 0 0 0 5px #bd9e3c,
+    0 4px 7px #66512133;
+}
+.map-passport-dialog > .row-between .icon-button svg {
+  width: 27px;
+  height: 27px;
+  stroke-width: 2;
+}
+.map-passport-divider {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  flex: 0 0 28px;
+  gap: 8px;
+  color: #b49a2e;
+}
+.map-passport-divider::before,
+.map-passport-divider::after {
+  content: "";
+  height: 1px;
+  background: #c5ac56;
+}
+.map-passport-divider::before { flex: 0 1 22%; }
+.map-passport-divider::after { flex: 1; }
+.map-passport-divider svg { width: 28px; height: 28px; }
+.map-passport-ornament {
+  position: absolute;
+  z-index: -1;
+  width: 190px;
+  height: 190px;
+  background: #c1a744;
+  mask: url("/assets/exploration/motif-ikat-pattern.svg") 0 0 / 76px 76px;
+  opacity: .42;
+  pointer-events: none;
+}
+.map-passport-ornament--top {
+  top: 8px;
+  left: 8px;
+  clip-path: polygon(0 0, 63% 0, 0 72%);
+}
+.map-passport-ornament--bottom {
+  right: 8px;
+  bottom: 8px;
+  width: 230px;
+  height: 190px;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+.map-passport-landscape {
+  position: absolute;
+  z-index: -2;
+  inset: auto 8px 8px;
+  height: 125px;
+  border-radius: 0 0 18px 18px;
+  background: url("/assets/exploration/passport-landscape.svg") left bottom / 100% 100% no-repeat;
+  pointer-events: none;
+}
+.map-destination-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  gap: 10px;
+  position: relative;
+  padding: 6px 2px 18px;
+}
+.map-destination-intro p {
+  margin: 0;
+  color: var(--map-coffee);
+  font: 400 clamp(13px, 1.65vw, 20px)/1.6 var(--sans);
+}
+.map-destination-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 5px 18px;
+  border: 1px solid var(--map-line);
+  border-radius: 20px;
+  background: linear-gradient(110deg, #eeebc8, #e8e9c7);
+  color: var(--map-forest);
+  font: 500 clamp(12px, 1.5vw, 18px)/1.4 var(--sans);
+  white-space: nowrap;
+}
+.map-destination-grid {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 3px 4px 8px;
+  scroll-padding-block: 8px;
+  overscroll-behavior: contain;
+  overflow: auto;
+  contain: paint;
+  /* Composite the bounded scroll area independently of the detailed atlas. */
+  transform: translateZ(0);
+  scrollbar-color: var(--map-sage) transparent;
+  scrollbar-width: thin;
+}
+.map-destination-card {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 14px;
+  min-height: 124px;
+  padding: 15px 20px 16px 32px;
+  border-radius: 19px;
+  color: var(--map-ink);
+  text-decoration: none;
+}
+.map-destination-card .map-control-surface {
+  border: 1.5px solid #286b2c;
+  background: url("/assets/exploration/passport-paper-grain.png"),
+    linear-gradient(135deg, #fffdf5, #faf5e6);
+  box-shadow: 0 3px 0 #6d7d3f2b, 0 5px 7px #77632c2b;
+}
+.map-destination-card .map-control-surface::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 90px;
+  height: 75px;
+  background: #afb16e;
+  mask: url("/assets/exploration/motif-ikat-pattern.svg") top right / 64px 64px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+  opacity: .3;
+}
+.map-destination-card .map-control-inlay {
+  inset: 6px;
+  border-color: #7e9d57;
+  border-radius: 13px;
+}
+.map-destination-card .map-control-wash {
+  background: linear-gradient(120deg, #b9cc7520, #9fbe6f36);
+}
+.map-destination-card .map-control-inlay::before,
+.map-destination-card .map-control-inlay::after {
+  content: none;
+}
+.map-destination-card:is(:hover, :focus-visible, [data-selected="true"])
+  .map-control-wash {
+  opacity: 1;
+  transform: translateX(0);
+}
+.map-destination-card:is(:hover, :focus-visible)
+  > :is(.map-control-surface, .map-control-inlay) {
+  transform: translateY(-1px);
+}
+.map-destination-card:active > :is(.map-control-surface, .map-control-inlay) {
+  transform: translateY(1px);
+}
+.map-destination-card[data-selected="true"] .map-control-inlay {
+  border-color: var(--map-sage);
+}
+.map-destination-copy {
+  position: relative;
+  z-index: 1;
+  display: block;
+  min-width: 0;
+}
+.map-destination-copy strong {
+  display: block;
+  color: #102b16;
+  font: 700 clamp(21px, 2.2vw, 27px)/1.15 var(--serif);
+  letter-spacing: -.025em;
+}
+.map-destination-province {
+  display: block;
+  margin-top: 3px;
+  color: var(--map-coffee);
+  font: 400 clamp(13px, 1.6vw, 19px)/1.35 var(--sans);
+}
+.map-destination-progress-label {
+  display: block;
+  margin-top: 8px;
+  color: #171b13;
+  font: 400 clamp(12px, 1.45vw, 17px)/1.4 var(--sans);
+}
+.map-destination-track {
+  display: block;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(90deg, #d2d8ae, #b6c495);
+  box-shadow: inset 0 0 0 1px #6b854526;
+}
+.map-destination-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1c6027, #469a37);
+  box-shadow: inset 0 0 0 1px #215f3180;
+}
+.map-destination-status {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--map-forest);
+}
+.map-destination-status.is-visited {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f4edcf, #dfe2b0);
+}
+.map-destination-status .map-icon--check { scale: 1.35; }
+.map-dialog-theme .nx-settings > p {
+  color: var(--map-coffee);
+  font: 400 13px/1.6 var(--sans);
+}
+.map-dialog-theme .nx-settings {
+  min-height: 0;
+  overflow-y: auto;
+}
+.map-dialog-theme .nx-settings label {
+  padding: 15px 0;
+  border-color: var(--map-line);
+}
+.map-dialog-theme .nx-settings strong {
+  color: var(--map-forest);
+  font: 600 14px/1.4 var(--sans);
+}
+.map-dialog-theme .nx-settings small {
+  color: var(--map-coffee);
+  font: 400 12px/1.5 var(--sans);
+}
+.map-dialog-theme .nx-settings input {
+  accent-color: var(--map-forest);
+}
+.map-dialog-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 20px;
+  padding: 10px 18px;
+  border: 1px solid var(--green-dark);
+  border-radius: 8px;
+  background: var(--map-forest);
+  box-shadow: 0 2px 0 var(--green-dark);
+  color: var(--map-paper);
+  font: 600 14px/1.4 var(--sans);
+}
+.map-dialog-primary:hover {
+  background: var(--green-dark);
+}
+@media (max-width: 600px) {
+  .map-dialog-theme .modal-backdrop {
+    padding: 16px;
+  }
+  .map-dialog-theme .modal {
+    max-height: calc(100svh - 32px);
+    padding: 18px;
+    border-radius: 12px;
+  }
+  .map-dialog-theme .modal h2 {
+    font-size: 22px;
+  }
+  .map-dialog-theme .modal > .row-between {
+    gap: 14px;
+    padding-bottom: 14px;
+  }
+  .map-destination-intro {
+    gap: 8px;
+    padding: 10px 2px 17px;
+  }
+  .map-destination-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .map-destination-card {
+    min-height: 136px;
+    padding: 18px 20px 20px 24px;
+  }
+  .map-dialog-theme .map-passport-dialog {
+    max-height: calc(100svh - 32px);
+    padding: 23px 16px 55px;
+    border-radius: 22px;
+  }
+  .map-dialog-theme .map-passport-dialog > .row-between {
+    gap: 12px;
+    padding: 0 4px 14px 9px;
+  }
+  .map-dialog-theme .map-passport-dialog h2 {
+    font-size: clamp(26px, 6.5vw, 36px);
+  }
+  .map-dialog-theme .map-passport-dialog > .row-between .icon-button {
+    width: 44px;
+    height: 44px;
+    border-radius: 9px;
+  }
+  .map-passport-dialog > .row-between .icon-button svg {
+    width: 22px;
+    height: 22px;
+  }
+  .map-passport-landscape {
+    height: 70px;
+  }
+  .map-passport-ornament--bottom {
+    width: 130px;
+    height: 110px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-dialog-theme .modal > .row-between .icon-button {
+    transition: none;
+    translate: none;
+  }
+  .map-destination-card > :is(.map-control-surface, .map-control-inlay) {
+    transition: none;
+    transform: none !important;
+  }
+  .map-destination-card .map-control-wash {
+    transition: none;
+  }
+}
+.nx-journey[data-motion="reduced"]
+  .map-dialog-theme
+  .modal
+  > .row-between
+  .icon-button {
+  transition: none;
+  translate: none;
+}
+.nx-journey[data-motion="reduced"]
+  .map-destination-card
+  > :is(.map-control-surface, .map-control-inlay) {
+  transition: none;
+  transform: none !important;
+}
+.nx-journey[data-motion="reduced"] .map-destination-card .map-control-wash {
+  transition: none;
+}

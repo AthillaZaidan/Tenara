@@ -1,0 +1,555 @@
+.nx-illustrated-atlas {
+  --atlas-animation-state: running;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 13% 10%, #d7ead3a3, transparent 38%),
+    radial-gradient(ellipse at 76% 37%, #90d3cb70, transparent 45%),
+    radial-gradient(ellipse at 50% 100%, #418f9b55, transparent 70%), #79b9ba;
+}
+.nx-atlas-ocean-texture {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+  opacity: 0.65;
+}
+.nx-atlas-ornaments {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
+.nx-atlas-viewport {
+  position: absolute;
+  inset: 190px 22px 137px;
+  outline-offset: -8px;
+  cursor: grab;
+  touch-action: none;
+  z-index: 2;
+}
+.nx-atlas-viewport[data-dragging="true"] {
+  cursor: grabbing;
+}
+.nx-atlas-viewport:focus-visible {
+  outline: 1px dashed #fff5cd90;
+  border-radius: 12px;
+}
+.nx-atlas-scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.nx-atlas-camera {
+  transform-origin: 0 0;
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+[data-dragging="true"] .nx-atlas-camera {
+  transition: none;
+}
+.nx-atlas-land-hit {
+  cursor: pointer;
+  stroke: transparent;
+  stroke-width: 5px;
+}
+.nx-atlas-label-line {
+  fill: none;
+  stroke: #f5e8b9;
+  stroke-width: 1.4px;
+  opacity: 0.9;
+  pointer-events: none;
+}
+.nx-atlas-destination {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  width: 100%;
+  padding: 0 12px;
+  border: 1.5px solid #ebd99c;
+  border-radius: 18px 15px 17px 14px;
+  background: linear-gradient(175deg, #fffcf0, #f5e9cb);
+  box-shadow:
+    0 3px 0 #936e4133,
+    0 6px 12px #2c5b432b;
+  color: #4a492d;
+  font: 750 14px/1 var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    translate 0.2s,
+    box-shadow 0.2s;
+}
+.nx-atlas-destination:hover,
+.nx-atlas-destination[aria-pressed="true"] {
+  background: #45623a;
+  color: #fff7dc;
+  border-color: #e5d79e;
+  translate: 0 -3px;
+  box-shadow:
+    0 3px 0 #38523455,
+    0 8px 18px #2c5b4340;
+}
+.nx-atlas-destination-gem {
+  color: #7a9445;
+  font-size: 12px;
+}
+.nx-atlas-destination:hover .nx-atlas-destination-gem,
+.nx-atlas-destination[aria-pressed="true"] .nx-atlas-destination-gem {
+  color: #f0d58f;
+}
+.nx-atlas-destination:focus-visible {
+  outline: 3px solid #fff8df !important;
+  outline-offset: 4px !important;
+}
+.nx-atlas-cloud {
+  animation: atlas-cloud-drift 30s ease-in-out infinite alternate;
+  filter: drop-shadow(0 12px 7px #326d5430);
+}
+.nx-atlas-boat {
+  animation: atlas-sailing 24s ease-in-out infinite alternate;
+}
+.nx-atlas-boat-1 {
+  animation-duration: 32s;
+  animation-delay: -13s;
+}
+.nx-atlas-boat-2 {
+  animation-duration: 28s;
+  animation-delay: -8s;
+}
+.nx-atlas-wake {
+  animation: atlas-wave-breathe 3s ease-in-out infinite alternate;
+}
+.nx-atlas-wave {
+  animation: atlas-wave-breathe 5s ease-in-out infinite alternate;
+}
+.nx-atlas-bird {
+  animation: atlas-bird-flight 9s ease-in-out infinite alternate;
+}
+.atlas-palm-fronds {
+  transform-origin: 3px -43px;
+  animation: atlas-palm-sway 5.5s ease-in-out infinite alternate;
+  /* Inherit into SVG <use> shadow trees, which ancestor selectors cannot reach. */
+  animation-play-state: var(--atlas-animation-state, running);
+}
+.nx-atlas-navigation-hint {
+  position: absolute;
+  z-index: 4;
+  bottom: 158px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #245d59;
+  opacity: 0.72;
+  font: 600 9px/1.5 var(--sans);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.nx-atlas-sunset {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: linear-gradient(155deg, #f2b56e80, #b65d4930 60%, #553d6d48);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s;
+}
+.nx-illustrated-atlas[data-light="sunset"] .nx-atlas-sunset {
+  opacity: 1;
+}
+.nx-illustrated-atlas[data-animated="false"],
+.nx-illustrated-atlas[data-quality="low"] {
+  --atlas-animation-state: paused;
+}
+.nx-illustrated-atlas[data-animated="false"] *,
+.nx-illustrated-atlas[data-animated="false"] *::before,
+.nx-illustrated-atlas[data-quality="low"] .atlas-palm-fronds {
+  animation-play-state: paused !important;
+}
+.nx-illustrated-atlas[data-quality="low"] .nx-atlas-cloud {
+  filter: none;
+}
+.nx-illustrated-atlas[data-quality="low"] .nx-atlas-ocean-texture {
+  display: none;
+}
+.nx-atlas-error {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  width: min(360px, 85%);
+  padding: 24px;
+  border: 1px solid #e5d09b;
+  border-radius: 8px;
+  background: #fff6df;
+  text-align: center;
+  font-size: 12px;
+  box-shadow: 0 10px 40px #315d4520;
+}
+.nx-atlas-error p {
+  margin: 9px 0 16px;
+  line-height: 1.7;
+}
+
+/* The atlas HUD follows the paper, brass and woven-cloth palette of the art. */
+.nx-refined-journey.nx-is-map .nx-atmosphere {
+  background: linear-gradient(
+    180deg,
+    #fff9e220,
+    transparent 22%,
+    transparent 80%,
+    #346d5620
+  );
+  box-shadow: inset 0 0 100px #285e5e17;
+}
+.nx-refined-journey.nx-is-map .nx-hud .brand,
+.nx-refined-journey.nx-is-map .nx-brand-caption {
+  color: #5c502f;
+}
+.nx-refined-journey.nx-is-map .nx-game-button {
+  border: 1px solid #a59467;
+  border-radius: 4px;
+  background: #fff8e9;
+  box-shadow:
+    0 3px 0 #5f624a66,
+    0 4px 12px #315d4510;
+  color: #514d30;
+}
+.nx-refined-journey.nx-is-map .nx-map-title {
+  top: 62px;
+}
+.nx-refined-journey.nx-is-map .nx-map-title > .nx-atlas-title-ornament {
+  display: block;
+  width: 206px;
+  height: 43px;
+  margin: -28px auto 7px;
+  color: #b38238;
+}
+.nx-refined-journey.nx-is-map .nx-map-title .nx-eyebrow {
+  color: #534e31;
+  font-size: 8px;
+  letter-spacing: 0.24em;
+}
+.nx-refined-journey.nx-is-map .nx-map-title .nx-eyebrow > span {
+  display: none;
+}
+.nx-refined-journey.nx-is-map .nx-map-title h1 {
+  margin: 7px 0 5px;
+  color: #433e24;
+  font-size: clamp(29px, 2.65vw, 44px);
+  letter-spacing: -0.045em;
+  line-height: 1.3;
+}
+.nx-refined-journey.nx-is-map .nx-map-title h1 em {
+  font-style: normal;
+}
+.nx-refined-journey.nx-is-map .nx-map-title p {
+  color: #41533d;
+  font-size: 11px;
+}
+.nx-is-map .nx-map-step {
+  top: 190px;
+  color: #4c5032;
+  font-size: 8px;
+  gap: 20px;
+}
+.nx-is-map .nx-map-step span {
+  opacity: 1;
+  color: #64644a;
+}
+.nx-is-map .nx-map-step span::before {
+  content: "|";
+  margin-right: 20px;
+  opacity: 0.5;
+}
+.nx-refined-journey.nx-is-map .nx-atlas-instruction {
+  bottom: 76px;
+  min-width: 540px;
+  padding: 15px 22px;
+  background: linear-gradient(115deg, #fffae9, #f3e8d2);
+  border: 1px solid #fff5d6;
+  box-shadow: 0 5px 20px #34665c20;
+  border-radius: 8px;
+}
+.nx-is-map .nx-atlas-instruction::before,
+.nx-is-map .nx-atlas-instruction::after {
+  content: "";
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border: 2px double #d4ad5f;
+  rotate: 45deg;
+  left: -8px;
+  pointer-events: none;
+}
+.nx-is-map .nx-atlas-instruction::after {
+  left: auto;
+  right: -8px;
+}
+.nx-is-map .nx-atlas-instruction strong {
+  color: #4a452f;
+}
+.nx-is-map .nx-atlas-instruction p {
+  color: #777057;
+}
+.nx-is-map .nx-atlas-seal {
+  border-color: #a99868;
+  color: #71623f;
+}
+.nx-is-map .nx-atlas-instruction button {
+  color: #51492f;
+  border-color: #baaa7b;
+}
+.nx-refined-journey.nx-is-map .nx-compass {
+  bottom: 180px;
+  color: #fff4d1;
+  opacity: 0.85;
+}
+.nx-is-map .nx-progress {
+  color: #3c4b35;
+}
+.nx-refined-journey.nx-is-map .nx-progress-icon {
+  background: #faf2d9;
+  border-color: #a4966c;
+}
+.nx-is-map[data-transition="out"] .nx-atlas-viewport {
+  opacity: 0;
+  scale: 1.08;
+  transition:
+    opacity 0.4s,
+    scale 0.45s;
+}
+.nx-is-map[data-transition="in"] .nx-atlas-viewport {
+  animation: atlas-arrival 0.75s ease-out;
+}
+.nx-atlas-sea-name {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-style: italic;
+  letter-spacing: 4px;
+  fill: #2e7376;
+  opacity: 0.8;
+}
+
+@keyframes atlas-cloud-drift {
+  from {
+    transform: translate(-12px, 0);
+  }
+  to {
+    transform: translate(20px, 7px);
+  }
+}
+@keyframes atlas-sailing {
+  0% {
+    transform: translate(-17px, 0) rotate(-2deg);
+  }
+  50% {
+    transform: translate(7px, -4px) rotate(1deg);
+  }
+  100% {
+    transform: translate(38px, 2px) rotate(-1deg);
+  }
+}
+@keyframes atlas-wave-breathe {
+  from {
+    opacity: 0.3;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 0.9;
+    transform: translateX(6px);
+  }
+}
+@keyframes atlas-bird-flight {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(35px, -13px);
+  }
+}
+@keyframes atlas-palm-sway {
+  from {
+    transform: rotate(-2deg);
+  }
+  to {
+    transform: rotate(3deg);
+  }
+}
+@keyframes atlas-arrival {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@media (min-width: 1800px) {
+  .nx-atlas-viewport {
+    inset: 205px 2% 150px;
+  }
+  .nx-is-map .nx-map-step {
+    top: 201px;
+  }
+}
+@media (max-width: 900px) {
+  .nx-atlas-viewport {
+    inset: 215px 0 195px;
+    overflow: hidden;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title {
+    top: 112px;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title > .nx-atlas-title-ornament {
+    width: 143px;
+    height: 29px;
+    margin: -21px auto 6px;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title h1 {
+    font-size: 30px;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title h1 br {
+    display: none;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title h1 em {
+    margin-left: 7px;
+  }
+  .nx-is-map .nx-map-step {
+    top: 199px;
+    bottom: auto;
+    font-size: 6px;
+    gap: 12px;
+  }
+  .nx-is-map .nx-map-step span::before {
+    margin-right: 12px;
+  }
+  .nx-atlas-navigation-hint {
+    bottom: 181px;
+    font-size: 8px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction {
+    min-width: 0;
+    bottom: 93px;
+    padding: 13px 16px;
+  }
+  .nx-refined-journey.nx-is-map .nx-compass {
+    top: auto;
+    bottom: 210px;
+    right: 18px;
+  }
+  .nx-atlas-corner-leaves {
+    opacity: 0.7;
+  }
+  .nx-atlas-destination {
+    font-size: 16px;
+  }
+  .nx-atlas-destination::after {
+    content: "";
+    position: absolute;
+    inset: -16px -4px;
+  }
+}
+@media (max-width: 520px) {
+  .nx-refined-journey.nx-is-map .nx-map-title {
+    top: 121px;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title h1 {
+    font-size: 28px;
+    line-height: 1.25;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title h1 br {
+    display: block;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title h1 em {
+    margin-left: 0;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title .nx-eyebrow {
+    font-size: 6px;
+    letter-spacing: 0.18em;
+  }
+  .nx-is-map .nx-map-step {
+    top: 224px;
+    gap: 8px;
+    letter-spacing: 0.01em;
+    font-size: 5.5px;
+  }
+  .nx-is-map .nx-map-step span::before {
+    margin-right: 8px;
+  }
+  .nx-atlas-viewport {
+    inset: 250px 0 191px;
+  }
+  .nx-atlas-navigation-hint {
+    max-width: 90%;
+    font-size: 7px;
+    gap: 5px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction {
+    bottom: 86px;
+    left: 16px;
+    right: 16px;
+    padding: 12px;
+    gap: 8px;
+  }
+  .nx-is-map .nx-atlas-instruction strong {
+    font-size: 8px;
+  }
+  .nx-is-map .nx-atlas-instruction p {
+    font-size: 7px;
+    max-width: 160px;
+  }
+  .nx-is-map .nx-atlas-instruction button {
+    font-size: 8px;
+    padding-left: 9px;
+    gap: 3px;
+  }
+  .nx-is-map .nx-atlas-seal {
+    width: 28px;
+    height: 28px;
+  }
+}
+@media (max-height: 760px) and (min-width: 901px) {
+  .nx-atlas-viewport {
+    top: 170px;
+    bottom: 120px;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title {
+    top: 59px;
+  }
+  .nx-refined-journey.nx-is-map .nx-map-title h1 {
+    font-size: 30px;
+  }
+  .nx-is-map .nx-map-step {
+    top: 173px;
+  }
+  .nx-atlas-navigation-hint {
+    bottom: 141px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction {
+    bottom: 65px;
+    padding: 11px 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-illustrated-atlas * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

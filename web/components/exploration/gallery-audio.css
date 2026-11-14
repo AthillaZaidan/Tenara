@@ -1,0 +1,128 @@
+.nx-audio-controls {
+  min-width: 0;
+  margin: 18px 0 0;
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid var(--map-line);
+  color: var(--map-ink);
+}
+.nx-audio-controls legend {
+  float: left;
+  width: 100%;
+  font: 700 12px/1.5 var(--sans);
+  padding: 0;
+  margin-bottom: 12px;
+}
+.nx-audio-switch {
+  clear: both;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 36px;
+  font: 600 12px/1.5 var(--sans);
+  text-align: left;
+}
+.nx-audio-switch > i {
+  margin-left: auto;
+  width: 30px;
+  height: 18px;
+  border: 1px solid var(--map-sage);
+  border-radius: 20px;
+  background: var(--sand);
+  padding: 2px;
+  transition: background 0.2s;
+}
+.nx-audio-switch > i::after {
+  content: "";
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--map-forest);
+  transition: translate 0.2s;
+}
+.nx-audio-switch > i[data-on="true"] {
+  background: #8baf7e66;
+}
+.nx-audio-switch > i[data-on="true"]::after {
+  translate: 12px 0;
+}
+.nx-audio-volume {
+  display: block;
+  margin-top: 12px;
+}
+.nx-audio-volume > span {
+  display: flex;
+  justify-content: space-between;
+  font: 500 11px/1.5 var(--sans);
+}
+.nx-audio-volume output {
+  color: var(--map-coffee);
+  font-variant-numeric: tabular-nums;
+}
+.nx-audio-volume input {
+  display: block;
+  width: 100%;
+  height: 20px;
+  margin-top: 4px;
+  padding: 0;
+  accent-color: var(--map-forest);
+  cursor: pointer;
+}
+.nx-audio-volume input:focus-visible {
+  outline: 2px solid var(--map-sage);
+  outline-offset: 3px;
+}
+.nx-audio-credit {
+  margin-top: 12px;
+  font: 400 10px/1.7 var(--sans);
+  color: var(--map-coffee);
+}
+.nx-audio-credit summary {
+  cursor: pointer;
+  font-size: 10px;
+}
+.nx-audio-credit p {
+  margin-top: 8px;
+}
+.nx-audio-credit a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.nx-audio-status {
+  font: 400 10px/1.6 var(--sans);
+  color: var(--map-coffee);
+  margin-top: 10px;
+}
+.nx-journey .nx-view-options {
+  max-height: min(74svh, 720px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.nx-journey .nx-view-light button[aria-pressed="true"] {
+  color: var(--map-paper);
+}
+.nx-settings .nx-audio-controls {
+  margin-bottom: 20px;
+}
+.nx-settings .nx-audio-volume {
+  display: block;
+  border: 0;
+  padding: 0;
+}
+.nx-settings .nx-audio-volume input {
+  width: 100%;
+  height: 24px;
+}
+.nx-settings .nx-audio-volume > span {
+  width: 100%;
+}
+.nx-settings .nx-audio-switch {
+  padding: 0;
+}
+@media (max-width: 600px) {
+  .nx-journey .map-hud .nx-audio-toggle {
+    display: none;
+  }
+}

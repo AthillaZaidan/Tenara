@@ -67,6 +67,33 @@ class GalleryEntry(Base):
     )
 
 
+class GalleryVariant(Base):
+    __tablename__ = "gallery_variants"
+    __table_args__ = (UniqueConstraint("entry_id", "name", name="uq_gallery_variant_name"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    entry_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("gallery_entries.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class GalleryVariantImage(Base):
+    __tablename__ = "gallery_variant_images"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    variant_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("gallery_variants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    file_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("files.id"), nullable=False)
+    caption: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    credit: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    license: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+
+
 class GalleryReferenceImage(Base):
     __tablename__ = "gallery_reference_images"
 

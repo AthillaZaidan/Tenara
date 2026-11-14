@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="168" viewBox="0 0 1320 168" overflow="visible"><defs>
+      <linearGradient id="cream-journey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdfbf7" /><stop offset="0.52" stop-color="#f9f4ea" /><stop offset="1" stop-color="#f1ede2" /></linearGradient>
+      <linearGradient id="gold-journey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8d5b9" /><stop offset="1" stop-color="#5f4228" /></linearGradient>
+      <linearGradient id="green-journey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8baf7e" /><stop offset="1" stop-color="#304729" /></linearGradient>
+    </defs>
+    <path d="M 56,14 L 1264,14 Q 1281,14 1289,31 C 1303,24 1312,31 1315,44 Q 1317,84.0 1315,124 C 1312,137 1303,144 1289,137 Q 1281,154 1264,154 L 56,154 Q 39,154 31,137 C 17,144 8,137 5,124 Q 3,84.0 5,44 C 8,31 17,24 31,31 Q 39,14 56,14 Z" transform="translate(0,6)" fill="#1d1914" opacity="0.16" />
+    <path d="M 56,14 L 1264,14 Q 1281,14 1289,31 C 1303,24 1312,31 1315,44 Q 1317,84.0 1315,124 C 1312,137 1303,144 1289,137 Q 1281,154 1264,154 L 56,154 Q 39,154 31,137 C 17,144 8,137 5,124 Q 3,84.0 5,44 C 8,31 17,24 31,31 Q 39,14 56,14 Z" fill="#3d5a33" stroke="#f9f4ea" stroke-width="7" stroke-linejoin="round" />
+    <path d="M 56,14 L 1264,14 Q 1281,14 1289,31 C 1303,24 1312,31 1315,44 Q 1317,84.0 1315,124 C 1312,137 1303,144 1289,137 Q 1281,154 1264,154 L 56,154 Q 39,154 31,137 C 17,144 8,137 5,124 Q 3,84.0 5,44 C 8,31 17,24 31,31 Q 39,14 56,14 Z" fill="none" stroke="#8baf7e" stroke-width="3.3" stroke-linejoin="round" />
+    <rect x="37" y="23" width="1246" height="122" rx="17" fill="url(#cream-journey)" stroke="#c8d5b9" stroke-width="4" />
+    <rect x="45" y="29" width="1230" height="110" rx="12" fill="none" stroke="#5f4228" stroke-width="1.2" opacity="0.7" />
+    <g transform="translate(29,84.0) scale(0.77)">
+      <path d="M0,-26 C8,-27 11,-16 8,-10 C19,-23 30,-14 23,-4 C35,1 30,12 17,13 C20,26 5,31 0,20 C-5,31 -20,26 -17,13 C-30,12 -35,1 -23,-4 C-30,-14 -19,-23 -8,-10 C-11,-16 -8,-27 0,-26Z" fill="#304729" stroke="#f9f4ea" stroke-width="3" />
+      <path d="M0,-20 Q9,-11 0,-2 Q-9,-11 0,-20 M17,-11 Q18,3 3,3 Q5,-11 17,-11 M19,10 Q8,18 1,4 Q15,1 19,10 M0,20 Q-9,11 0,2 Q9,11 0,20 M-19,10 Q-8,18 -1,4 Q-15,1 -19,10 M-17,-11 Q-18,3 -3,3 Q-5,-11 -17,-11" fill="#8baf7e" stroke="#f9f4ea" stroke-width="1.2" />
+      <circle r="5.5" fill="#f9f4ea" stroke="#8baf7e" stroke-width="2" />
+      <circle r="2.7" fill="#304729" />
+    </g><g transform="translate(1291,84.0) scale(0.77)">
+      <path d="M0,-26 C8,-27 11,-16 8,-10 C19,-23 30,-14 23,-4 C35,1 30,12 17,13 C20,26 5,31 0,20 C-5,31 -20,26 -17,13 C-30,12 -35,1 -23,-4 C-30,-14 -19,-23 -8,-10 C-11,-16 -8,-27 0,-26Z" fill="#304729" stroke="#f9f4ea" stroke-width="3" />
+      <path d="M0,-20 Q9,-11 0,-2 Q-9,-11 0,-20 M17,-11 Q18,3 3,3 Q5,-11 17,-11 M19,10 Q8,18 1,4 Q15,1 19,10 M0,20 Q-9,11 0,2 Q9,11 0,20 M-19,10 Q-8,18 -1,4 Q-15,1 -19,10 M-17,-11 Q-18,3 -3,3 Q-5,-11 -17,-11" fill="#8baf7e" stroke="#f9f4ea" stroke-width="1.2" />
+      <circle r="5.5" fill="#f9f4ea" stroke="#8baf7e" stroke-width="2" />
+      <circle r="2.7" fill="#304729" />
+    </g></svg>

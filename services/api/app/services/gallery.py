@@ -317,8 +317,26 @@ def reference_images(session: Session, entry_id: uuid.UUID) -> list[dict]:
     rows = session.scalars(select(GalleryReferenceImage)
                            .where(GalleryReferenceImage.entry_id == entry_id)
                            .order_by(GalleryReferenceImage.sort_order, GalleryReferenceImage.id))
-    return [{"url": f"/api/v1/files/{r.file_id}", "caption": r.caption, "credit": r.credit,
+    return [{"id": r.id, "url": f"/api/v1/files/{r.file_id}", "caption": r.caption, "credit": r.credit,
              "license": r.license} for r in rows]
+
+
+def variants(session: Session, entry_id: uuid.UUID) -> list[dict]:
+    from app.models import GalleryVariant, GalleryVariantImage
+
+    rows = session.scalars(select(GalleryVariant).where(GalleryVariant.entry_id == entry_id)
+                           .order_by(GalleryVariant.name, GalleryVariant.id))
+    result = []
+    for variant in rows:
+        images = session.scalars(select(GalleryVariantImage)
+                                 .where(GalleryVariantImage.variant_id == variant.id)
+                                 .order_by(GalleryVariantImage.sort_order, GalleryVariantImage.id))
+        result.append({"id": variant.id, "entry_id": variant.entry_id, "name": variant.name,
+                       "description": variant.description,
+                       "images": [{"url": f"/api/v1/files/{image.file_id}",
+                                   "caption": image.caption, "credit": image.credit,
+                                   "license": image.license} for image in images]})
+    return result
 
 
 def detail(session: Session, entry: GalleryEntry) -> dict:

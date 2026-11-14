@@ -36,6 +36,11 @@ docs/superpowers/
 # Local file storage
 services/api/storage/
 
+# Portable database + upload snapshots (contain account data)
+backups/
+.tenara-snapshot/
+.playwright-mcp/
+
 # Downloaded ML model weights
 services/api/models/
 

@@ -1,0 +1,39 @@
+/* Original prototype foundation, scoped to the gallery and its study rooms. */
+:where(.nx-journey, .nx-study, .map-dialog-theme) {
+  --ink: #1d1914;
+  --muted: #666;
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+:where(.nx-journey, .nx-study, .map-dialog-theme) :is(button, input, select, textarea) { font: inherit; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) :is(button, a, input, select, textarea) { -webkit-tap-highlight-color: transparent; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) button { cursor: pointer; border: 0; background: none; color: inherit; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) button:disabled { opacity: .45; cursor: not-allowed; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) :is(button, a) { touch-action: manipulation; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) a { color: inherit; text-decoration: none; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) img { display: block; max-width: 100%; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) svg { flex-shrink: 0; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) :is(h1, h2, h3, h4, h5, h6, p) { margin: 0; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) :is(h1, h2, h3, h4) { font-family: var(--serif); font-weight: 700; letter-spacing: normal; text-wrap: wrap; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) h1 { font-size: 64px; line-height: 1.2; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) h2 { font-size: 40px; line-height: 1.3; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) h3 { font-size: 24px; line-height: 1.4; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) h4 { font-size: 20px; line-height: 1.5; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) p { color: var(--muted); }
+:where(.nx-journey, .nx-study, .map-dialog-theme) em { font-style: normal; font-weight: inherit; color: inherit; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) strong { font-weight: 700; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) ul { padding-left: 24px; }
+:where(.nx-journey, .nx-study, .map-dialog-theme) :focus-visible { outline: 2px solid var(--green); outline-offset: 4px; }
+:where(.nx-journey, .nx-study) .brand { display: inline-flex; align-items: center; gap: 8px; color: var(--green); }
+:where(.nx-journey, .nx-study) .brand > svg { width: 32px; height: 34px; }
+:where(.nx-journey, .nx-study) .brand > span { font-family: var(--serif); font-size: 28px; font-weight: 700; line-height: 1.2; }
+:where(.map-dialog-theme) .row-between { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+:where(.map-dialog-theme) .icon-button { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+:where(.map-dialog-theme) .icon-button:hover { color: var(--green); }
+:where(.map-dialog-theme) .modal-backdrop { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: #1d191480; z-index: 80; }
+:where(.map-dialog-theme) .modal { width: 100%; max-width: 600px; padding: 32px; background: white; max-height: 90vh; overflow-y: auto; }
+:where(.map-dialog-theme) .modal > .row-between { margin-bottom: 28px; }
+:where(.map-dialog-theme) .modal h2 { font-size: 28px; }

@@ -1,0 +1,1289 @@
+/* Animal Futures interaction patterns, with Tenara type and decisive card edges. */
+.nx-play-surface {
+  position: absolute;
+  inset: 0;
+}
+/* Modal overlays own the frame budget; keep the background at its current frame. */
+.nx-journey[data-modal-open="true"] .nx-play-surface,
+.nx-journey[data-modal-open="true"] .nx-play-surface *,
+.nx-journey[data-modal-open="true"] .nx-play-surface *::before,
+.nx-journey[data-modal-open="true"] .nx-play-surface *::after {
+  animation-play-state: paused !important;
+}
+.nx-reference-ui {
+  --nx-ui-ink: #304b35;
+  --nx-ui-paper: #fff8e8;
+  --nx-ui-line: #36583a;
+}
+.nx-reference-ui .nx-game-button {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  border: 1.5px solid var(--nx-ui-line);
+  border-radius: 4px;
+  background: var(--nx-ui-paper);
+  color: var(--nx-ui-ink);
+  box-shadow:
+    0 4px 0 #345238,
+    0 9px 20px #29442c16;
+}
+.nx-reference-ui .nx-game-button:hover {
+  background: #edf1df;
+  box-shadow: 0 6px 0 #345238;
+}
+.nx-reference-ui .nx-game-button.nx-primary {
+  background: #36583a;
+  border-color: #29492e;
+  color: #fff8e8;
+  box-shadow: 0 4px 0 #233a29;
+}
+.nx-reference-ui .nx-game-button.nx-primary:hover {
+  background: #456c42;
+}
+.nx-reference-ui .nx-hud {
+  z-index: 65;
+}
+.nx-reference-ui .nx-hud nav {
+  gap: 10px;
+}
+.nx-reference-ui .nx-hud .nx-game-button {
+  min-height: 44px;
+}
+.nx-reference-ui .nx-brand-caption {
+  font-family: var(--sans);
+  font-size: 10px;
+  line-height: 1.7;
+  color: #3b5139;
+}
+.nx-reference-ui .nx-brand-caption strong {
+  font-weight: 750;
+}
+.nx-open-cards b {
+  font-family: var(--sans);
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  background: #36583a;
+  color: #fff8e8;
+  font-size: 10px;
+  line-height: 1;
+}
+.nx-reference-ui .nx-map-pin {
+  font-family: var(--sans) !important;
+  font-weight: 700 !important;
+  border-radius: 4px !important;
+}
+.nx-small-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 750 10px/1.7 var(--sans);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #536e43;
+}
+.nx-reference-ui .nx-world {
+  inset: 76px 0 76px;
+}
+.nx-reference-ui.nx-is-map .nx-world {
+  inset: 0;
+}
+.nx-reference-ui.nx-has-panel .nx-world {
+  inset: 76px 0 76px;
+}
+.nx-reference-ui.nx-is-region:not(.nx-is-intro):not(.nx-has-panel) .nx-world {
+  inset: 76px 0 76px;
+}
+.nx-world-overview {
+  position: absolute;
+  z-index: 45;
+  width: 360px;
+  top: 160px;
+  bottom: 132px;
+  right: 48px;
+  display: flex;
+  flex-direction: column;
+  color: #304b35;
+}
+.nx-overview-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b79f7d transparent;
+  padding: 0 8px 6px 0;
+}
+.nx-region-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  margin-bottom: 16px;
+  border: 1px solid #6a714b;
+  font: 700 10px/1.4 var(--sans);
+  color: #49613f;
+}
+.nx-world-overview h1 {
+  font-family: var(--serif);
+  font-size: clamp(36px, 3.5vw, 52px);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.045em;
+  color: #304b35;
+  margin: 9px 0 15px;
+}
+.nx-world-overview h2 {
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.6;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  margin: 0 0 18px;
+  color: #4c5439;
+}
+.nx-world-overview p {
+  font: 500 14px/1.95 var(--sans);
+  color: #555c44;
+  margin: 0 0 16px;
+}
+.nx-read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font: 750 12px/1.7 var(--sans);
+  color: #36583a;
+  padding: 7px 0;
+}
+.nx-read-more > span {
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+}
+.nx-overview-route {
+  margin-top: 18px;
+  border-top: 1px solid #6b775f50;
+}
+.nx-overview-route button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 11px 0;
+  border-bottom: 1px solid #6b775f50;
+  font: 700 12px/1.5 var(--sans);
+}
+.nx-overview-route .nx-route-number {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #718167;
+  font: 700 9px/1 var(--sans);
+}
+.nx-overview-route button > svg:last-child {
+  margin-left: auto;
+}
+.nx-overview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 18px;
+}
+.nx-overview-actions .nx-game-button {
+  font-size: 11px;
+  padding: 11px 13px;
+  flex: 1;
+  white-space: nowrap;
+}
+.nx-location-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 175px;
+  min-height: 64px;
+  padding: 8px 10px;
+  background: #fff8e8;
+  color: #304b35;
+  border: 2px solid #36583a;
+  border-radius: 4px;
+  box-shadow:
+    0 4px 0 #36583a,
+    0 8px 18px #263f2720;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition:
+    translate 0.18s,
+    box-shadow 0.18s;
+}
+.nx-location-card:hover {
+  translate: 0 -3px;
+  box-shadow:
+    0 7px 0 #36583a,
+    0 12px 18px #263f2720;
+}
+.nx-location-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 40px;
+  flex-shrink: 0;
+  background: #36583a;
+  color: #fff8e8;
+}
+.nx-location-copy {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 5px;
+}
+.nx-location-copy > strong {
+  font: 800 11px/1.3 var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.nx-location-progress {
+  display: block;
+  position: relative;
+  background: #e0dfc8;
+  height: 15px;
+  overflow: hidden;
+  border: 1px solid #b0b89d;
+}
+.nx-location-progress > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #b8cd9d;
+  transition: width 0.3s;
+}
+.nx-location-progress > b {
+  position: relative;
+  z-index: 1;
+  display: block;
+  text-align: center;
+  font: 800 7px/13px var(--sans);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.nx-location-status {
+  position: absolute;
+  top: -12px;
+  right: -10px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #fff8e8;
+  outline: 1px solid #526d3c;
+  border-radius: 50%;
+  background: #eac16a;
+  color: #405331;
+  font: 800 13px/1 var(--sans);
+}
+.nx-location-card.is-read .nx-location-status {
+  background: #36583a;
+  color: #fff8e8;
+}
+.nx-reference-ui .nx-region-panel.nx-topic-panel {
+  width: min(500px, 38vw);
+  right: 24px;
+  top: 96px;
+  bottom: 100px;
+  background: #fff8e8;
+  border: 1.5px solid #36583a;
+  border-radius: 5px;
+  box-shadow:
+    0 5px 0 #36583a,
+    0 20px 45px #4e3f2520;
+  isolation: isolate;
+  overflow: hidden;
+}
+.nx-woven-watermark {
+  position: absolute;
+  right: -35px;
+  top: 115px;
+  height: 420px;
+  width: 290px;
+  color: #54733c;
+  opacity: 0.045;
+  z-index: -1;
+  pointer-events: none;
+}
+.nx-topic-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  padding: 22px 24px 10px;
+  gap: 16px;
+}
+.nx-topic-emblem {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 58px;
+  flex-shrink: 0;
+  background: #36583a;
+  color: #fff8e8;
+  border: 2px solid #36583a;
+  clip-path: polygon(18% 0, 82% 0, 100% 18%, 100% 100%, 0 100%, 0 18%);
+}
+.nx-reference-ui .nx-topic-close {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 10px;
+}
+.nx-reference-ui .nx-topic-scroll {
+  padding: 15px 25px 20px;
+}
+.nx-reference-ui .nx-topic-scroll h2 {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.35;
+  letter-spacing: -0.04em;
+  color: #304b35;
+  margin: 12px 0 20px;
+}
+.nx-reference-ui .nx-topic-scroll p {
+  font: 500 13px/1.95 var(--sans);
+  color: #535d48;
+  margin: 12px 0 20px;
+}
+.nx-reference-ui .nx-topic-scroll .nx-topic-lead {
+  font-size: 14px;
+  font-weight: 700;
+  color: #36583a;
+  line-height: 1.85;
+}
+.nx-topic-inset {
+  padding-top: 17px;
+  margin-top: 25px;
+  border-top: 1px solid #b5bda150;
+}
+.nx-reference-ui .nx-topic-inset h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 750 12px/1.6 var(--sans);
+  color: #36583a;
+}
+.nx-reference-ui .nx-panel-cards {
+  display: inline-flex;
+  width: 100%;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-top: 10px;
+  padding: 12px;
+}
+.nx-panel-fabric-list {
+  display: grid;
+  gap: 14px;
+  margin: 22px 0;
+}
+.nx-panel-fabric-list article {
+  display: flex;
+  gap: 13px;
+  padding: 10px;
+  border: 1.5px solid #718368;
+  background: #fbf5e6;
+}
+.nx-panel-fabric-list article > a {
+  width: 88px;
+  flex-shrink: 0;
+}
+.nx-panel-fabric-list img {
+  width: 88px;
+  height: 102px;
+  object-fit: cover;
+}
+.nx-panel-fabric-list article > div {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+}
+.nx-reference-ui .nx-panel-fabric-list h3 {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.5;
+  font-weight: 700;
+  margin: 5px 0 12px;
+}
+.nx-panel-fabric-list article > div > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.nx-panel-fabric-list article > div > div a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #718368;
+  padding: 5px 7px;
+  font: 700 10px/1.5 var(--sans);
+}
+.nx-reference-ui .nx-topic-footer {
+  display: block;
+  padding: 11px 19px 13px;
+  border-top: 1.5px solid #36583a;
+  background: #f5f0df;
+}
+.nx-topic-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+}
+.nx-topic-stepper button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 750 10px/1.5 var(--sans);
+  color: #36583a;
+  min-height: 35px;
+  padding: 5px 3px;
+}
+.nx-topic-stepper button:hover {
+  background: #e6ecd7;
+}
+.nx-chapter-position {
+  font: 800 9px/1.5 var(--sans);
+  letter-spacing: 0.08em;
+  color: #7f8d72;
+  white-space: nowrap;
+}
+.nx-topic-read-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  font: 600 9px/1.6 var(--sans);
+  color: #668157;
+}
+.nx-topic-read-status > a {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 750;
+  color: #36583a;
+}
+.nx-region-pagination {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 55;
+  display: flex;
+  gap: 8px;
+}
+.nx-region-pagination .nx-game-button {
+  font-size: 10px;
+  min-height: 39px;
+  padding: 9px 14px;
+}
+.nx-region-pagination .nx-square {
+  min-height: 39px;
+  width: 36px;
+}
+.nx-collection-launcher {
+  position: absolute;
+  z-index: 48;
+  right: 34px;
+  bottom: 99px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 62px;
+  width: 230px;
+  padding: 10px;
+  background: #fff8e8;
+  color: #36583a;
+  border: 1.5px solid #36583a;
+  box-shadow: 0 4px 0 #36583a;
+  border-radius: 4px;
+  text-align: left;
+}
+.nx-collection-launcher > span {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: #36583a;
+  color: #fff8e8;
+}
+.nx-collection-launcher strong {
+  display: block;
+  font: 800 12px/1.5 var(--sans);
+}
+.nx-collection-launcher small {
+  display: block;
+  font: 500 9px/1.7 var(--sans);
+}
+.nx-collection-launcher > svg {
+  margin-left: auto;
+}
+.nx-reference-ui .nx-destination-card {
+  border: 1.5px solid #36583a;
+  border-radius: 4px;
+  box-shadow:
+    0 5px 0 #36583a,
+    0 15px 35px #184d4720;
+}
+.nx-reference-ui .nx-destination-card::before,
+.nx-reference-ui .nx-destination-card::after {
+  display: none;
+}
+.nx-reference-ui .nx-region-list-card {
+  border: 1.5px solid #657c53;
+  border-radius: 3px;
+}
+.nx-reference-ui .nx-free-explore .nx-region-heading {
+  z-index: 6;
+}
+.nx-reference-ui .nx-life-hint {
+  bottom: 102px;
+}
+.nx-reference-ui.nx-has-panel .nx-discovery {
+  left: calc((100% - 430px) / 2);
+}
+.nx-reference-ui.nx-is-map .nx-collection-launcher {
+  bottom: 99px;
+}
+.nx-dashboard-open .nx-world {
+  inset: 0 !important;
+}
+.nx-dashboard-open .nx-hud nav,
+.nx-dashboard-open .nx-bottom-hud,
+.nx-dashboard-open .nx-region-pagination,
+.nx-dashboard-open .nx-collection-launcher,
+.nx-dashboard-open .nx-map-title,
+.nx-dashboard-open .nx-destination,
+.nx-dashboard-open .nx-compass,
+.nx-dashboard-open .nx-ocean-label {
+  visibility: hidden;
+}
+.nx-card-dashboard {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  background: linear-gradient(180deg, #234e3b55, #244d3c9c 65%, #1c3b2be8);
+  backdrop-filter: blur(1px);
+}
+.nx-card-dashboard::before {
+  content: "";
+  position: absolute;
+  inset: 60% 0 0;
+  pointer-events: none;
+  opacity: 0.12;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 9px,
+      #eff3c6 10px 11px,
+      transparent 12px 20px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0 9px,
+      #eff3c6 10px 11px,
+      transparent 12px 20px
+    );
+  mask-image: linear-gradient(transparent, #000);
+}
+.nx-dashboard-tray {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 22px;
+  animation: nx-dashboard-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.nx-reference-ui .nx-close-dashboard {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 15px);
+  background: #fff8e8;
+  border-color: #36583a;
+  min-height: 39px;
+  padding: 9px 16px;
+  font-size: 11px;
+}
+.nx-dashboard-paper {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 24px;
+  padding: 20px;
+  background: #fff8e8;
+  border: 2px solid #36583a;
+  border-radius: 5px;
+  box-shadow: 0 6px 0 #183e2b;
+}
+.nx-dashboard-intro {
+  border-right: 1px solid #bac3a4;
+  padding-right: 20px;
+}
+.nx-dashboard-intro h2 {
+  font-family: var(--serif);
+  font-size: 26px;
+  line-height: 1.35;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+  margin: 9px 0 12px;
+}
+.nx-dashboard-intro p {
+  font: 500 11px/1.9 var(--sans);
+  color: #647456;
+  margin: 0 0 15px;
+}
+.nx-dashboard-scopes {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+.nx-dashboard-scopes button {
+  font: 750 9px/1.5 var(--sans);
+  padding: 7px 8px;
+  border: 1px solid #718165;
+}
+.nx-dashboard-scopes button[aria-pressed="true"] {
+  background: #36583a;
+  color: #fff8e8;
+}
+.nx-dashboard-catalog {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 750 11px/1.7 var(--sans);
+  border-bottom: 1px solid #36583a;
+  padding-bottom: 4px;
+}
+.nx-dashboard-main {
+  min-width: 0;
+}
+.nx-dashboard-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 10px;
+  gap: 12px;
+  min-height: 25px;
+}
+.nx-dashboard-toolbar > span {
+  font: 600 10px/1.6 var(--sans);
+  color: #718264;
+}
+.nx-dashboard-toolbar > div {
+  display: flex;
+  gap: 6px;
+}
+.nx-dashboard-toolbar button {
+  display: grid;
+  place-items: center;
+  border: 1px solid #718165;
+  width: 28px;
+  height: 26px;
+}
+.nx-dashboard-rail {
+  display: flex;
+  align-items: start;
+  gap: 17px;
+  overflow-x: auto;
+  padding: 1px 2px 10px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: #7e9664 #eeeada;
+}
+.nx-region-card-group {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  padding: 7px;
+  border: 1.5px solid #a9b898;
+  background: #f3efdf;
+}
+.nx-region-card-group.is-current-region {
+  border-color: #36583a;
+  box-shadow: 0 3px 0 #36583a;
+}
+.nx-group-card-list {
+  display: flex;
+  gap: 8px;
+}
+.nx-fabric-collectible {
+  position: relative;
+  width: 180px;
+  background: #fffdf5;
+  border: 1px solid #b2bda3;
+  flex-shrink: 0;
+}
+.nx-collectible-image {
+  display: block;
+  position: relative;
+  height: 100px;
+  overflow: hidden;
+  background: #e4dfd0;
+}
+.nx-collectible-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s;
+}
+.nx-collectible-image:hover img {
+  transform: scale(1.06);
+}
+.nx-collectible-image > span {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 3px 5px;
+  font: 750 7px/1.3 var(--sans);
+  background: #fff8e8;
+  color: #36583a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.nx-save-card {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  background: #fff8e8;
+  border: 1px solid #718165;
+}
+.nx-save-card.is-saved {
+  color: #a45b36;
+}
+.nx-collectible-copy {
+  padding: 9px;
+}
+.nx-collectible-copy h3 {
+  font-family: var(--serif);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 0 0 10px;
+  min-height: 36px;
+}
+.nx-collectible-actions {
+  display: flex;
+  gap: 6px;
+}
+.nx-collectible-actions a {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 4px;
+  font: 750 9px/1.5 var(--sans);
+  border: 1px solid #718165;
+}
+.nx-collectible-actions a:last-child {
+  background: #36583a;
+  color: #fff8e8;
+}
+.nx-region-card-group > footer {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 2px 0;
+}
+.nx-region-card-group > footer strong {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: 800 10px/1.5 var(--sans);
+}
+.nx-region-card-group > footer > div:first-child > span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+  font: 700 8px/1.5 var(--sans);
+  color: #7a866a;
+}
+.nx-region-card-group .is-complete {
+  color: #36583a !important;
+}
+.nx-mini-chapters {
+  display: flex;
+  gap: 3px;
+}
+.nx-mini-chapters > span {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 17px;
+  border: 1px solid #b6c1a7;
+  background: #e5e5d5;
+  color: transparent;
+}
+.nx-mini-chapters > span.is-read {
+  background: #36583a;
+  color: #fff8e8;
+  border-color: #36583a;
+}
+.nx-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@keyframes nx-dashboard-in {
+  from {
+    opacity: 0;
+    translate: 0 45px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@media (max-width: 1300px) {
+  .nx-reference-ui .nx-drag-hint {
+    display: none;
+  }
+  .nx-world-overview {
+    right: 28px;
+    width: 330px;
+  }
+  .nx-reference-ui .nx-region-panel.nx-topic-panel {
+    width: 38vw;
+    right: 20px;
+  }
+  .nx-reference-ui .nx-topic-scroll h2 {
+    font-size: 28px;
+  }
+}
+@media (max-width: 1050px) and (min-width: 901px) {
+  .nx-world-overview {
+    width: 290px;
+    top: 130px;
+    bottom: 120px;
+  }
+  .nx-world-overview h1 {
+    font-size: 36px;
+  }
+  .nx-world-overview p {
+    font-size: 12px;
+  }
+  .nx-world-overview h2 {
+    font-size: 16px;
+  }
+  .nx-overview-route {
+    margin-top: 10px;
+  }
+  .nx-overview-actions .nx-game-button {
+    font-size: 10px;
+  }
+  .nx-reference-ui .nx-topic-scroll {
+    padding: 12px 18px;
+  }
+  .nx-reference-ui .nx-topic-scroll h2 {
+    font-size: 25px;
+  }
+  .nx-reference-ui .nx-topic-scroll p {
+    font-size: 12px;
+  }
+}
+@media (max-width: 900px) {
+  .nx-reference-ui .nx-hud {
+    left: 16px;
+    right: 16px;
+    top: 16px;
+  }
+  .nx-reference-ui .nx-hud nav {
+    gap: 6px;
+  }
+  .nx-reference-ui .nx-hud .nx-game-button {
+    min-height: 36px;
+    padding: 8px;
+  }
+  .nx-reference-ui .nx-hud .nx-square {
+    width: 34px;
+    padding: 0;
+  }
+  .nx-reference-ui .nx-open-cards {
+    gap: 5px;
+  }
+  .nx-open-cards > span {
+    display: none;
+  }
+  .nx-open-cards b {
+    width: 15px;
+    min-width: 15px;
+    height: 17px;
+    font-size: 8px;
+  }
+  .nx-reference-ui.nx-overview-visible .nx-world {
+    inset: 68px 0 39%;
+  }
+  .nx-reference-ui.nx-detail-open .nx-world {
+    inset: 68px 0 46%;
+  }
+  .nx-reference-ui.nx-free-explore .nx-world {
+    inset: 90px 0 115px;
+  }
+  .nx-world-overview {
+    top: auto;
+    left: 16px;
+    right: 16px;
+    bottom: 94px;
+    width: auto;
+    height: 34%;
+    min-height: 260px;
+    background: #fff8e8ee;
+    border: 1.5px solid #36583a;
+    box-shadow: 0 4px 0 #36583a;
+    border-radius: 4px;
+    padding: 16px;
+  }
+  .nx-overview-scroll {
+    padding-right: 4px;
+  }
+  .nx-region-tag {
+    font-size: 8px;
+    padding: 3px 5px;
+    margin-bottom: 8px;
+  }
+  .nx-world-overview .nx-small-label {
+    font-size: 8px;
+  }
+  .nx-world-overview h1 {
+    font-size: 29px;
+    margin: 6px 0 8px;
+  }
+  .nx-world-overview h2 {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+  .nx-world-overview p {
+    font-size: 11px;
+    line-height: 1.85;
+    margin-bottom: 8px;
+  }
+  .nx-read-more {
+    font-size: 10px;
+  }
+  .nx-overview-route {
+    margin-top: 10px;
+  }
+  .nx-overview-route button {
+    font-size: 10px;
+    padding: 7px 0;
+  }
+  .nx-overview-actions {
+    padding-top: 10px;
+    gap: 8px;
+  }
+  .nx-overview-actions .nx-game-button {
+    font-size: 10px;
+    min-height: 38px;
+    padding: 8px 9px;
+  }
+  .nx-reference-ui .nx-region-panel.nx-topic-panel {
+    top: auto;
+    left: 14px;
+    right: 14px;
+    bottom: 85px;
+    width: auto;
+    height: 43%;
+    min-height: 315px;
+  }
+  .nx-topic-header {
+    padding: 12px 16px 4px;
+  }
+  .nx-topic-emblem {
+    width: 35px;
+    height: 38px;
+  }
+  .nx-topic-emblem svg {
+    width: 22px;
+  }
+  .nx-reference-ui .nx-topic-close {
+    min-height: 30px;
+    padding: 5px 8px;
+    font-size: 9px;
+  }
+  .nx-reference-ui .nx-topic-scroll {
+    padding: 10px 16px 14px;
+  }
+  .nx-reference-ui .nx-topic-scroll h2 {
+    font-size: 23px;
+    margin: 7px 0 12px;
+  }
+  .nx-reference-ui .nx-topic-scroll p,
+  .nx-reference-ui .nx-topic-scroll .nx-topic-lead {
+    font-size: 11px;
+    line-height: 1.85;
+    margin-bottom: 12px;
+  }
+  .nx-topic-inset {
+    padding-top: 12px;
+    margin-top: 14px;
+  }
+  .nx-reference-ui .nx-topic-inset h3 {
+    font-size: 10px;
+  }
+  .nx-reference-ui .nx-panel-cards {
+    padding: 9px;
+    font-size: 9px;
+  }
+  .nx-reference-ui .nx-topic-footer {
+    padding: 7px 12px 9px;
+  }
+  .nx-topic-stepper button {
+    font-size: 9px;
+    min-height: 30px;
+    gap: 3px;
+  }
+  .nx-chapter-position {
+    font-size: 8px;
+  }
+  .nx-topic-read-status {
+    font-size: 8px;
+    margin-top: 4px;
+  }
+  .nx-topic-read-status > a {
+    font-size: 8px;
+  }
+  .nx-panel-fabric-list {
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .nx-panel-fabric-list article {
+    padding: 7px;
+    gap: 10px;
+  }
+  .nx-panel-fabric-list article > a,
+  .nx-panel-fabric-list img {
+    width: 64px;
+  }
+  .nx-panel-fabric-list img {
+    height: 82px;
+  }
+  .nx-reference-ui .nx-panel-fabric-list h3 {
+    font-size: 14px;
+    margin: 3px 0 8px;
+  }
+  .nx-panel-fabric-list article > div > div a {
+    font-size: 9px;
+    padding: 4px 6px;
+  }
+  .nx-region-pagination {
+    top: 77px;
+    bottom: auto;
+    left: 16px;
+    transform: none;
+  }
+  .nx-region-pagination > .nx-square {
+    display: none;
+  }
+  .nx-region-pagination .nx-game-button {
+    min-height: 35px;
+    padding: 8px 10px;
+    font-size: 9px;
+  }
+  .nx-reference-ui .nx-region-heading {
+    top: 132px;
+    left: 20px;
+  }
+  .nx-reference-ui .nx-region-heading h1 {
+    font-size: 26px;
+  }
+  .nx-location-card {
+    width: 122px;
+    min-height: 54px;
+    padding: 6px 7px;
+    gap: 7px;
+  }
+  .nx-location-icon {
+    width: 29px;
+    height: 34px;
+  }
+  .nx-location-icon svg {
+    width: 21px;
+  }
+  .nx-location-copy > strong {
+    font-size: 8px;
+  }
+  .nx-location-card[data-chapter="weaving"] {
+    left: -10px;
+  }
+  .nx-location-card[data-chapter="textiles"] {
+    left: 10px;
+  }
+  .nx-location-progress > b {
+    font-size: 6px;
+  }
+  .nx-location-status {
+    width: 21px;
+    height: 21px;
+    font-size: 11px;
+  }
+  .nx-collection-launcher {
+    display: none;
+  }
+  .nx-reference-ui .nx-destination {
+    bottom: 105px;
+  }
+  .nx-reference-ui .nx-destination-card {
+    padding: 14px;
+  }
+  .nx-reference-ui .nx-destination-card .nx-primary {
+    font-size: 10px;
+  }
+  .nx-reference-ui .nx-bottom-hud {
+    left: 16px;
+    right: 16px;
+  }
+  .nx-reference-ui.nx-has-panel .nx-discovery {
+    left: 50%;
+  }
+  .nx-dashboard-tray {
+    left: 12px;
+    right: 12px;
+    bottom: 14px;
+  }
+  .nx-reference-ui.nx-dashboard-open .nx-world {
+    inset: 60px 0 55% !important;
+  }
+  .nx-dashboard-paper {
+    display: block;
+    padding: 13px;
+    max-height: 69svh;
+    overflow: auto;
+  }
+  .nx-dashboard-intro {
+    border: 0;
+    border-bottom: 1px solid #bac3a4;
+    padding: 0 0 10px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 10px;
+  }
+  .nx-dashboard-intro .nx-small-label {
+    font-size: 8px;
+  }
+  .nx-dashboard-intro h2 {
+    font-size: 23px;
+    margin: 5px 0 0;
+    grid-column: 1;
+  }
+  .nx-dashboard-intro h2 br {
+    display: none;
+  }
+  .nx-dashboard-intro p {
+    font-size: 9px;
+    margin: 4px 0 8px;
+    grid-column: 1;
+  }
+  .nx-dashboard-scopes {
+    grid-column: 2;
+    grid-row: 2;
+    flex-direction: column;
+    margin: 0;
+    align-self: start;
+  }
+  .nx-dashboard-scopes button {
+    font-size: 8px;
+    padding: 5px 7px;
+  }
+  .nx-dashboard-catalog {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: start;
+    justify-self: end;
+    font-size: 9px;
+    gap: 4px;
+  }
+  .nx-dashboard-toolbar {
+    margin: 9px 0 8px;
+  }
+  .nx-dashboard-toolbar > span {
+    font-size: 8px;
+  }
+  .nx-dashboard-toolbar button {
+    width: 25px;
+    height: 24px;
+  }
+  .nx-dashboard-rail {
+    gap: 12px;
+  }
+  .nx-fabric-collectible {
+    width: 151px;
+  }
+  .nx-collectible-image {
+    height: 90px;
+  }
+  .nx-collectible-copy {
+    padding: 7px;
+  }
+  .nx-collectible-copy h3 {
+    font-size: 11px;
+    min-height: 33px;
+  }
+  .nx-collectible-actions a {
+    font-size: 8px;
+    padding: 5px 3px;
+  }
+  .nx-region-card-group {
+    padding: 6px;
+  }
+  .nx-region-card-group > footer strong {
+    font-size: 9px;
+  }
+  .nx-mini-chapters > span {
+    width: 12px;
+    height: 14px;
+  }
+  .nx-region-card-group > footer > div:first-child > span {
+    font-size: 7px;
+  }
+  .nx-reference-ui .nx-close-dashboard {
+    min-height: 35px;
+    font-size: 10px;
+    bottom: calc(100% + 10px);
+  }
+}
+@media (max-width: 360px) {
+  .nx-open-cards b {
+    display: none;
+  }
+  .nx-reference-ui .nx-hud .brand {
+    font-size: 20px;
+  }
+  .nx-reference-ui .nx-hud nav {
+    gap: 5px;
+  }
+  .nx-reference-ui .nx-hud .nx-open-cards {
+    padding: 8px;
+  }
+  .nx-dashboard-catalog {
+    font-size: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-dashboard-tray {
+    animation: none;
+  }
+  .nx-collectible-image img {
+    transition: none;
+  }
+}

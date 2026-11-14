@@ -16,6 +16,7 @@ type AuthState = {
   login: (email: string, password: string) => Promise<Me>;
   register: (email: string, password: string, displayName: string) => Promise<Me>;
   logout: () => void;
+  refresh: () => Promise<Me | null>;
   has: (role: string) => boolean;
 };
 
@@ -66,6 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout() {
         tokenStore.set(null);
         setMe(null);
+      },
+      async refresh() {
+        const user = await load();
+        setMe(user);
+        return user;
       },
       has: (role: string) => !!me?.roles.some((r) => r.role === role && r.status === "active"),
     };

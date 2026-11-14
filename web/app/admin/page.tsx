@@ -12,7 +12,7 @@ function Overview() {
   const refs = useLoad(() => api<{ items: { pending: number; gives_verdict: boolean }[] }>("/admin/reference-photos/coverage"), "e");
   const refPending = refs.data?.items.reduce((n, i) => n + i.pending, 0) ?? 0;
   const refReady = refs.data?.items.filter((i) => i.gives_verdict).length ?? 0;
-  const pendingApps = apps.data?.items.filter((a) => ["submitted", "in_review", "information_requested"].includes(a.status)).length ?? 0;
+  const pendingApps = apps.data?.items.filter((a) => ["submitted", "under_review", "needs_information"].includes(a.status)).length ?? 0;
   const openAppeals = appeals.data?.items.filter((a) => a.status !== "decided").length ?? 0;
   const drafts = entries.data?.items.filter((e) => e.status !== "published").length ?? 0;
   const cards: [string, string, string][] = [
@@ -21,6 +21,7 @@ function Overview() {
     ["/admin/sources", "Sumber budaya", `${sources.data?.items.length ?? 0} menunggu tinjauan`],
     ["/admin/references", "Foto referensi", `${refPending} menunggu · ${refReady} tradisi bisa dinilai`],
     ["/admin/appeals", "Banding klaim", `${openAppeals} terbuka`],
+    ["/admin/settings", "Pengaturan dan audit", "komisi, pola, dan aktivitas"],
     ["/orders?as=admin", "Semua pesanan", "simulasi pengiriman, penyelesaian"],
   ];
   return (

@@ -1,0 +1,148 @@
+.nx-atlas-gpu-stage {
+  --atlas-safe-top: 190px;
+  --atlas-safe-side: 22px;
+  --atlas-safe-bottom: 137px;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  touch-action: none;
+}
+.nx-region-3d-stage {
+  position: absolute;
+  inset: 0;
+}
+.nx-atlas-gpu-stage canvas {
+  cursor: grab;
+  touch-action: none;
+}
+.nx-atlas-gpu-stage canvas:focus-visible {
+  outline: 1px dashed #fff5ccaa;
+  outline-offset: -5px;
+  border-radius: 8px;
+}
+.nx-gpu-atlas-labels {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  overflow: hidden;
+}
+.nx-gpu-atlas-connectors {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.nx-gpu-atlas-connectors line {
+  stroke: #f5e8b9;
+  stroke-width: 1.2;
+  opacity: 0.9;
+}
+.nx-gpu-atlas-connectors circle {
+  fill: #fff1c3;
+  stroke: #7e8f45;
+  stroke-width: 1.2;
+}
+.nx-gpu-atlas-destination {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: auto;
+  height: 33px;
+  padding: 0 12px;
+  font-size: 12px;
+  pointer-events: auto;
+  visibility: hidden;
+  will-change: transform;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.nx-gpu-atlas-destination:hover,
+.nx-gpu-atlas-destination[aria-pressed="true"] {
+  translate: none;
+}
+.nx-atlas-touch-hint {
+  display: none;
+}
+.nx-has-atlas-2d .nx-atlas-navigation-hint {
+  bottom: 164px;
+  z-index: 4;
+}
+.nx-refined-journey.nx-has-atlas-2d .nx-atmosphere {
+  background: linear-gradient(
+    180deg,
+    #b9d9ce85,
+    #b9d9ce35 17%,
+    transparent 30%,
+    transparent 80%,
+    #346d5620
+  );
+}
+.nx-has-atlas-2d .nx-map-step {
+  pointer-events: none;
+}
+.nx-has-atlas-2d[data-transition="out"] .nx-atlas-gpu-stage {
+  opacity: 0;
+  scale: 1.035;
+  transition:
+    opacity 0.4s ease,
+    scale 0.4s ease;
+}
+.nx-has-atlas-2d[data-transition="in"] .nx-atlas-gpu-stage {
+  animation: atlas-arrival 0.65s ease-out;
+}
+@media (min-width: 1800px) {
+  .nx-atlas-gpu-stage {
+    --atlas-safe-top: 205px;
+    --atlas-safe-side: 2%;
+    --atlas-safe-bottom: 150px;
+  }
+}
+@media (max-width: 900px) {
+  .nx-atlas-gpu-stage {
+    --atlas-safe-top: 215px;
+    --atlas-safe-side: 0px;
+    --atlas-safe-bottom: 195px;
+  }
+  .nx-atlas-desktop-hint {
+    display: none;
+  }
+  .nx-atlas-touch-hint {
+    display: inline;
+  }
+  .nx-has-atlas-2d .nx-atlas-navigation-hint {
+    bottom: 179px;
+  }
+  .nx-gpu-atlas-destination {
+    font-size: 10px;
+    height: 34px;
+    padding: 0 9px;
+    gap: 5px;
+  }
+  .nx-gpu-atlas-destination::after {
+    inset: -5px -2px;
+  }
+}
+@media (max-width: 520px) {
+  .nx-atlas-gpu-stage {
+    --atlas-safe-top: 250px;
+    --atlas-safe-bottom: 191px;
+  }
+}
+@media (max-height: 760px) and (min-width: 901px) {
+  .nx-atlas-gpu-stage {
+    --atlas-safe-top: 170px;
+    --atlas-safe-bottom: 120px;
+  }
+  .nx-has-atlas-2d .nx-atlas-navigation-hint {
+    bottom: 145px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-has-atlas-2d .nx-atlas-gpu-stage {
+    transition: none !important;
+    animation: none !important;
+  }
+}

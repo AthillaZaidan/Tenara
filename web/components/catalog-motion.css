@@ -1,0 +1,48 @@
+/* Preserve the previous image during loading; fade only the ready replacement. */
+.catalog-related-image > a, .catalog-preview-image { position: relative; }
+.catalog-preview-image > img { position: absolute; inset: 0; }
+.catalog-related-image > a > .catalog-image-incoming { position: absolute; inset: 0; }
+.catalog-detail-photo > .catalog-image-incoming,
+.catalog-preview-image > .catalog-image-incoming,
+.catalog-related-image > a > .catalog-image-incoming { opacity: 0; pointer-events: none; }
+.catalog-detail-photo > .catalog-image-incoming.is-ready,
+.catalog-preview-image > .catalog-image-incoming.is-ready,
+.catalog-related-image > a > .catalog-image-incoming.is-ready { opacity: 1; }
+.catalog-buy-collapse { display: grid; grid-template-rows: 0fr; opacity: 0; }
+.catalog-buy-collapse.is-open { grid-template-rows: 1fr; opacity: 1; }
+.catalog-buy-content { min-height: 0; overflow: hidden; }
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes catalog-detail-arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes catalog-detail-fade { from { opacity: .3; } to { opacity: 1; } }
+  .ecommerce-detail .catalog-detail-gallery { animation: catalog-detail-arrive .75s cubic-bezier(.22, 1, .36, 1); }
+  .ecommerce-detail .catalog-detail-copy { animation: catalog-detail-arrive .8s cubic-bezier(.22, 1, .36, 1) .08s backwards; }
+  .ecommerce-detail .product-price-value, .ecommerce-detail .ecommerce-empty, .ecommerce-detail .ecommerce-offer-list { animation: catalog-detail-fade .5s ease-out; }
+  .ecommerce-detail .catalog-image-incoming, .catalog-preview-image .catalog-image-incoming { transition: opacity .65s cubic-bezier(.22, 1, .36, 1); }
+  .ecommerce-detail .catalog-detail-samples button, .ecommerce-detail .catalog-offer-row,
+  .ecommerce-detail .catalog-buy-toggle, .ecommerce-detail .ecommerce-action,
+  .ecommerce-detail .catalog-photo-nav button, .ecommerce-detail .catalog-quantity-input { transition: background-color .45s ease, color .45s ease, border-color .45s ease, box-shadow .45s ease; }
+  .ecommerce-detail .catalog-detail-views img, .ecommerce-detail .catalog-related-thumbnails img { transition: border-color .4s ease, opacity .4s ease; }
+  .ecommerce-detail .catalog-buy-collapse { transition: grid-template-rows .6s cubic-bezier(.22, 1, .36, 1), opacity .4s ease; }
+  .ecommerce-detail .product-accordion { transition: grid-template-rows .6s cubic-bezier(.22, 1, .36, 1), padding-bottom .6s cubic-bezier(.22, 1, .36, 1); }
+  .ecommerce-detail .product-accordion-content { opacity: 0; transition: opacity .4s ease; }
+  .ecommerce-detail .product-accordion.is-open .product-accordion-content { opacity: 1; }
+  .ecommerce-detail .product-accordion-trigger svg { transition: transform .55s cubic-bezier(.22, 1, .36, 1); }
+  .ecommerce-detail .catalog-quantity-input:focus-within { border-color: var(--green); box-shadow: 0 0 0 2px #3d5a3312; }
+  .js .ecommerce-detail .rise { transform: translateY(12px); transition-duration: .8s; }
+  .js .ecommerce-detail .rise.in { transform: translateY(0); }
+  .catalog-preview-dialog { opacity: 0; transform: translateY(10px) scale(.99); transition: opacity .35s ease, transform .5s cubic-bezier(.22, 1, .36, 1), display .5s allow-discrete, overlay .5s allow-discrete; }
+  .catalog-preview-dialog[open] { opacity: 1; transform: translateY(0) scale(1); }
+  .catalog-preview-dialog::backdrop { opacity: 0; transition: opacity .4s ease, display .5s allow-discrete, overlay .5s allow-discrete; }
+  .catalog-preview-dialog[open]::backdrop { opacity: 1; }
+  @starting-style {
+    .catalog-preview-dialog[open] { opacity: 0; transform: translateY(10px) scale(.99); }
+    .catalog-preview-dialog[open]::backdrop { opacity: 0; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ecommerce-detail *, .ecommerce-detail *::before, .ecommerce-detail *::after,
+  .catalog-preview-dialog, .catalog-preview-dialog *, .catalog-preview-dialog::backdrop { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .js .ecommerce-detail .rise { opacity: 1; transform: none; }
+  .catalog-related-image:hover > a > img, .ecommerce-detail a:hover svg { transform: none; }
+}

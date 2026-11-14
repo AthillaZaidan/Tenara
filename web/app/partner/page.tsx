@@ -4,19 +4,21 @@ import { useState } from "react";
 import { Upload, type Uploaded } from "@/components/Upload";
 import { Field, Notice, Page, RequireAuth, useAction, useLoad } from "@/components/ui";
 import { api, when } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 type App = { id: string; type: "merchant" | "tailor"; status: string; data: Record<string, unknown>; decision_reason?: string | null; submitted_at?: string | null };
 
-const STATUS: Record<string, string> = { draft: "Draf", submitted: "Diajukan, menunggu tinjauan", in_review: "Sedang ditinjau", information_requested: "Perlu informasi tambahan", approved: "Disetujui", rejected: "Ditolak" };
+const STATUS: Record<string, string> = { draft: "Draf", submitted: "Diajukan, menunggu tinjauan", under_review: "Sedang ditinjau", needs_information: "Perlu informasi tambahan", approved: "Disetujui", rejected: "Ditolak" };
 
 function Form() {
+  const auth = useAuth();
   const mine = useLoad(() => api<App[]>("/partner-applications/mine"), "mine");
   const act = useAction();
   const [type, setType] = useState<"merchant" | "tailor">("merchant");
   const [f, setF] = useState({ shop_name: "", description: "", city: "", province: "", contact_phone: "", experience_years: "" });
   const [files, setFiles] = useState<Uploaded[]>([]);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
-  const open = (mine.data ?? []).find((a) => ["draft", "submitted", "in_review", "information_requested"].includes(a.status));
+  const open = (mine.data ?? []).find((a) => ["draft", "submitted", "under_review", "needs_information"].includes(a.status));
 
   if (mine.loading) return <p>Memuat…</p>;
   return (
@@ -28,6 +30,7 @@ function Form() {
               <span className="text-lg">{a.type === "merchant" ? "Penjual kain" : "Penjahit"}: {STATUS[a.status] ?? a.status}</span>
               {a.submitted_at && <span className="text-base text-muted">Diajukan {when(a.submitted_at)}</span>}
               {a.decision_reason && <span className="text-base">{a.decision_reason}</span>}
+              {a.status === "approved" && <button className="link w-fit text-sm" onClick={() => void auth.refresh()}>Perbarui akses mitra</button>}
             </li>
           ))}
         </ul>

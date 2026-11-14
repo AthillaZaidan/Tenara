@@ -40,6 +40,9 @@ class FabricListing(Base):
     entry_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("gallery_entries.id"), nullable=False
     )
+    variant_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("gallery_variants.id"), nullable=True, index=True
+    )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
     material: Mapped[str | None] = mapped_column(String(100), nullable=True)

@@ -12,6 +12,7 @@ from app.models import (
     FabricStockUnit,
     File,
     GalleryEntry,
+    GalleryVariant,
     ListingImage,
     MerchantProfile,
     ProductStory,
@@ -26,7 +27,14 @@ MAX_IMAGES = 10
 UPDATABLE = {"title", "description", "price_idr", "min_quantity", "quantity_increment", "material",
              "weight_gsm", "thickness_note", "usable_width_cm", "piece_length_cm", "piece_width_cm",
              "motif_orientation", "pattern_repeat_cm", "city", "province", "dispatch_days",
-             "merchant_claimed_origin"}
+             "merchant_claimed_origin", "variant_id"}
+
+
+def check_variant(session: Session, entry_id: uuid.UUID, variant_id: uuid.UUID | None) -> None:
+    if variant_id is not None:
+        variant = session.get(GalleryVariant, variant_id)
+        if variant is None or variant.entry_id != entry_id:
+            raise AppValidationError("Varian tidak sesuai dengan entri kain", field="variant_id")
 
 
 def _check_unit_rules(unit: str, min_q: Decimal, inc: Decimal) -> None:
@@ -39,6 +47,7 @@ def create_listing(session: Session, merchant: MerchantProfile, user: User, data
     entry = session.get(GalleryEntry, data["entry_id"])
     if entry is None or entry.status != "published":
         raise AppValidationError("A published Gallery entry is required", field="entry_id")
+    check_variant(session, entry.id, data.get("variant_id"))
     _check_unit_rules(data["selling_unit"], data["min_quantity"], data["quantity_increment"])
     data = {**data, "city": data.get("city") or merchant.city,
             "province": data.get("province") or merchant.province}
@@ -62,8 +71,10 @@ def update_listing(session: Session, user: User, listing: FabricListing, expecte
     if listing.status == "archived":
         raise AppValidationError("Archived listings cannot be edited", field="status")
     check_revision(expected_revision, listing.revision)
+    if "variant_id" in changes:
+        check_variant(session, listing.entry_id, changes["variant_id"])
     for key, value in changes.items():
-        if key in UPDATABLE and value is not None:
+        if key in UPDATABLE and (value is not None or key == "variant_id"):
             setattr(listing, key, value)
     _check_unit_rules(listing.selling_unit, listing.min_quantity, listing.quantity_increment)
     listing.revision += 1
@@ -181,7 +192,7 @@ def missing_for_custom(listing: FabricListing) -> list[str]:
 def images_out(session: Session, listing_id: uuid.UUID) -> list[dict]:
     rows = session.scalars(select(ListingImage).where(ListingImage.listing_id == listing_id)
                            .order_by(ListingImage.sort_order, ListingImage.id))
-    return [{"url": f"/api/v1/files/{r.file_id}", "caption": r.caption} for r in rows]
+    return [{"id": r.id, "url": f"/api/v1/files/{r.file_id}", "caption": r.caption} for r in rows]
 
 
 def _published_story(session: Session, listing: FabricListing) -> dict | None:
@@ -217,7 +228,7 @@ def listing_out(session: Session, listing: FabricListing, *, include_merchant: b
     if include_merchant and visual_match:
         visual_match = {k: v for k, v in visual_match.items() if k != "claim_check"}
     out = {
-        "id": listing.id, "entry_id": listing.entry_id, "title": listing.title,
+        "id": listing.id, "entry_id": listing.entry_id, "variant_id": listing.variant_id, "title": listing.title,
         "description": listing.description, "material": listing.material or "tidak diketahui",
         "weight_gsm": listing.weight_gsm, "thickness_note": listing.thickness_note,
         "usable_width_cm": listing.usable_width_cm, "selling_unit": listing.selling_unit,
@@ -252,7 +263,8 @@ def public_listing(session: Session, listing_id: uuid.UUID) -> FabricListing:
 
 
 def listings_for_entry(session: Session, entry: GalleryEntry, *, city: str | None,
-                       max_price: int | None, sort: str, limit: int) -> list[FabricListing]:
+                       max_price: int | None, sort: str, limit: int,
+                       variant_id: uuid.UUID | None = None) -> list[FabricListing]:
     stmt = (select(FabricListing).join(MerchantProfile, MerchantProfile.id == FabricListing.merchant_id)
             .where(FabricListing.entry_id == entry.id, FabricListing.status == "published",
                    MerchantProfile.status == "active"))
@@ -260,6 +272,9 @@ def listings_for_entry(session: Session, entry: GalleryEntry, *, city: str | Non
         stmt = stmt.where(func.lower(FabricListing.city) == city.lower())
     if max_price:
         stmt = stmt.where(FabricListing.price_idr <= max_price)
+    if variant_id is not None:
+        check_variant(session, entry.id, variant_id)
+        stmt = stmt.where(FabricListing.variant_id == variant_id)
     stmt = stmt.order_by(FabricListing.price_idr if sort == "price_asc" else FabricListing.created_at.desc())
     return list(session.scalars(stmt.limit(limit)))
 

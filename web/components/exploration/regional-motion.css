@@ -1,0 +1,173 @@
+/* Keep the WebGL viewport stable. Framing is animated by the camera, never by resize. */
+.nx-refined-journey.nx-is-region .nx-world {
+  inset: 0 !important;
+}
+/* Two pre-rendered frames move on the compositor while the 3D renderer rests. */
+.nx-slide-frames {
+  --nx-frame-direction: 1;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+}
+.nx-slide-frames[data-direction="-1"] {
+  --nx-frame-direction: -1;
+}
+.nx-slide-frames[data-phase="out"],
+.nx-slide-frames[data-phase="in"] {
+  visibility: visible;
+}
+.nx-slide-frames img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  will-change: transform;
+  transition: transform 650ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nx-slide-frame-from {
+  transform: translate3d(0, 0, 0);
+}
+.nx-slide-frame-to {
+  transform: translate3d(calc(100% * var(--nx-frame-direction)), 0, 0);
+}
+.nx-slide-frames:is([data-phase="out"], [data-phase="in"])
+  .nx-slide-frame-from {
+  transform: translate3d(calc(-100% * var(--nx-frame-direction)), 0, 0);
+}
+.nx-slide-frames:is([data-phase="out"], [data-phase="in"]) .nx-slide-frame-to {
+  transform: translate3d(0, 0, 0);
+}
+.nx-journey:has(.nx-slide-frames[data-phase="out"]) .nx-region-3d-stage {
+  visibility: hidden;
+}
+.nx-preview-layer,
+.nx-overview-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+}
+.nx-preview-layer {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.4s ease,
+    visibility 0s 0.4s;
+}
+.nx-preview-layer[data-active="true"] {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.7s ease 0.15s,
+    visibility 0s;
+}
+/* Remove the preview controls before overview-specific styles take effect. */
+.nx-preview-layer[data-active="false"] {
+  opacity: 0;
+  visibility: hidden;
+  transition: none;
+}
+.nx-preview-layer .nx-world-preview {
+  animation: none;
+  translate: 0 26px;
+  transition: translate 1.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nx-preview-layer[data-active="true"] .nx-world-preview {
+  translate: 0 0;
+}
+.nx-preview-layer[data-active="true"]
+  :is(.nx-world-preview, .nx-preview-back, .nx-world-pagination) {
+  pointer-events: auto;
+}
+.nx-overview-layer {
+  visibility: hidden;
+  transition: visibility 0s 0.45s;
+}
+.nx-overview-layer[data-active="true"] {
+  visibility: visible;
+  transition-delay: 0s;
+}
+.nx-overview-layer .nx-world-overview {
+  opacity: 0;
+  translate: 65px 0;
+  transition:
+    opacity 0.45s ease,
+    translate 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nx-overview-layer[data-active="true"] .nx-world-overview {
+  opacity: 1;
+  translate: 0 0;
+  transition-delay: 0.2s;
+  pointer-events: auto;
+}
+.nx-overview-layer .nx-overview-scroll > *,
+.nx-overview-layer .nx-overview-actions {
+  opacity: 0;
+  translate: 24px 0;
+  transition:
+    opacity 0.5s ease,
+    translate 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nx-overview-layer[data-active="true"]
+  :is(.nx-overview-scroll > *, .nx-overview-actions) {
+  opacity: 1;
+  translate: 0 0;
+  transition-delay: 0.28s;
+}
+.nx-overview-layer[data-active="true"] .nx-overview-scroll > :nth-child(3) {
+  transition-delay: 0.34s;
+}
+.nx-overview-layer[data-active="true"] .nx-overview-scroll > :nth-child(4) {
+  transition-delay: 0.4s;
+}
+.nx-overview-layer[data-active="true"] .nx-overview-scroll > :nth-child(n + 5) {
+  transition-delay: 0.46s;
+}
+.nx-overview-layer[data-active="true"] .nx-overview-actions {
+  transition-delay: 0.52s;
+}
+@media (max-width: 900px) {
+  .nx-overview-layer .nx-world-overview {
+    translate: 0 48px;
+  }
+  .nx-overview-layer .nx-overview-scroll > *,
+  .nx-overview-layer .nx-overview-actions {
+    translate: 0 18px;
+  }
+  .nx-overview-layer[data-active="true"]
+    :is(.nx-world-overview, .nx-overview-scroll > *, .nx-overview-actions) {
+    translate: 0 0;
+  }
+}
+.nx-journey[data-motion="paused"]
+  :is(
+    .nx-preview-layer,
+    .nx-preview-layer *,
+    .nx-overview-layer,
+    .nx-overview-layer *,
+    .nx-location-card
+  ),
+.nx-journey[data-motion="reduced"]
+  :is(
+    .nx-preview-layer,
+    .nx-preview-layer *,
+    .nx-overview-layer,
+    .nx-overview-layer *,
+    .nx-location-card
+  ) {
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-preview-layer,
+  .nx-preview-layer *,
+  .nx-overview-layer,
+  .nx-overview-layer *,
+  .nx-location-card {
+    transition: none !important;
+  }
+}

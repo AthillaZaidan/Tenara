@@ -1,0 +1,223 @@
+/* Shared map controls; layout adaptations only, retaining the atlas surface/inlay. */
+.nx-journey .map-control.nx-regional-collection {
+  position: absolute;
+  right: 34px;
+  bottom: 104px;
+  z-index: 48;
+}
+.nx-journey .map-control.nx-preview-back {
+  position: absolute;
+}
+.nx-preview-back .map-control-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.nx-journey .nx-overview-actions .map-control {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 0 14px;
+}
+.nx-journey .nx-overview-actions .map-control > .map-control-content {
+  gap: 7px;
+}
+.nx-journey .nx-overview-route {
+  display: grid;
+  gap: 3px;
+  border-top: 1px solid var(--map-line);
+  padding-top: 8px;
+}
+.nx-journey .nx-overview-route .map-control {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--map-line);
+  border-radius: 0;
+  font-size: 12px;
+}
+.nx-journey .nx-overview-route .map-control-content {
+  justify-content: flex-start;
+}
+.nx-journey .nx-overview-route .map-control-trailing {
+  margin-left: auto;
+}
+.nx-journey .nx-route-number {
+  border-color: var(--map-line);
+  color: var(--map-forest);
+}
+.nx-journey .map-control--text:hover {
+  background: #f7f7ed55;
+}
+.nx-journey .map-control.nx-overview-read {
+  padding-left: 0;
+  min-height: 36px;
+  font-size: 12px;
+}
+.nx-journey .map-control.nx-panel-cards {
+  width: 100%;
+  white-space: normal;
+}
+.nx-journey .map-control.nx-location-card {
+  width: 202px;
+  min-height: 68px;
+  padding: 11px 13px;
+  text-align: left;
+  translate: none;
+  transition:
+    opacity 0.4s ease,
+    scale 0.65s cubic-bezier(0.2, 0.85, 0.25, 1),
+    visibility 0s;
+}
+.nx-location-card .map-control-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+}
+.nx-location-card .map-control-content {
+  min-width: 0;
+}
+.nx-journey .nx-location-icon {
+  width: 29px;
+  height: 34px;
+  color: var(--map-forest);
+  background: transparent;
+}
+.nx-location-icon svg {
+  width: 24px;
+}
+.nx-journey .nx-location-copy > strong {
+  font: 650 11px/1.4 var(--sans);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.nx-journey .nx-location-progress {
+  height: 12px;
+  border-radius: 4px;
+  border-color: var(--map-line);
+  background: var(--sand);
+}
+.nx-journey .nx-location-progress > i {
+  background: var(--map-sage);
+}
+.nx-journey .nx-location-progress > b {
+  font: 650 7px/10px var(--sans);
+  text-transform: none;
+}
+.nx-journey .nx-location-status {
+  position: static;
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--map-sage);
+  outline: 0;
+  font-size: 10px;
+  background: #e8d7a1;
+  color: var(--map-forest);
+}
+.nx-journey .nx-location-card.is-read .nx-location-status {
+  background: var(--map-forest);
+  color: var(--map-paper);
+}
+.nx-journey .nx-location-card[data-visible="false"] {
+  opacity: 0;
+  scale: 0.78;
+  visibility: hidden;
+  transition-delay: 0s;
+}
+.nx-journey .nx-location-card[data-visible="true"] {
+  opacity: 1;
+  scale: 1;
+  visibility: visible;
+  transition-delay: var(--hotspot-delay);
+}
+.nx-journey .map-control.nx-topic-close {
+  min-height: 38px;
+  font-size: 12px;
+  padding: 0 12px;
+}
+@media (max-width: 900px) {
+  .nx-journey .map-control.nx-regional-collection {
+    display: none;
+  }
+  .nx-journey .map-control.nx-location-card {
+    width: 155px;
+    min-height: 57px;
+    padding: 9px 11px;
+  }
+  .nx-location-card .map-control-label {
+    gap: 5px;
+  }
+  .nx-journey .nx-location-icon {
+    width: 22px;
+    height: 29px;
+  }
+  .nx-location-icon svg {
+    width: 20px;
+  }
+  .nx-journey .nx-location-copy > strong {
+    font-size: 9px;
+  }
+  .nx-journey .nx-location-progress > b {
+    font-size: 6px;
+  }
+  .nx-journey .nx-location-status {
+    width: 14px;
+    height: 14px;
+  }
+  .nx-journey .nx-overview-actions .map-control {
+    font-size: 11px;
+    padding: 0 11px;
+  }
+  .nx-journey .map-control.nx-preview-back {
+    min-height: 38px;
+    font-size: 11px;
+  }
+  .nx-journey .map-control.nx-overview-read {
+    font-size: 11px;
+  }
+  .nx-journey .nx-region-pagination {
+    top: 77px;
+    bottom: auto;
+    align-items: center;
+  }
+  .nx-journey .nx-region-pagination .map-control--icon {
+    display: none;
+  }
+  .nx-journey .nx-world-overview {
+    bottom: 106px;
+  }
+  .nx-journey .nx-topic-panel {
+    bottom: 103px;
+  }
+  .nx-journey .nx-world-preview {
+    bottom: 131px;
+  }
+  .nx-journey .nx-world-pagination {
+    bottom: 99px;
+  }
+}
+@media (max-width: 360px) {
+  .nx-journey .map-control.nx-location-card {
+    width: 137px;
+    min-height: 53px;
+    padding: 8px 10px;
+  }
+  .nx-journey .nx-location-icon {
+    width: 18px;
+  }
+  .nx-location-icon svg {
+    width: 17px;
+  }
+  .nx-journey .nx-location-copy > strong {
+    font-size: 8px;
+  }
+  .nx-journey .nx-location-status {
+    width: 12px;
+    height: 12px;
+  }
+  .nx-journey .nx-overview-actions .map-control {
+    font-size: 10px;
+  }
+}

@@ -98,7 +98,7 @@ function Result({ job }: { job: Job }) {
 }
 
 /** Buyer-side: measure from a front and a side photo (SMPL-X fit on the server), then review in the form. */
-export function PhotoMeasure({ custId, onMeasured }: { custId: string; onMeasured: () => void }) {
+export function PhotoMeasure({ custId, onMeasured, onFrontUploaded }: { custId: string; onMeasured: () => void; onFrontUploaded?: (id: string) => void }) {
   const act = useAction();
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState<Notice_ | null>(null);
@@ -108,11 +108,13 @@ export function PhotoMeasure({ custId, onMeasured }: { custId: string; onMeasure
   const [height, setHeight] = useState("");
   const [gender, setGender] = useState("");
   const [job, setJob] = useState<Job | null>(null);
+  const [pollError, setPollError] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const poll = async (jobId: string) => {
     try {
       const j = await api<Job>(`/body-measurements/${jobId}`);
+      setPollError("");
       setJob(j);
       if (RUNNING.includes(j.status)) {
         timer.current = setTimeout(() => poll(jobId), 2000);
@@ -121,7 +123,7 @@ export function PhotoMeasure({ custId, onMeasured }: { custId: string; onMeasure
         onMeasured();
       }
     } catch {
-      remember(custId, null);
+      setPollError("Status pengukuran belum dapat dimuat. Coba periksa lagi.");
     }
   };
 
@@ -146,9 +148,11 @@ export function PhotoMeasure({ custId, onMeasured }: { custId: string; onMeasure
         form.append("consent_id", consent.id);
         return api<{ id: string }>("/body-photos", { form });
       };
-      const [f, s] = [await upload(front!), await upload(side!)];
+      const f = await upload(front!);
+      onFrontUploaded?.(f.id);
+      const s = side ? await upload(side) : null;
       return api<{ job_id: string }>("/body-measurements/estimate", {
-        body: { body_photo_id: f.id, side_photo_id: s.id, height_cm: Number(height), gender, customization_id: custId },
+        body: { body_photo_id: f.id, side_photo_id: s?.id ?? null, height_cm: Number(height), gender: s ? gender : null, customization_id: custId },
       });
     });
     if (r) {
@@ -159,13 +163,13 @@ export function PhotoMeasure({ custId, onMeasured }: { custId: string; onMeasure
   };
 
   const running = job && RUNNING.includes(job.status);
-  const ready = agreed && front && side && Number(height) >= 100 && Number(height) <= 230 && gender;
+  const ready = agreed && front && Number(height) >= 100 && Number(height) <= 230 && (!side || gender);
 
   return (
     <div className="grid gap-5">
       {!open && !job && (
         <div className="grid gap-3">
-          <p className="text-base">Belum punya meteran? Ukur dari dua foto: tampak depan dan tampak samping. Sistem membentuk model tubuh 3D dari foto, lalu mengukurnya. Hasilnya perkiraan yang bisa Anda koreksi.</p>
+          <p className="text-base">Perkirakan sebagian ukuran dari foto depan. Foto samping opsional dapat membantu estimasi tambahan bila model tersedia. Hasilnya perlu diperiksa dan dikoreksi.</p>
           <button className="btn btn-quiet w-fit" onClick={() => act.run(start)}>Ukur dari foto</button>
         </div>
       )}
@@ -174,6 +178,7 @@ export function PhotoMeasure({ custId, onMeasured }: { custId: string; onMeasure
           <div className="grid gap-2 text-base">
             <p className="font-medium">Cara memotret</p>
             <ul className="grid list-disc gap-1 pl-5">
+              {notice?.guidance.map((item) => <li key={item}>{item}</li>)}
               <li>HP tegak, setinggi pinggang, jarak 2,5 sampai 3 meter, tidak menunduk atau mendongak.</li>
               <li>Seluruh badan masuk, dari ujung kepala sampai telapak kaki.</li>
               <li><span className="font-medium">Foto depan:</span> menghadap kamera, lengan dibuka seperti huruf A.</li>
@@ -183,7 +188,7 @@ export function PhotoMeasure({ custId, onMeasured }: { custId: string; onMeasure
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Foto tampak depan"><input type="file" accept="image/*" className="field" onChange={(e) => setFront(e.target.files?.[0] ?? null)} /></Field>
-            <Field label="Foto tampak samping"><input type="file" accept="image/*" className="field" onChange={(e) => setSide(e.target.files?.[0] ?? null)} /></Field>
+            <Field label="Foto tampak samping (opsional)"><input type="file" accept="image/*" className="field" onChange={(e) => setSide(e.target.files?.[0] ?? null)} /></Field>
             <Field label="Tinggi badan (cm)" hint="Dipakai sebagai skala; isi setepat mungkin."><input className="field" inputMode="decimal" value={height} onChange={(e) => setHeight(e.target.value)} /></Field>
             <Field label="Model tubuh">
               <select className="field" value={gender} onChange={(e) => setGender(e.target.value)}>
@@ -207,6 +212,7 @@ export function PhotoMeasure({ custId, onMeasured }: { custId: string; onMeasure
         </div>
       )}
       {running && <Notice>Sedang mengukur dari foto. Biasanya 10 sampai 30 detik.</Notice>}
+      {pollError && <div className="grid gap-2"><Notice tone="error">{pollError}</Notice><button className="btn btn-quiet w-fit" onClick={() => { const id = job?.job_id ?? recall(custId); if (id) void poll(id); }}>Periksa status lagi</button></div>}
       {job?.status === "failed" && (
         <div className="grid gap-3">
           <Notice tone="error">Foto belum bisa dipakai: {job.error}</Notice>

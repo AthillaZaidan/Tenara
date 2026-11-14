@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Page } from "@/components/ui";
-import { ListingCard, type Listing } from "@/components/ListingCard";
+import { type Listing } from "@/components/ListingCard";
+import { VariantOffers } from "@/components/VariantOffers";
+import type { GalleryVariant } from "@/lib/variants";
 import { ApiError, api, fileUrl } from "@/lib/api";
 import type { Entry } from "@/lib/types";
+import { regionExploreHrefForEntry } from "@/lib/regions";
 
 type Passport = {
   entry: Entry;
@@ -11,6 +15,7 @@ type Passport = {
   citations: { source_id: string; title: string; publisher: string | null; url: string | null; license: string | null; locator: string | null; excerpt: string | null }[];
   reference_images: { url: string; caption: string | null; credit: string | null; license: string | null }[];
   review: { status: string; reviewed_at: string | null; is_demo_seed: boolean };
+  notice: string;
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -18,13 +23,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return { title: slug.replaceAll("-", " ") };
 }
 
-export default async function EntryPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function EntryPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ variant?: string }> }) {
   const { slug } = await params;
+  const { variant } = await searchParams;
   let passport: Passport;
   let listings: Listing[] = [];
+  let variants: GalleryVariant[] = [];
   try {
     passport = await api<Passport>(`/gallery/${slug}/passport`, { token: null });
     listings = (await api<{ items: Listing[] }>(`/gallery/${slug}/listings`, { token: null })).items;
+    variants = await api<GalleryVariant[]>(`/gallery/${slug}/variants`, { token: null });
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
     throw e;
@@ -33,12 +41,13 @@ export default async function EntryPage({ params }: { params: Promise<{ slug: st
   const facts = [entry.technique, entry.region, entry.community].filter(Boolean).join(" · ");
   return (
     <Page>
-      <h1 className="t-display mb-6 mt-8" style={{ fontSize: "clamp(44px, 8vw, 128px)" }}>{entry.name}</h1>
-      <p className="mb-14 max-w-[52ch] text-lg">{facts}</p>
+      <div className="passport-shell">
+      <nav className="catalog-breadcrumb" aria-label="Jejak navigasi"><Link href="/katalog">Katalog kain</Link><span aria-hidden="true">/</span><span>Cerita kain</span></nav>
+      <header className="passport-header"><p className="fabric-offers-kicker">Cerita kain</p><h1>{entry.name}</h1>{facts && <p>{facts}</p>}<Link className="btn btn-quiet" href={regionExploreHrefForEntry(entry)}>Jelajahi daerah asal</Link></header>
 
-      <div className="grid gap-12 md:grid-cols-12">
-        <article className="rise md:col-span-7">
-          <h2 className="t-head mb-6" style={{ fontSize: "clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem)" }}>Ceritanya</h2>
+      <div className="passport-layout">
+        <article>
+          <h2>Ceritanya</h2>
           {story ? (
             <div className="grid max-w-[62ch] gap-4">
               {story.body.split("\n").map((p, i) => <p key={i}>{p}</p>)}
@@ -54,7 +63,7 @@ export default async function EntryPage({ params }: { params: Promise<{ slug: st
             </div>
           )}
         </article>
-        <aside className="rise md:col-span-4 md:col-start-9" style={{ ["--d" as string]: "100ms" }}>
+        <aside>
           {refs.length > 0 && (
             <div className="mb-10 grid gap-4">
               {refs.map((r) => (
@@ -77,16 +86,10 @@ export default async function EntryPage({ params }: { params: Promise<{ slug: st
           </ul>
         </aside>
       </div>
+      <p className="mt-8 bg-surface p-4 text-base">{passport.notice}</p>
 
-      <section className="mt-[clamp(72px,10vw,140px)]" aria-labelledby="listings">
-        <h2 id="listings" className="t-head mb-3" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 4rem)" }}>Kain ini dijual oleh</h2>
-        <p className="mb-10 max-w-[56ch]">Penjual yang sudah diverifikasi platform. Klaim asal-usul dari penjual ditampilkan terpisah dari verifikasi kurator.</p>
-        {listings.length === 0 ? (
-          <p>Belum ada penjual yang menawarkan kain untuk entri ini.</p>
-        ) : (
-          <ul className="grid list-none gap-10 p-0 md:grid-cols-2">{listings.map((l) => <li key={l.id}><ListingCard l={l} /></li>)}</ul>
-        )}
-      </section>
+      <VariantOffers slug={slug} variants={variants} listings={listings} initialVariant={variant} />
+      </div>
     </Page>
   );
 }

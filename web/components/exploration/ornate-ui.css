@@ -1,0 +1,586 @@
+/* Frames and icons extracted from the user's tenara_nusantara_button_sheet.svg.
+   Nine-slice borders preserve the original vectors at different label widths. */
+.nx-is-map {
+  --ornate-font: Lato, "DejaVu Sans", sans-serif;
+  --ornate-forest: var(--green);
+  --ornate-sage: #8baf7e;
+  --ornate-paper: var(--cream);
+  --ornate-ink: var(--ink);
+  --ornate-coffee: var(--coffee);
+  --ornate-line: color-mix(in srgb, var(--coffee) 28%, var(--cream));
+  --ornate-ease: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+.nx-ornate-frame {
+  position: absolute;
+  inset: 0;
+  display: block;
+  z-index: -1;
+  border: 1px solid transparent;
+  border-image-source: var(
+    --ornate-image,
+    url("/assets/exploration/hud-ornate-frame.svg")
+  );
+  border-image-slice: var(--ornate-slice, 30 58) fill;
+  border-image-width: var(--ornate-edge-y, 12px) var(--ornate-edge-x, 24px);
+  border-image-repeat: stretch;
+  filter: none;
+  pointer-events: none;
+}
+.nx-ornate-frame-square {
+  --ornate-image: url("/assets/exploration/hud-square-frame.svg");
+  border-image-slice: 28 fill;
+  border-image-width: var(--ornate-square-edge, 11px);
+}
+.nx-ornate-frame-toolbar {
+  --ornate-image: url("/assets/exploration/hud-toolbar-frame.svg");
+  --ornate-slice: 34 58;
+  border-image-width: 13px 24px;
+}
+.nx-ornate-frame-panel {
+  --ornate-image: url("/assets/exploration/hud-panel-frame.svg");
+  --ornate-slice: 34 58;
+  border-image-width: 17px 29px;
+}
+.nx-ornate-frame-display {
+  --ornate-image: url("/assets/exploration/hud-display-frame.svg");
+  --ornate-slice: 34 58;
+  border-image-width: 13px 24px;
+}
+.nx-ornate-frame-passport {
+  --ornate-image: url("/assets/exploration/hud-passport-frame.svg");
+  --ornate-slice: 40;
+  border-image-width: 16px;
+}
+.nx-hud-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  pointer-events: none;
+}
+.nx-hud-icon.nx-hud-arrow {
+  width: 14px;
+  height: 14px;
+}
+.nx-hud-icon.nx-hud-chevron {
+  width: 13px;
+  height: 10px;
+  transition: rotate 0.2s;
+}
+.nx-is-map .nx-view-trigger[aria-expanded="true"] .nx-hud-chevron {
+  rotate: 180deg;
+}
+.nx-ornate-gem {
+  flex: 0 0 auto;
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+.nx-refined-journey.nx-is-map .nx-atlas-destination {
+  position: relative;
+  isolation: isolate;
+  height: 40px;
+  padding: 0 29px;
+  gap: 7px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ornate-ink);
+  font: 400 12.5px/1 var(--ornate-font);
+}
+.nx-refined-journey.nx-is-map .nx-gpu-atlas-destination {
+  position: absolute;
+  width: max-content;
+}
+.nx-refined-journey.nx-is-map .nx-atlas-destination:hover,
+.nx-refined-journey.nx-is-map .nx-atlas-destination[aria-pressed="true"] {
+  background: transparent;
+  color: var(--ornate-forest);
+  border: 0;
+  box-shadow: none;
+  translate: none;
+}
+.nx-is-map .nx-atlas-destination:hover > .nx-ornate-frame,
+.nx-is-map .nx-atlas-destination[aria-pressed="true"] > .nx-ornate-frame {
+  filter: none;
+}
+.nx-refined-journey.nx-is-map .nx-ornate-button {
+  --ornate-edge-y: 12px;
+  --ornate-edge-x: 32px;
+  position: relative;
+  isolation: isolate;
+  min-height: 46px;
+  padding: 10px 34px;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ornate-ink);
+  font-family: var(--ornate-font);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.nx-refined-journey.nx-is-map .nx-ornate-button:hover {
+  color: var(--ornate-forest);
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+.nx-is-map .nx-game-button:hover > .nx-ornate-frame {
+  filter: none;
+}
+.nx-refined-journey.nx-is-map .nx-game-button > .nx-ornate-frame {
+  display: block;
+}
+.nx-refined-journey.nx-is-map .nx-ornate-button.nx-square {
+  width: 46px;
+  min-height: 46px;
+  padding: 0;
+}
+.nx-refined-journey.nx-is-map .nx-hud nav {
+  gap: 8px;
+}
+.nx-refined-journey.nx-is-map .nx-open-cards b {
+  min-width: 21px;
+  height: 23px;
+  padding: 0 5px;
+  border: 1px solid var(--green-dark);
+  border-radius: 4px;
+  background: linear-gradient(var(--green), var(--green-dark));
+  box-shadow: inset 0 1px 0 #8baf7e66;
+  color: var(--ornate-paper);
+  font-size: 12px;
+}
+.nx-refined-journey.nx-is-map .nx-view-trigger {
+  font-size: 12px;
+  min-width: 156px;
+}
+.nx-is-map .nx-view-trigger > svg:first-of-type {
+  width: 20px;
+  height: 20px;
+}
+.nx-refined-journey.nx-is-map .nx-view-options {
+  background: linear-gradient(145deg, var(--cream), var(--sand));
+  border-color: var(--ornate-forest);
+  color: var(--ornate-ink);
+  box-shadow:
+    0 3px 0 var(--green-dark),
+    inset 0 0 0 2px #8baf7e44,
+    0 12px 30px #30472924;
+}
+.nx-is-map .nx-view-options header,
+.nx-is-map .nx-view-light {
+  border-color: var(--ornate-line);
+}
+.nx-is-map .nx-view-options :is(button:hover, button[aria-pressed="true"]) {
+  color: var(--ornate-forest);
+}
+
+.nx-refined-journey.nx-is-map .nx-atlas-instruction {
+  --ornate-edge-y: 21px;
+  --ornate-edge-x: 55px;
+  isolation: isolate;
+  bottom: 64px;
+  width: min(660px, calc(100% - 64px));
+  min-width: 0;
+  min-height: 82px;
+  padding: 16px 48px;
+  gap: 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.nx-refined-journey.nx-is-map .nx-atlas-instruction::before,
+.nx-refined-journey.nx-is-map .nx-atlas-instruction::after {
+  content: none;
+}
+.nx-is-map .nx-atlas-instruction > div {
+  flex: 1;
+  min-width: 0;
+}
+.nx-refined-journey.nx-is-map .nx-atlas-instruction strong {
+  font: 500 15px/1.5 var(--ornate-font);
+  color: var(--ornate-ink);
+}
+.nx-refined-journey.nx-is-map .nx-atlas-instruction p {
+  font-family: var(--ornate-font);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--ornate-coffee);
+  margin-top: 3px;
+}
+.nx-refined-journey.nx-is-map .nx-atlas-seal {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 auto;
+  border: 0;
+  background: none;
+  color: var(--ornate-forest);
+  box-shadow: none;
+}
+.nx-is-map .nx-atlas-seal .nx-hud-icon {
+  width: 100%;
+  height: 100%;
+}
+.nx-refined-journey.nx-is-map .nx-atlas-instruction button {
+  flex: 0 0 auto;
+  border-color: var(--ornate-line);
+  color: var(--ornate-ink);
+  font-size: 12px;
+  font-family: var(--ornate-font);
+  font-weight: 500;
+  padding: 11px 0 11px 18px;
+}
+.nx-refined-journey.nx-is-map .nx-atlas-instruction button:hover {
+  color: var(--ornate-forest);
+}
+.nx-refined-journey.nx-is-map .nx-atlas-navigation-hint {
+  bottom: 151px;
+}
+
+.nx-refined-journey.nx-is-map .nx-progress {
+  position: relative;
+  isolation: isolate;
+  width: 278px;
+  min-height: 80px;
+  gap: 10px;
+  padding: 9px 15px 9px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ornate-ink);
+  opacity: 1;
+}
+.nx-refined-journey.nx-is-map .nx-progress:hover {
+  background: transparent;
+}
+.nx-is-map .nx-progress:hover > .nx-ornate-frame {
+  filter: none;
+}
+.nx-refined-journey.nx-is-map .nx-progress-icon {
+  width: 50px;
+  height: 61px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 0;
+  background: url("/assets/exploration/hud-passport.svg") center / contain
+    no-repeat;
+  box-shadow: none;
+}
+.nx-is-map .nx-progress-icon > svg {
+  display: none;
+}
+.nx-is-map .nx-progress > span:last-child {
+  flex: 1;
+  min-width: 0;
+  padding-left: 13px;
+  border-left: 1px solid var(--ornate-line);
+}
+.nx-refined-journey.nx-is-map .nx-progress strong {
+  font-size: 15px;
+  font-family: var(--ornate-font);
+  font-weight: 800;
+  line-height: 1.4;
+}
+.nx-refined-journey.nx-is-map .nx-progress small {
+  font-family: var(--ornate-font);
+  font-size: 10px;
+  margin: 2px 0 7px;
+  white-space: nowrap;
+}
+.nx-refined-journey.nx-is-map .nx-progress i {
+  width: 100%;
+  height: 8px;
+  border: 1px solid var(--cream);
+  border-radius: 8px;
+  background: var(--sand);
+  box-shadow: inset 0 1px 2px #30472924;
+}
+.nx-refined-journey.nx-is-map .nx-progress i b {
+  background: linear-gradient(var(--ornate-sage), var(--ornate-forest));
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 #f9f4ea66;
+}
+
+@media (max-width: 900px) {
+  .nx-refined-journey.nx-is-map .nx-hud {
+    left: 14px;
+    right: 14px;
+    gap: 8px;
+  }
+  .nx-refined-journey.nx-is-map .nx-hud nav {
+    gap: 4px;
+  }
+  .nx-refined-journey.nx-is-map .nx-hud .nx-game-button {
+    --ornate-image: url("/assets/exploration/hud-square-frame.svg");
+    --ornate-slice: 20;
+    --ornate-edge-x: 9px;
+    --ornate-edge-y: 9px;
+    --ornate-square-edge: 9px;
+    min-height: 40px;
+    padding: 8px 10px;
+    gap: 4px;
+  }
+  .nx-is-map .nx-hud .nx-ornate-frame-toolbar {
+    --ornate-image: url("/assets/exploration/hud-square-frame.svg");
+    --ornate-slice: 28;
+    border-image-width: 9px;
+  }
+  .nx-is-map .nx-catalog-shortcut .nx-hud-arrow {
+    display: none;
+  }
+  .nx-refined-journey.nx-is-map .nx-hud .nx-square {
+    width: 38px;
+    padding: 0;
+  }
+  .nx-refined-journey.nx-is-map .nx-open-cards b {
+    min-width: 16px;
+    width: 16px;
+    height: 18px;
+    padding: 0 3px;
+    font-size: 9px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-destination {
+    --ornate-edge-x: 21px;
+    --ornate-edge-y: 10.5px;
+    height: 35px;
+    padding: 0 25px;
+    gap: 5px;
+    font-size: 10px;
+  }
+  .nx-is-map .nx-ornate-gem {
+    width: 12px;
+    height: 12px;
+  }
+  .nx-refined-journey.nx-is-map .nx-view-trigger {
+    --ornate-edge-x: 27.5px;
+    --ornate-edge-y: 10.5px;
+    min-width: 124px;
+    min-height: 40px;
+    padding: 9px 26px;
+    font-size: 10px;
+    gap: 5px;
+  }
+  .nx-is-map .nx-view-trigger > svg:first-of-type {
+    width: 16px;
+    height: 16px;
+  }
+  .nx-refined-journey.nx-is-map .nx-bottom-hud {
+    left: 16px;
+    right: 16px;
+    bottom: 18px;
+    gap: 10px;
+  }
+  .nx-refined-journey.nx-is-map .nx-progress {
+    width: 210px;
+    max-width: 210px;
+    min-width: 0;
+    flex: 1;
+    min-height: 62px;
+    padding: 7px 10px 7px 7px;
+    gap: 7px;
+    border-radius: 12px;
+  }
+  .nx-refined-journey.nx-is-map .nx-progress-icon {
+    width: 36px;
+    height: 45px;
+  }
+  .nx-is-map .nx-progress > span:last-child {
+    padding-left: 8px;
+  }
+  .nx-refined-journey.nx-is-map .nx-progress strong {
+    font-size: 12px;
+  }
+  .nx-refined-journey.nx-is-map .nx-progress small {
+    font-size: 8px;
+    margin-bottom: 5px;
+  }
+  .nx-refined-journey.nx-is-map .nx-progress i {
+    height: 6px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction {
+    --ornate-edge-x: 43px;
+    --ornate-edge-y: 17px;
+    left: 14px;
+    right: 14px;
+    bottom: 86px;
+    width: auto;
+    min-height: 78px;
+    transform: none;
+    padding: 14px 30px;
+    gap: 9px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction strong {
+    font-size: 9px;
+    line-height: 1.5;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction p {
+    font-size: 8px;
+    max-width: none;
+    line-height: 1.5;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-seal {
+    width: 30px;
+    height: 30px;
+    border-width: 1.5px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction button {
+    font-size: 9px;
+    padding: 8px 0 8px 10px;
+    gap: 4px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-navigation-hint {
+    bottom: 179px;
+  }
+}
+@media (max-width: 360px) {
+  .nx-refined-journey.nx-is-map .nx-hud .nx-game-button {
+    width: 34px;
+    min-width: 34px;
+    padding: 8px 7px;
+  }
+  .nx-refined-journey.nx-is-map .nx-hud .nx-open-cards {
+    padding: 8px 7px;
+  }
+  .nx-refined-journey.nx-is-map .nx-view-trigger {
+    min-width: 110px;
+    padding: 9px 23px;
+    font-size: 9px;
+  }
+  .nx-refined-journey.nx-is-map .nx-progress {
+    padding-right: 8px;
+    gap: 5px;
+  }
+  .nx-refined-journey.nx-is-map .nx-progress-icon {
+    width: 30px;
+    height: 41px;
+  }
+  .nx-is-map .nx-progress > span:last-child {
+    padding-left: 6px;
+  }
+  .nx-refined-journey.nx-is-map .nx-progress strong {
+    font-size: 10px;
+  }
+  .nx-refined-journey.nx-is-map .nx-progress small {
+    font-size: 7px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction {
+    padding: 13px 26px;
+    gap: 7px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction strong {
+    font-size: 8px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction p {
+    font-size: 7px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction button {
+    font-size: 8px;
+    padding-left: 7px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-seal {
+    width: 26px;
+    height: 26px;
+  }
+}
+@media (max-height: 760px) and (min-width: 901px) {
+  .nx-refined-journey.nx-is-map .nx-atlas-instruction {
+    bottom: 52px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-navigation-hint {
+    display: none;
+  }
+}
+
+/* Animate the decoration, never the camera-controlled marker transform. */
+.nx-is-map .nx-ornate-frame {
+  transform: translateY(0) scale(1);
+  transition: transform 180ms var(--ornate-ease);
+}
+.nx-is-map .nx-ornate-frame::after {
+  content: "";
+  position: absolute;
+  inset: 6px 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px #30472938;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ornate-ease);
+}
+.nx-ornate-wash {
+  position: absolute;
+  inset: var(--ornate-wash-y, 12px) var(--ornate-wash-x, 25px);
+  overflow: hidden;
+  border-radius: 7px;
+  pointer-events: none;
+}
+.nx-ornate-wash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, #8baf7e30, #8baf7e48);
+  opacity: 0;
+  transform: translateX(-105%);
+  transition: transform 280ms var(--ornate-ease), opacity 180ms ease;
+}
+.nx-ornate-frame-square { --ornate-wash-y: 9px; --ornate-wash-x: 9px; }
+.nx-ornate-frame-panel { --ornate-wash-y: 17px; --ornate-wash-x: 29px; }
+.nx-ornate-frame-passport { --ornate-wash-y: 10px; --ornate-wash-x: 10px; }
+.nx-is-map .nx-hud-icon {
+  transition: translate 200ms var(--ornate-ease), rotate 200ms var(--ornate-ease), scale 120ms ease;
+}
+.nx-is-map .nx-progress-icon { transition: transform 220ms var(--ornate-ease); }
+.nx-is-map .nx-progress i b { transition: width 400ms var(--ornate-ease); }
+.nx-is-map .nx-gpu-atlas-connectors line { stroke: var(--ornate-paper); }
+.nx-is-map .nx-gpu-atlas-connectors circle { fill: var(--ornate-paper); stroke: var(--ornate-forest); }
+.nx-is-map .nx-atlas-label-line { stroke: var(--ornate-paper); }
+
+.nx-refined-journey.nx-is-map :is(.nx-atlas-destination, .nx-ornate-button, .nx-progress):not(:disabled):is(:hover, :focus-visible, [aria-pressed="true"], [aria-expanded="true"]) > .nx-ornate-frame {
+  transform: translateY(-1px);
+}
+.nx-is-map :is(.nx-atlas-destination, .nx-ornate-button, .nx-progress):not(:disabled):is(:hover, :focus-visible, [aria-pressed="true"], [aria-expanded="true"]) > .nx-ornate-frame::after,
+.nx-is-map .nx-atlas-instruction:focus-within > .nx-ornate-frame::after { opacity: .8; }
+.nx-is-map :is(.nx-atlas-destination, .nx-ornate-button, .nx-progress):not(:disabled):is(:hover, :focus-visible, [aria-pressed="true"], [aria-expanded="true"]) > .nx-ornate-frame .nx-ornate-wash::before,
+.nx-is-map .nx-atlas-instruction:is(:hover, :focus-within) > .nx-ornate-frame .nx-ornate-wash::before {
+  opacity: 1;
+  transform: translateX(0);
+}
+.nx-refined-journey.nx-is-map :is(.nx-atlas-destination, .nx-ornate-button, .nx-progress):focus-visible {
+  outline: 2px solid var(--ornate-forest) !important;
+  outline-offset: 3px !important;
+  border-radius: 5px;
+}
+.nx-refined-journey.nx-is-map .nx-ornate-button:active { transform: none; }
+.nx-refined-journey.nx-is-map :is(.nx-atlas-destination, .nx-ornate-button, .nx-progress):not(:disabled):active > .nx-ornate-frame {
+  transform: translateY(1px) scale(.985);
+  transition-duration: 90ms;
+}
+.nx-is-map :is(.nx-atlas-destination, .nx-ornate-button):not(:disabled):active > .nx-hud-icon { scale: .93; }
+.nx-is-map :is(.nx-ornate-button, .nx-atlas-instruction button):is(:hover, :focus-visible) .nx-hud-arrow { translate: 2px -2px; }
+.nx-is-map .nx-ornate-button:is(:hover, :focus-visible) .nx-hud-icon-settings { rotate: 9deg; }
+.nx-is-map .nx-ornate-button:is(:hover, :focus-visible) .nx-hud-icon-book { rotate: -4deg; }
+.nx-is-map .nx-progress:is(:hover, :focus-visible) .nx-progress-icon { transform: translateY(-2px) rotate(-2deg); }
+.nx-is-map .nx-atlas-destination[aria-pressed="true"] .nx-ornate-gem { animation: nx-ornate-pick 280ms var(--ornate-ease); }
+@keyframes nx-ornate-pick { 0%, 100% { scale: 1; } 45% { scale: 1.12; } }
+
+.nx-is-map[data-motion="reduced"] :is(.nx-ornate-frame, .nx-ornate-frame *, .nx-hud-icon, .nx-progress-icon, .nx-progress i b),
+.nx-is-map[data-motion="reduced"] .nx-ornate-frame::after,
+.nx-is-map[data-motion="reduced"] .nx-ornate-wash::before { animation: none !important; transition: none !important; }
+.nx-is-map[data-motion="reduced"] .nx-ornate-frame,
+.nx-is-map[data-motion="reduced"] .nx-progress-icon { transform: none !important; }
+.nx-is-map[data-motion="reduced"] .nx-hud-icon { translate: none !important; scale: 1 !important; }
+.nx-is-map[data-motion="reduced"] :is(.nx-hud-icon-settings, .nx-hud-icon-book) { rotate: 0deg !important; }
+@media (prefers-reduced-motion: reduce) {
+  .nx-is-map :is(.nx-ornate-frame, .nx-ornate-frame *, .nx-hud-icon, .nx-progress-icon, .nx-progress i b),
+  .nx-is-map .nx-ornate-frame::after,
+  .nx-is-map .nx-ornate-wash::before { animation: none !important; transition: none !important; }
+  .nx-is-map .nx-ornate-frame,
+  .nx-is-map .nx-progress-icon { transform: none !important; }
+  .nx-is-map .nx-hud-icon { translate: none !important; scale: 1 !important; }
+  .nx-is-map :is(.nx-hud-icon-settings, .nx-hud-icon-book) { rotate: 0deg !important; }
+}

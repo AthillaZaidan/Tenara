@@ -84,6 +84,20 @@ export const newKey = () =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
+/** Keep the same key across retries and reloads within this tab for one exact money action. */
+export function intentKey(scope: string): string {
+  const storageKey = `tenara.intent.${scope}`;
+  try {
+    const existing = window.sessionStorage.getItem(storageKey);
+    if (existing) return existing;
+    const key = newKey();
+    window.sessionStorage.setItem(storageKey, key);
+    return key;
+  } catch {
+    return newKey();
+  }
+}
+
 /** Public file URLs from the API are relative ("/api/v1/files/…"); make them absolute. */
 export const fileUrl = (url?: string | null) => (!url ? "" : url.startsWith("http") ? url : `${API_URL}${url}`);
 

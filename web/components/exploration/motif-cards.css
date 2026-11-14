@@ -1,0 +1,384 @@
+.nx-motif-overlay {
+  --nx-motif-ink: #123f2c;
+  --nx-motif-gold: #b5791b;
+  --nx-motif-paper: #fbedd6;
+  position: absolute;
+  inset: 0;
+  z-index: 195;
+  overflow-x: hidden;
+  overflow-y: auto;
+  isolation: isolate;
+  color: var(--nx-motif-ink);
+  font-family: var(--sans);
+  background:
+    url("/assets/exploration/motif-paper-grain.svg"),
+    radial-gradient(ellipse at 50% 35%, #fff5e5 0%, #fbecd4 65%, #f3dfbf 100%);
+}
+.nx-motif-open .nx-topic-panel { opacity: 0; pointer-events: none; }
+.nx-motif-open .nx-hud,
+.nx-motif-open .nx-region-passport { visibility: hidden; }
+.nx-motif-overlay::before,
+.nx-motif-overlay::after {
+  position: absolute;
+  top: 18%;
+  z-index: -1;
+  width: clamp(160px, 22vw, 350px);
+  height: 62%;
+  content: "";
+  pointer-events: none;
+  opacity: .13;
+  background: url("/assets/exploration/motif-ikat-pattern.svg") center / 230px 230px repeat;
+  mask-image: linear-gradient(transparent, #000 12%, #000 80%, transparent);
+}
+.nx-motif-overlay::before { left: 0; }
+.nx-motif-overlay::after { right: 0; }
+.nx-motif-landscape {
+  position: absolute;
+  z-index: -1;
+  inset: auto 0 0;
+  width: 100%;
+  height: clamp(100px, 16vh, 175px);
+  pointer-events: none;
+}
+.nx-motif-content > .nx-motif-landscape { width: 100%; }
+.nx-motif-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 108px;
+  padding: 32px 4%;
+}
+.nx-motif-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 2px solid var(--nx-motif-gold);
+  border-radius: 10px;
+  background: #174b35;
+  color: #fff1d3;
+  box-shadow: 0 3px 0 #b47a23, 0 5px 12px #73461326;
+  font: 700 16px/1.2 var(--serif);
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.nx-motif-close:hover { background: #236345; transform: translateY(-1px); }
+.nx-motif-close:active { transform: translateY(1px); }
+.nx-motif-brand {
+  position: absolute;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--nx-motif-ink);
+  font: 700 34px/1 var(--serif);
+  letter-spacing: -.05em;
+  transform: translateX(-50%);
+}
+.nx-motif-brand > svg { width: 28px; height: 28px; color: #a0471d; }
+.nx-motif-brand > span { margin-left: -10px; }
+.nx-motif-region {
+  color: inherit;
+  font: 700 11px/1.3 var(--serif);
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+.nx-motif-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: calc(100% - 108px);
+  margin: 0 auto;
+  padding: 10px 24px 80px;
+  text-align: center;
+}
+.nx-motif-intro > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font: 700 13px/1.4 var(--serif);
+  letter-spacing: .23em;
+  text-transform: uppercase;
+}
+.nx-motif-intro > span::before,
+.nx-motif-intro > span::after { width: 53px; height: 1px; content: ""; background: var(--nx-motif-gold); }
+.nx-motif-intro > span > svg { width: 18px; height: 18px; color: var(--nx-motif-gold); }
+.nx-motif-intro h2 {
+  margin: 15px 0 10px;
+  color: var(--nx-motif-ink);
+  font: 600 clamp(32px, 3.4vw, 48px)/1.12 var(--serif);
+  letter-spacing: -.035em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.nx-motif-intro h2 em { color: #ac6c10; font-style: normal; }
+.nx-motif-intro p {
+  margin: 10px 0 0;
+  color: var(--nx-motif-ink);
+  font-size: 16px;
+  line-height: 1.5;
+  font-style: italic;
+  font-weight: 500;
+}
+.nx-motif-rail {
+  --nx-motif-card-width: 264px;
+  width: min(1050px, 100%);
+  flex-shrink: 0;
+  display: grid;
+  grid-auto-columns: var(--nx-motif-card-width);
+  grid-auto-flow: column;
+  align-items: stretch;
+  justify-content: safe center;
+  gap: 26px;
+  margin: 18px auto 0;
+  padding: 10px 12px 20px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-color: #be914c transparent;
+  scrollbar-width: thin;
+}
+.nx-motif-card {
+  --nx-card-accent: #103e2b;
+  --nx-card-light: #1d4f33;
+  min-width: 0;
+  height: 360px;
+  position: relative;
+  perspective: 1400px;
+  scroll-snap-align: center;
+  animation: nx-motif-enter .65s cubic-bezier(.2,.8,.2,1) backwards;
+  animation-delay: calc(min(var(--nx-card-index), 6) * 85ms);
+  transition: transform 240ms ease;
+}
+.nx-motif-card[data-tone="1"] { --nx-card-accent: #963c21; --nx-card-light: #b34e29; }
+.nx-motif-card[data-tone="2"] { --nx-card-accent: #594035; --nx-card-light: #79543d; }
+.nx-motif-card[data-tone="3"] { --nx-card-accent: #2a6160; --nx-card-light: #397775; }
+.nx-motif-card.is-selected { z-index: 1; transform: translateY(-4px); }
+.nx-motif-card-select {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  position: relative;
+  border: 0;
+  border-radius: 22px;
+  background: transparent;
+  color: #fff0cb;
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.nx-motif-card-turn {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: inherit;
+  perspective: 1200px;
+}
+/* Rotate each face independently: nested preserve-3d inside a native button
+   can be flattened in Firefox, leaving the back mirrored over the story. */
+.nx-motif-card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px;
+  overflow: hidden;
+  border: 5px solid transparent;
+  border-radius: inherit;
+  background:
+    linear-gradient(125deg, var(--nx-card-light), var(--nx-card-accent) 55%) padding-box,
+    linear-gradient(120deg, #ffedb5 0%, #d99929 22%, #fff2bd 45%, #d28c22 75%, #ffe2a0 100%) border-box;
+  box-shadow: 0 0 0 1px #c08526, inset 0 0 0 2px #f8d17b, 0 5px 0 #c78b2e, 0 12px 18px #73461338;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  pointer-events: none;
+  transition: transform 760ms cubic-bezier(.45, 0, .55, 1), visibility 0s 380ms;
+}
+.nx-motif-card-face::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+  content: "";
+  opacity: .18;
+  background:
+    url("/assets/exploration/motif-paper-grain.svg"),
+    repeating-linear-gradient(0deg, transparent 0 2px, #fff2cd16 2px 3px),
+    repeating-linear-gradient(90deg, transparent 0 3px, #0002 3px 4px);
+  mix-blend-mode: soft-light;
+}
+.nx-motif-card-back { justify-content: center; visibility: visible; transform: rotateY(0deg); }
+.nx-motif-card.is-open .nx-motif-card-back { visibility: hidden; transform: rotateY(-180deg); }
+.nx-motif-card-ornament {
+  position: absolute;
+  inset: 7px;
+  background: url("/assets/exploration/motif-woven-ornament.svg") center / 100% 100% no-repeat;
+}
+.nx-motif-card-invitation {
+  position: absolute;
+  right: 25px;
+  bottom: 104px;
+  left: 25px;
+  color: #f5d995;
+  font: 500 10px/1.4 var(--sans);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.nx-motif-card-select:is(:hover, :focus-visible) .nx-motif-card-invitation { opacity: .85; }
+.nx-motif-card-front { visibility: hidden; transform: rotateY(180deg); }
+.nx-motif-card.is-open .nx-motif-card-front { visibility: visible; transform: rotateY(0deg); }
+.nx-motif-card-front::before {
+  position: absolute;
+  inset: 5px;
+  content: "";
+  border: 1px solid #eac777;
+  border-radius: 16px;
+  pointer-events: none;
+  background: url("/assets/exploration/motif-front-corners.svg") center bottom / 100% auto no-repeat;
+}
+.nx-motif-card-art {
+  display: block;
+  flex: 0 0 43%;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #eac777;
+  border-radius: 13px 13px 3px 3px;
+  background: var(--nx-card-accent);
+}
+.nx-motif-card-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.nx-motif-card-copy { display: flex; flex: 1; min-height: 0; flex-direction: column; align-items: center; padding: 8px 6px 5px; }
+.nx-motif-kind { display: flex; align-items: center; justify-content: center; gap: 6px; color: #eacb89; font: 600 9px/1.3 var(--serif); letter-spacing: .16em; text-transform: uppercase; }
+.nx-motif-kind > svg { width: 13px; height: 13px; flex-shrink: 0; }
+.nx-motif-card-copy strong { display: block; margin: 5px 0 8px; color: #fff1cf; font: 500 22px/1.1 var(--serif); letter-spacing: -.025em; text-transform: uppercase; }
+.nx-motif-story { display: block; max-width: 245px; color: #f8e8c9; font: 400 11.5px/1.45 var(--sans); text-wrap: pretty; }
+.nx-motif-origin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  gap: 5px;
+  min-width: 96px;
+  max-width: 90%;
+  flex-shrink: 0;
+  margin: auto auto 6px;
+  padding: 5px 12px;
+  border-radius: 30px;
+  background: linear-gradient(#fff2cd, #f5dcaa);
+  color: #a56520;
+  font: 700 9px/1.2 var(--sans);
+  text-transform: uppercase;
+}
+.nx-motif-controls { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 0 auto; }
+.nx-motif-controls button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #fff2cf;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fff2cd, #fbe5b6);
+  color: var(--nx-motif-ink);
+  box-shadow: 0 2px 1px #c49752, 0 5px 9px #8056252c;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.nx-motif-controls button > svg { width: 22px; height: 22px; }
+.nx-motif-controls button:hover { transform: translateY(-2px); box-shadow: 0 3px 1px #c49752, 0 7px 12px #80562538; }
+.nx-motif-controls > span { min-width: 160px; color: var(--nx-motif-ink); font: 600 14px/1.3 var(--serif); }
+.nx-motif-continue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-width: 350px;
+  min-height: 48px;
+  margin: 15px auto 0;
+  padding: 8px 20px;
+  border: 3px solid #d5a247;
+  border-radius: 40px;
+  background: linear-gradient(125deg, #22563a, #103f2c 55%, #245438);
+  box-shadow: inset 0 0 0 1px #ffe0a0, 0 3px 0 #b47a23, 0 8px 14px #8a5b2333;
+  color: #fff1d3;
+  font: 600 15px/1.2 var(--serif);
+  letter-spacing: .09em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.nx-motif-continue > svg { width: 22px; height: 22px; color: #e5b756; flex-shrink: 0; }
+.nx-motif-continue:not(:disabled):hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px #ffe0a0, 0 4px 0 #b47a23, 0 11px 20px #8a5b2340; }
+.nx-motif-continue:disabled { opacity: .6; cursor: not-allowed; }
+.nx-motif-disclaimer { margin: 6px 0 0; color: #53694d; font-size: 9px; }
+.nx-motif-empty { margin: 45px auto; }
+.nx-motif-overlay :is(button, a):focus-visible { outline: 3px solid #a96b1a; outline-offset: 5px; }
+@keyframes nx-motif-enter { from { opacity: 0; transform: translateY(28px) rotate(-2deg); } to { opacity: 1; transform: translateY(0) rotate(0); } }
+@media (hover: hover) { .nx-motif-card:hover:not(.is-selected) { transform: translateY(-5px); } }
+@media (min-width: 701px) and (max-height: 800px) {
+  .nx-motif-header { min-height: 92px; padding-block: 24px; }
+  .nx-motif-content { min-height: calc(100% - 92px); padding-top: 5px; padding-bottom: 42px; }
+  .nx-motif-intro h2 { margin: 12px 0 8px; font-size: 36px; }
+  .nx-motif-intro p { font-size: 14px; }
+  .nx-motif-rail { --nx-motif-card-width: 248px; margin-top: 12px; padding-bottom: 16px; }
+  .nx-motif-card { height: 324px; }
+  .nx-motif-card-art { flex-basis: 40%; }
+  .nx-motif-card-copy { padding: 7px 4px 4px; }
+  .nx-motif-card-copy strong { font-size: 21px; margin-block: 4px 6px; }
+  .nx-motif-story { font-size: 11px; line-height: 1.4; }
+  .nx-motif-controls button { width: 38px; height: 38px; }
+  .nx-motif-continue { min-height: 44px; margin-top: 12px; font-size: 14px; }
+}
+@media (max-width: 700px) {
+  .nx-motif-header { min-height: 92px; padding: 24px 16px; }
+  .nx-motif-brand { position: static; gap: 7px; font-size: 29px; transform: none; }
+  .nx-motif-brand > svg { width: 24px; height: 24px; }
+  .nx-motif-brand > span { margin-left: -7px; }
+  .nx-motif-region { display: none; }
+  .nx-motif-close { gap: 6px; padding-inline: 10px; font-size: 14px; }
+  .nx-motif-close > svg { width: 17px; }
+  .nx-motif-content { min-height: calc(100% - 92px); padding: 12px 0 94px; }
+  .nx-motif-intro { padding-inline: 20px; }
+  .nx-motif-intro > span { gap: 10px; font-size: 11px; letter-spacing: .16em; }
+  .nx-motif-intro > span::before, .nx-motif-intro > span::after { width: 24px; }
+  .nx-motif-intro > span > svg { width: 17px; height: 17px; }
+  .nx-motif-intro h2 { margin-top: 14px; font-size: clamp(29px, 7.6vw, 42px); line-height: 1.12; }
+  .nx-motif-intro p { max-width: 290px; margin: 10px auto 0; font-size: 12px; line-height: 1.5; }
+  .nx-motif-rail {
+    --nx-motif-card-width: min(264px, calc(100vw - 72px));
+    justify-content: start;
+    gap: 22px;
+    margin-top: 14px;
+    padding: 10px max(36px, calc((100% - 264px) / 2)) 20px;
+    scroll-padding-inline: max(36px, calc((100% - 264px) / 2));
+    scrollbar-width: none;
+  }
+  .nx-motif-card { height: 360px; }
+  .nx-motif-story { font-size: 11.5px; }
+  .nx-motif-card-copy { padding-inline: 5px; }
+  .nx-motif-card-copy strong { font-size: 22px; }
+  .nx-motif-controls { gap: 16px; }
+  .nx-motif-controls button { width: 40px; height: 40px; }
+  .nx-motif-controls > span { min-width: 150px; font-size: 13px; }
+  .nx-motif-continue { gap: 14px; min-width: 0; max-width: calc(100% - 36px); min-height: 46px; margin-top: 14px; padding: 8px 16px; font-size: 12px; letter-spacing: .06em; }
+  .nx-motif-continue > svg { width: 21px; height: 21px; }
+  .nx-motif-disclaimer { font-size: 9px; }
+  .nx-motif-overlay::before, .nx-motif-overlay::after { width: 75px; opacity: .08; }
+  .nx-motif-landscape { height: 130px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-motif-overlay *, .nx-motif-overlay *::before, .nx-motif-overlay *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+.nx-motif-still *, .nx-motif-still *::before, .nx-motif-still *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

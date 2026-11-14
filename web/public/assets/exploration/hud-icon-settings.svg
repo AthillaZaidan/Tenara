@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="58" height="58" viewBox="29 29 58 58" overflow="visible"><defs>
+      <linearGradient id="cream-pengaturan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdfbf7" /><stop offset="0.52" stop-color="#f9f4ea" /><stop offset="1" stop-color="#f1ede2" /></linearGradient>
+      <linearGradient id="gold-pengaturan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8d5b9" /><stop offset="1" stop-color="#5f4228" /></linearGradient>
+      <linearGradient id="green-pengaturan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8baf7e" /><stop offset="1" stop-color="#304729" /></linearGradient>
+    </defs><g stroke="#1d1914" stroke-width="4.4" fill="none" stroke-linecap="round"><path d="M34 43 H82 M34 73 H82" /><circle cx="51" cy="43" r="7" fill="#f9f4ea" /><circle cx="70" cy="73" r="7" fill="#f9f4ea" /></g></svg>

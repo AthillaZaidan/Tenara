@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # fabric scan photo description; empty = LLM_MODEL. Gemma 4 26B read the technique right on 11/13
     # test photos vs 6/13 for gpt-6-luna (experiments/vlm_eval, 2026-11-08)
     llm_vision_model: str = ""
+    # photo Fit On drawn by an image model (the photo leaves this server, so the buyer opts in per request);
+    # empty = AI Fit On is unavailable and only the local pose overlay is offered
+    llm_image_model: str = ""
     openai_api_key: str = ""
     openrouter_api_key: str = ""
     pose_model_path: str = "./models/pose_landmarker_full.task"

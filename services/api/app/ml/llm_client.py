@@ -69,6 +69,36 @@ def chat(messages: list[dict], *, model: str | None = None, json_mode: bool = Tr
                       usage=data.get("usage") or {})
 
 
+@dataclass
+class ImageResult:
+    png: bytes
+    usage: dict = field(default_factory=dict)
+
+
+def edit_image(messages: list[dict], *, model: str, timeout: int = 150) -> ImageResult:
+    """One image back from an image-capable model (OpenRouter: `modalities` + `message.images`)."""
+    import base64
+
+    base, key = endpoint()
+    if settings.llm_provider != "openrouter":
+        raise RuntimeError("Pembuatan gambar AI hanya tersedia lewat OpenRouter")
+    body = {"model": model, "modalities": ["image", "text"], "messages": messages, "usage": {"include": True}}
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {key}"}
+    req = urllib.request.Request(f"{base}/chat/completions", data=json.dumps(body).encode(),
+                                 headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.load(resp)
+        url = data["choices"][0]["message"]["images"][0]["image_url"]["url"]
+        png = base64.b64decode(url.split(",", 1)[1])
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode(errors="replace")[:200]
+        raise RuntimeError(f"Penyedia gambar menolak permintaan (HTTP {exc.code}): {detail}") from exc
+    except (OSError, KeyError, IndexError, ValueError) as exc:
+        raise RuntimeError(f"Penyedia gambar tidak mengembalikan gambar: {exc}") from exc
+    return ImageResult(png=png, usage=data.get("usage") or {})
+
+
 def parse_json(text: str, what: str) -> dict:
     """Parse a model's JSON reply; tolerates a ```json fence. Anything else is a provider failure."""
     raw = text.strip()

@@ -6,6 +6,7 @@ texture, with the accepted options drawn on it. Anything we cannot draw is repor
 import io
 from dataclasses import dataclass, field
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageOps, ImageStat
 
 from app.ml.vision.pose import PoseResult
@@ -33,10 +34,53 @@ class Rendered:
     warnings: list[str] = field(default_factory=list)
 
 
+def cloth_square(img: Image.Image) -> tuple[int, int, int] | None:
+    """(left, top, side) in `img` pixels of the biggest square that is all cloth, or None when the photo has
+    no plain backdrop to cut away.
+
+    A product shot shows the cloth on a plain pale backdrop. The backdrop colour is read from the photo's
+    border; whatever differs from it is cloth, and the largest square of that is the part safe to repeat."""
+    from PIL import ImageFilter
+
+    scale = 200 / max(img.size)
+    small = img.resize((max(8, round(img.width * scale)), max(8, round(img.height * scale))))
+    a = np.asarray(small, dtype=np.int16)
+    h, w = a.shape[:2]
+    border = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
+    backdrop = np.median(border, axis=0)
+    # the border must itself be plain (a backdrop); a photo that is cloth to its very edge has none to cut
+    if np.abs(border - backdrop).sum(axis=1).mean() > 24:
+        return None
+    mask = np.abs(a - backdrop).sum(axis=2) > 45
+    mask = np.asarray(Image.fromarray((mask * 255).astype(np.uint8)).filter(ImageFilter.MedianFilter(5))) > 127
+    if mask.mean() > 0.97:  # nothing to cut away
+        return None
+    best, size = (0, 0, 0), np.zeros(w + 1, dtype=np.int32)
+    prev = np.zeros(w + 1, dtype=np.int32)
+    for y in range(h):  # largest all-true square: size[x] = side of the square ending at (y, x)
+        size = np.zeros(w + 1, dtype=np.int32)
+        for x in range(1, w + 1):
+            if mask[y, x - 1]:
+                size[x] = 1 + min(prev[x], prev[x - 1], size[x - 1])
+                if size[x] > best[2]:
+                    best = (x - size[x], y - size[x] + 1, int(size[x]))
+        prev = size
+    left, top, side = best
+    if side < 0.3 * min(w, h):  # too little cloth to say which part it is: fall back to the middle
+        return None
+    inset = max(1, round(side * 0.04))  # a few pixels in, away from the soft edge of the cloth
+    left, top, side = left + inset, top + inset, side - 2 * inset
+    return round(left / scale), round(top / scale), round(side / scale)
+
+
 def load_texture(data: bytes, size: int = 180) -> Image.Image:
+    """A square of the cloth: the largest one free of the photo's backdrop, else the middle of the photo."""
     img = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
-    side = min(img.size)
-    left, top = (img.width - side) // 2, (img.height - side) // 2
+    cut = cloth_square(img)
+    if cut is None:
+        side = min(img.size)
+        cut = ((img.width - side) // 2, (img.height - side) // 2, side)
+    left, top, side = cut
     return img.crop((left, top, left + side, top + side)).resize((size, size))
 
 

@@ -150,6 +150,53 @@ def test_fabric_texture_is_mirrored_so_repeats_have_no_seam():
     assert np.array_equal(tex[:, 0], tex[:, -1]) and np.array_equal(tex[0], tex[-1])
 
 
+def _striped_cloth(size, backdrop=None, margin=0):
+    """A busy dark-red cloth; with a `backdrop` it sits in the middle of a plain light photo like a product shot."""
+    rng = np.random.default_rng(3)
+    cloth = np.zeros((size, size, 3), dtype=np.uint8)
+    cloth[..., 0] = 120 + (np.arange(size)[None, :] // 6 % 2) * 70
+    cloth[..., 1] = 25 + rng.integers(0, 30, (size, size))
+    cloth[..., 2] = 40 + (np.arange(size)[:, None] // 9 % 2) * 60
+    if backdrop is None:
+        return cloth
+    out = np.zeros((size + 2 * margin, size + 2 * margin, 3), dtype=np.uint8)
+    out[:] = backdrop
+    out[margin:margin + size, margin:margin + size] = cloth
+    return out
+
+
+def _png(array):
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.fromarray(array).save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_fabric_texture_never_contains_the_photos_backdrop():
+    """A product shot has a pale backdrop round the cloth. Mirrored 2x2, any backdrop in the tile would show as a
+    pale stripe across the garment every 30 cm, so the texture is cut from the cloth alone."""
+    backdrop = (214, 210, 208)
+    photo = _png(_striped_cloth(300, backdrop, margin=90))  # the middle 70 % still reaches the backdrop
+    tex = np.asarray(avatar.fabric_texture(photo, size=64)).astype(int)
+    distance = np.abs(tex - np.array(backdrop)).sum(axis=2)
+    assert distance.min() > 60, "backdrop pixels reached the texture"
+    assert tex.shape == (128, 128, 3)
+    assert np.array_equal(tex[:, 63], tex[:, 64]) and np.array_equal(tex[63], tex[64])
+
+
+def test_fabric_texture_of_a_photo_that_is_all_cloth_keeps_the_middle():
+    cloth = _striped_cloth(300)
+    tex = np.asarray(avatar.fabric_texture(_png(cloth), size=64))
+    assert tex.shape == (128, 128, 3)
+    side = int(300 * 0.7)
+    middle = cloth[(300 - side) // 2:(300 - side) // 2 + side, (300 - side) // 2:(300 - side) // 2 + side]
+    from PIL import Image
+
+    expected = np.asarray(Image.fromarray(middle).resize((64, 64)))
+    assert np.abs(tex[:64, :64].astype(int) - expected.astype(int)).mean() < 12
+
+
 # ---------- the real model (skipped where SMPL-X is not installed) ----------
 
 @pytest.mark.skipif(body3d.get_body_model("neutral") is None, reason="SMPL-X model files not installed")

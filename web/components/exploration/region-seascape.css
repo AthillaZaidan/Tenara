@@ -1,0 +1,53 @@
+.nx-region-seascape {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.nx-sea-haze {
+  position: absolute;
+  width: 135%;
+  height: 70%;
+  left: -18%;
+  border-radius: 48% 55% 40% 60%;
+  background:
+    radial-gradient(ellipse at 24% 38%, #eef8f27a, transparent 46%),
+    radial-gradient(ellipse at 65% 55%, #e2f4ed55, transparent 55%);
+  animation: nx-sea-haze-drift 36s ease-in-out infinite alternate;
+}
+.nx-sea-haze-far {
+  top: -27%;
+  rotate: -9deg;
+}
+.nx-sea-haze-near {
+  bottom: -42%;
+  left: -7%;
+  opacity: 0.7;
+  animation-delay: -18s;
+  rotate: 8deg;
+}
+.nx-sea-glints {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: #e3f7f1;
+  stroke-width: 2;
+  opacity: 0.3;
+}
+.nx-refined-journey.nx-is-region .nx-world-preview > p {
+  color: #31585b;
+}
+.nx-journey[data-motion="paused"] .nx-sea-haze {
+  animation-play-state: paused;
+}
+@keyframes nx-sea-haze-drift {
+  to {
+    transform: translate3d(4%, 3%, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-sea-haze {
+    animation: none;
+  }
+}

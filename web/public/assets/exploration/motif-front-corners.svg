@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 90" fill="none" stroke="#eac777" stroke-width="2">
+  <defs><g id="corner"><path d="M7 7v65q0 11 11 11h65M7 14l69 69M7 27l56 56"/><path d="m15 27 9 9-9 9-9-9Zm17 17 9 9-9 9-9-9Zm17 17 9 9-9 9-9-9Z"/><path d="m15 33 3 3-3 3-3-3Zm17 17 3 3-3 3-3-3Zm17 17 3 3-3 3-3-3Z" fill="#eac777" stroke="none"/><path d="M15 63v12h12M15 70h5v5"/></g></defs>
+  <use href="#corner"/><use href="#corner" transform="translate(300 0) scale(-1 1)"/>
+</svg>

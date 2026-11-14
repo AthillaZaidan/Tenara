@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { api } from "@/lib/api";
 import { Notice, errText } from "./ui";
 
@@ -9,12 +9,13 @@ export type Uploaded = { id: string; kind: string; url: string; content_type: st
 /** Uploads one file to POST /files and reports it; the caller keeps the list. */
 export function Upload({ kind, label, onUploaded, accept = "image/jpeg,image/png,image/webp,application/pdf" }: { kind: string; label: string; onUploaded: (f: Uploaded) => void; accept?: string }) {
   const [busy, setBusy] = useState(false);
+  const id = useId();
   const [error, setError] = useState<string | null>(null);
   return (
     <div className="grid gap-2">
-      <label className="text-base" htmlFor={`up-${kind}`}>{label}</label>
+      <label className="text-base" htmlFor={id}>{label}</label>
       <input
-        id={`up-${kind}`}
+        id={id}
         type="file"
         accept={accept}
         disabled={busy}

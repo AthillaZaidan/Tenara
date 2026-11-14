@@ -1,0 +1,40 @@
+.tailor-dashboard {
+  .tailor-welcome-art > svg { position: absolute; top: 5px; right: 42px; color: #789065; opacity: .24; transform: rotate(-25deg); }
+  .tailor-patterns { margin: 0; padding: 0; border-top: 1px solid #eeeee6; list-style: none; }
+  .tailor-pattern + .tailor-pattern { border-top: 1px solid #eeeee6; }
+  .tailor-pattern-toggle { display: flex; align-items: center; gap: 13px; width: 100%; min-height: 88px; padding: 15px 23px; text-align: left; }
+  .tailor-pattern-toggle:hover { background: #f8faf4; }
+  .tailor-pattern-icon { display: grid; flex: 0 0 44px; width: 44px; height: 50px; place-items: center; border-radius: 8px; background: #edf0e6; color: #819274; }
+  .tailor-pattern-name { flex: 1; min-width: 0; }
+  .tailor-pattern-name strong, .tailor-pattern-name small { display: block; }
+  .tailor-pattern-name strong { font-size: 13px; font-weight: 600; line-height: 1.5; }
+  .tailor-pattern-name small { margin-top: 5px; color: #7b8672; font-size: 11px; line-height: 1.5; }
+  .tailor-pattern-toggle > svg { color: #829274; transition: transform .2s; }
+  .tailor-pattern-toggle > .tailor-chevron-open { transform: rotate(180deg); }
+  .tailor-pattern-toggle .badge { flex-shrink: 0; }
+  .tailor-form { display: grid; gap: 18px; border-top: 1px solid #eeeee6; padding: 20px 23px 24px; background: #f8f9f3; }
+  .tailor-form > p { color: #74806c; font-size: 12px; }
+  .tailor-service-intro h3 { margin: 0 0 5px; font: 600 13px/1.6 var(--sans); }
+  .tailor-service-intro p { color: #74806c; font-size: 11px; line-height: 1.8; }
+  .tailor-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .tailor-fields label { display: grid; align-content: start; gap: 7px; color: var(--green-dark); font-size: 12px; font-weight: 600; }
+  .tailor-fields .field { min-height: 44px; background: #fffefa; font-size: 13px; font-weight: 400; }
+  .tailor-fields small { color: #77816e; font-size: 10px; font-weight: 400; }
+  .tailor-form-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; }
+  .tailor-form-actions .btn { min-height: 44px; padding: 0 19px; font-size: 12px; }
+  .tailor-stop { min-height: 44px; color: #805043; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
+  .tailor-stop:disabled { opacity: .45; cursor: not-allowed; }
+  .tailor-cancel { min-height: 44px; color: #6d7b61; font-size: 12px; }
+  .tailor-cancel:hover { text-decoration: underline; text-underline-offset: 4px; }
+  @media (max-width: 560px) {
+    .tailor-welcome-art > svg { top: auto; right: -20px; bottom: -25px; opacity: .12; }
+    .tailor-pattern-toggle { gap: 9px; min-height: 82px; padding: 14px 17px; }
+    .tailor-pattern-icon { flex-basis: 40px; width: 40px; height: 46px; }
+    .tailor-pattern-name strong { font-size: 12px; }
+    .tailor-pattern-name small { font-size: 10px; }
+    .tailor-pattern-toggle .badge { max-width: 84px; text-align: center; white-space: normal; }
+    .tailor-form { padding: 18px 17px 22px; }
+    .tailor-fields { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tailor-pattern-toggle > svg { transition: none; } }
+}

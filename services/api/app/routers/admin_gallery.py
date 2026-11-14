@@ -2,11 +2,12 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.deps import require_role
-from app.core.errors import AppValidationError, NotFound
+from app.core.errors import AppValidationError, InvalidTransition, NotFound
 from app.core.pagination import paginate
 from app.core.responses import ok
 from app.db.base import get_session
@@ -16,8 +17,12 @@ from app.ml.text.story_gen import TextLLM, get_story_llm
 from app.ml.vision import photo_match
 from app.models import (
     CulturalSource,
+    FabricListing,
     File,
     GalleryEntry,
+    GalleryReferenceImage,
+    GalleryVariant,
+    GalleryVariantImage,
     ReferencePhoto,
     Story,
     StoryCitation,
@@ -39,6 +44,102 @@ from app.services.files import signed_url
 
 router = APIRouter(prefix="/admin", tags=["admin-gallery"])
 Admin = Depends(require_role("admin"))
+
+
+class VariantCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str = ""
+
+
+class VariantUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str = ""
+
+
+@router.get("/gallery/{entry_id}/variants")
+def list_variants(entry_id: uuid.UUID, user: User = Admin, session: Session = Depends(get_session)):
+    svc.get_entry(session, entry_id)
+    return ok(svc.variants(session, entry_id))
+
+
+@router.post("/gallery/{entry_id}/variants", status_code=201)
+def create_variant(entry_id: uuid.UUID, body: VariantCreate, user: User = Admin,
+                   session: Session = Depends(get_session)):
+    svc.get_entry(session, entry_id)
+    name = body.name.strip()
+    if not name:
+        raise AppValidationError("Nama varian wajib diisi", field="name")
+    existing = session.scalar(select(GalleryVariant).where(
+        GalleryVariant.entry_id == entry_id, func.lower(GalleryVariant.name) == name.lower()))
+    if existing:
+        raise AppValidationError("Varian sudah ada", field="name")
+    variant = GalleryVariant(entry_id=entry_id, name=name, description=body.description)
+    session.add(variant)
+    session.flush()
+    audit.record(session, actor=user, action="gallery.variant_created", target_type="gallery_variant",
+                 target_id=variant.id)
+    session.commit()
+    return ok({"id": variant.id, "entry_id": variant.entry_id, "name": variant.name,
+               "description": variant.description, "images": []})
+
+
+@router.patch("/gallery/variants/{variant_id}")
+def update_variant(variant_id: uuid.UUID, body: VariantUpdate, user: User = Admin,
+                   session: Session = Depends(get_session)):
+    variant = session.get(GalleryVariant, variant_id)
+    if variant is None:
+        raise NotFound("Variant not found")
+    name = body.name.strip()
+    if not name:
+        raise AppValidationError("Nama varian wajib diisi", field="name")
+    existing = session.scalar(select(GalleryVariant).where(
+        GalleryVariant.entry_id == variant.entry_id, GalleryVariant.id != variant.id,
+        func.lower(GalleryVariant.name) == name.lower()))
+    if existing:
+        raise AppValidationError("Varian sudah ada", field="name")
+    variant.name, variant.description = name, body.description
+    session.flush()
+    audit.record(session, actor=user, action="gallery.variant_updated", target_type="gallery_variant",
+                 target_id=variant.id)
+    session.commit()
+    return ok({"id": variant.id, "entry_id": variant.entry_id, "name": variant.name,
+               "description": variant.description})
+
+
+@router.delete("/gallery/variants/{variant_id}")
+def delete_variant(variant_id: uuid.UUID, user: User = Admin,
+                   session: Session = Depends(get_session)):
+    variant = session.get(GalleryVariant, variant_id)
+    if variant is None:
+        raise NotFound("Variant not found")
+    if session.scalar(select(FabricListing.id).where(FabricListing.variant_id == variant.id).limit(1)):
+        raise InvalidTransition("Pindahkan listing ke varian lain sebelum menghapus varian ini")
+    session.delete(variant)
+    session.flush()
+    audit.record(session, actor=user, action="gallery.variant_deleted", target_type="gallery_variant",
+                 target_id=variant.id)
+    session.commit()
+    return ok({"deleted": str(variant_id)})
+
+
+@router.post("/gallery/variants/{variant_id}/images", status_code=201)
+def attach_variant_image(variant_id: uuid.UUID, body: ImageAttach, user: User = Admin,
+                         session: Session = Depends(get_session)):
+    variant = session.get(GalleryVariant, variant_id)
+    if variant is None:
+        raise NotFound("Variant not found")
+    file = session.get(File, body.file_id)
+    if file is None or file.deleted_at is not None or file.owner_id != user.id:
+        raise NotFound("File not found")
+    if file.visibility != "public" or file.kind != "reference_image":
+        raise AppValidationError("Gunakan gambar referensi publik", field="file_id")
+    image = GalleryVariantImage(variant_id=variant.id, **body.model_dump())
+    session.add(image)
+    session.flush()
+    audit.record(session, actor=user, action="gallery.variant_image_added", target_type="gallery_variant",
+                 target_id=variant.id)
+    session.commit()
+    return ok({"id": image.id, "url": f"/api/v1/files/{image.file_id}"})
 
 
 def _source(s: CulturalSource) -> dict:
@@ -120,6 +221,26 @@ def attach_image(entry_id: uuid.UUID, body: ImageAttach, user: User = Admin,
                              credit=body.credit, license=body.license, sort_order=body.sort_order)
     session.commit()
     return ok({"id": image.id, "url": f"/api/v1/files/{image.file_id}"})
+
+
+@router.delete("/gallery/{entry_id}/images/{image_id}")
+def remove_entry_image(entry_id: uuid.UUID, image_id: uuid.UUID, user: User = Admin,
+                       session: Session = Depends(get_session)):
+    image = session.get(GalleryReferenceImage, image_id)
+    if image is None or image.entry_id != entry_id:
+        raise NotFound("Gallery image not found")
+    session.delete(image)
+    audit.record(session, actor=user, action="gallery.image_removed", target_type="gallery_entry",
+                 target_id=entry_id, metadata={"image_id": str(image_id)})
+    session.commit()
+    return ok({"removed": str(image_id), "file_kept": True})
+
+
+@router.get("/gallery/{entry_id}/images")
+def list_entry_images(entry_id: uuid.UUID, user: User = Admin,
+                      session: Session = Depends(get_session)):
+    svc.get_entry(session, entry_id)
+    return ok(svc.reference_images(session, entry_id))
 
 
 # ----- sources -----

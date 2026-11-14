@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 390" fill="none" color="#eac777">
+  <defs>
+    <g id="diamond" stroke="currentColor" stroke-width="2.5">
+      <path d="m0-16 16 16L0 16-16 0Z"/>
+      <path d="m0-7 7 7-7 7-7-7Z" fill="currentColor" stroke="none"/>
+      <path d="M0-21v5M21 0h-5M0 21v-5M-21 0h5"/>
+    </g>
+    <g id="bud" fill="currentColor">
+      <path d="m0-12 3 5 4-2-1 6 5 3-5 3 1 6-4-2-3 5-3-5-4 2 1-6-5-3 5-3-1-6 4 2Z"/>
+    </g>
+    <pattern id="weave" width="48" height="48" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <path d="M0 0h48v48H0Z" stroke="currentColor" stroke-width="1.5"/>
+      <use href="#bud" x="24" y="24"/>
+    </pattern>
+    <g id="crown">
+      <path d="M10 10h280v151h-8l-31 29 31 27h8v163H10V217h8l31-27-31-29h-8Z" stroke="currentColor" stroke-width="3"/>
+      <path d="M13 13h274L150 103Z" fill="url(#weave)" stroke="currentColor" stroke-width="3"/>
+      <path d="m18 13 132 99L282 13M13 88l79-75M287 88l-79-75" stroke="currentColor" stroke-width="2.5"/>
+      <path d="M13 15v71l75-71M287 15v71l-75-71" stroke="currentColor" stroke-width="2"/>
+      <use href="#diamond" x="38" y="38"/>
+      <use href="#diamond" x="262" y="38"/>
+      <use href="#bud" x="19" y="67"/>
+      <use href="#bud" x="281" y="67"/>
+    </g>
+  </defs>
+  <rect x="4" y="4" width="292" height="382" rx="17" stroke="currentColor" stroke-width="2"/>
+  <use href="#crown"/>
+  <use href="#crown" transform="translate(300 390) rotate(180)"/>
+  <path d="m12 168 26 22-26 20m276-42-26 22 26 20" stroke="currentColor" stroke-width="3"/>
+  <use href="#bud" x="17" y="190"/>
+  <use href="#bud" x="283" y="190"/>
+  <g transform="translate(150 195)" fill="currentColor">
+    <path id="petal" d="M0-55C-8-44-30-32 0-6c30-26 8-38 0-49Zm0 13c10 12 11 17 0 29-11-12-10-17 0-29Z" fill-rule="evenodd"/>
+    <use href="#petal" transform="rotate(90)"/>
+    <use href="#petal" transform="rotate(180)"/>
+    <use href="#petal" transform="rotate(270)"/>
+    <circle r="5"/>
+  </g>
+</svg>

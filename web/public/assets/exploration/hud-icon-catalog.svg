@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="51" height="54" viewBox="71 44 51 54" overflow="visible"><defs>
+      <linearGradient id="cream-katalog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdfbf7" /><stop offset="0.52" stop-color="#f9f4ea" /><stop offset="1" stop-color="#f1ede2" /></linearGradient>
+      <linearGradient id="gold-katalog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8d5b9" /><stop offset="1" stop-color="#5f4228" /></linearGradient>
+      <linearGradient id="green-katalog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8baf7e" /><stop offset="1" stop-color="#304729" /></linearGradient>
+    </defs>
+    <g transform="translate(76,54) scale(1.06)" fill="none" stroke="#1d1914" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.1">
+    <path d="M0 5 L19 -5 L38 5 L19 15 Z M0 16 L19 26 L38 16 M0 26 L19 36 L38 26" /></g></svg>

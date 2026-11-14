@@ -1,0 +1,462 @@
+/* Story-first layout shared by all regional dioramas. */
+.nx-journey.nx-is-region .nx-world-overview {
+  top: 18%;
+  right: 4%;
+  bottom: auto;
+  width: min(30vw, 390px);
+  container-type: inline-size;
+  color: #fffdf2;
+  text-shadow: 0 2px 18px #184e4b88;
+}
+.nx-journey.nx-is-region .nx-overview-scroll {
+  overflow: visible;
+}
+.nx-journey.nx-is-region .nx-region-tag {
+  border: 1px solid #fffdf2;
+  border-radius: 8px;
+  color: #fffdf2;
+  font-size: 13px;
+  padding: 6px 11px;
+}
+.nx-journey.nx-is-region .nx-world-overview .nx-small-label {
+  display: block;
+  color: #fff5d4;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+.nx-journey.nx-is-region .nx-world-overview h1 {
+  color: #fffdf2;
+  font: 800 clamp(36px, 18cqi, 72px)/1.05 var(--sans);
+  letter-spacing: -0.06em;
+  overflow-wrap: anywhere;
+  margin: 18px 0 20px;
+}
+.nx-journey.nx-is-region.nx-long-region .nx-world-overview h1 {
+  font-size: clamp(28px, 14cqi, 56px);
+  line-height: 1.05;
+}
+.nx-journey.nx-is-region .nx-world-overview h2 {
+  color: #fffdf2;
+  font: 800 clamp(21px, 2vw, 29px)/1.2 var(--sans);
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+}
+.nx-journey.nx-is-region .nx-world-overview p {
+  color: #fffdf2;
+  font: 500 15px/1.65 var(--sans);
+}
+.nx-journey.nx-is-region .nx-world-overview .nx-region-prompt {
+  margin-top: 24px;
+  font-weight: 800;
+  color: #fff4ca;
+}
+.nx-journey.nx-is-region .map-control.nx-location-card {
+  width: 218px;
+  min-height: 72px;
+  padding: 9px;
+  border-radius: 14px;
+}
+.nx-journey.nx-is-region .nx-location-card .map-control-surface {
+  border: 2px solid #fff5d6;
+  background: #fff7e8;
+  box-shadow:
+    0 5px 0 #40683288,
+    0 10px 24px #163f3960;
+}
+.nx-journey.nx-is-region .nx-location-card .map-control-inlay {
+  display: none;
+}
+.nx-journey.nx-is-region .nx-location-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  color: #fffef3;
+  background: #5c9e2c;
+}
+.nx-journey.nx-is-region .nx-location-copy > strong {
+  font: 800 15px/1.2 var(--sans);
+  color: #293e32;
+}
+.nx-journey.nx-is-region .nx-location-progress {
+  height: 19px;
+  border: 0;
+  border-radius: 12px;
+  background: #e4efd2;
+}
+.nx-journey.nx-is-region .nx-location-progress > i {
+  background: #70b831;
+}
+.nx-journey.nx-is-region .nx-location-progress > b {
+  color: #35552c;
+  font: 700 10px/19px var(--sans);
+}
+.nx-journey.nx-is-region .nx-location-card.is-read .nx-location-progress > b {
+  color: white;
+}
+.nx-journey.nx-is-region .nx-location-status {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 25px;
+  height: 25px;
+  border: 2px solid #fff8e8;
+  background: #f0bf57;
+  box-shadow: 0 2px 5px #294c3455;
+}
+.nx-journey.nx-is-region .nx-location-card.is-read .nx-location-status {
+  background: #69b32d;
+}
+.nx-region-view-settings > div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 10px 0;
+}
+.nx-region-view-settings button {
+  min-width: 38px;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid var(--map-forest);
+  border-radius: 7px;
+}
+.nx-region-view-settings output {
+  min-width: 48px;
+  text-align: center;
+}
+.nx-region-fallback {
+  position: absolute;
+  inset: 15% 35% 15% 5%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    #c2dc93 0%,
+    #80b17b 45%,
+    transparent 70%
+  );
+  color: #fff7d5;
+  font-size: 80px;
+}
+.nx-region-fallback-stories {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  text-shadow: none;
+}
+.nx-region-fallback-stories .map-control {
+  width: 100%;
+}
+@media (max-width: 900px) {
+  .nx-journey.nx-is-region.nx-overview-visible .nx-world {
+    inset: 65px 0 28%;
+  }
+  .nx-journey.nx-is-region .nx-world-overview {
+    top: auto;
+    bottom: 18px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    max-height: 25%;
+    overflow: auto;
+    padding: 15px 18px;
+    border-radius: 14px;
+    background: #fff8eaf2;
+    color: #274d3b;
+    text-shadow: none;
+  }
+  .nx-journey.nx-is-region
+    .nx-world-overview
+    :is(h1, h2, p, .nx-small-label, .nx-region-tag, .nx-region-prompt) {
+    color: #274d3b;
+  }
+  .nx-journey.nx-is-region .nx-region-tag {
+    border-color: #72906e;
+    margin: 0;
+    font-size: 10px;
+  }
+  .nx-journey.nx-is-region .nx-world-overview .nx-small-label {
+    display: none;
+  }
+  .nx-journey.nx-is-region .nx-world-overview h1,
+  .nx-journey.nx-is-region.nx-long-region .nx-world-overview h1 {
+    font-size: 32px;
+    margin: 8px 0 3px;
+  }
+  .nx-journey.nx-is-region .nx-world-overview h2 {
+    font-size: 15px;
+    margin-bottom: 5px;
+  }
+  .nx-journey.nx-is-region .nx-world-overview p {
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 4px;
+  }
+  .nx-journey.nx-is-region .nx-world-overview .nx-region-prompt {
+    margin-top: 8px;
+  }
+  .nx-journey.nx-is-region .map-control.nx-location-card {
+    width: 155px;
+    min-height: 54px;
+    padding: 6px;
+  }
+  .nx-journey.nx-is-region .nx-location-icon {
+    width: 34px;
+    height: 34px;
+  }
+  .nx-journey.nx-is-region .nx-location-copy > strong {
+    font-size: 11px;
+  }
+  .nx-journey.nx-is-region .nx-location-progress {
+    height: 15px;
+  }
+  .nx-journey.nx-is-region .nx-location-progress > b {
+    font-size: 9px;
+    line-height: 15px;
+  }
+  .nx-journey.nx-is-region .nx-location-status {
+    width: 20px;
+    height: 20px;
+  }
+  .nx-journey.nx-is-region .nx-topic-panel {
+    bottom: 16px;
+    height: 48%;
+  }
+  .nx-region-fallback {
+    inset: 12% 5% 30%;
+  }
+}
+
+/* A little travel companion, shared by the atlas and the regional story. */
+.nx-journey .map-control--passport {
+  width: 290px;
+  min-height: 78px;
+  padding: 10px 17px 10px 12px;
+  border-radius: 22px;
+}
+.nx-journey .map-control--passport > .map-control-surface {
+  border: 2px solid #fff8e8;
+  background: #fff4df;
+  box-shadow:
+    0 4px 0 #d8ad6e,
+    0 10px 22px #164d4860;
+}
+.nx-journey .map-control--passport > .map-control-inlay {
+  display: none;
+}
+.nx-journey .map-passport-book {
+  width: 58px;
+  height: 74px;
+  margin: -15px 4px -12px -5px;
+  padding-top: 11px;
+  border: 3px solid #fff1c9;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #317656, #174b37);
+  box-shadow:
+    2px 3px 0 #e4b969,
+    4px 6px 9px #204b3b55;
+  rotate: -14deg;
+}
+.nx-journey .map-passport-book > span {
+  font-size: 9px;
+}
+.nx-journey .map-passport-book > i {
+  top: 34px;
+  width: 21px;
+  height: 21px;
+  border: 2px solid #efc33c;
+  border-radius: 5px;
+  rotate: 45deg;
+}
+.nx-journey .map-passport-book > i::before {
+  border-color: #efc33c;
+}
+.nx-journey .map-passport-copy {
+  padding-left: 0;
+  border: 0;
+}
+.nx-journey .map-passport-copy strong {
+  color: #164e38;
+  font-size: 16px;
+  font-weight: 800;
+}
+.nx-journey .map-passport-copy small {
+  color: #263c34;
+  font-size: 11px;
+}
+.nx-journey .map-passport-track {
+  height: 8px;
+  background: #e4e9c9;
+  box-shadow: none;
+}
+.nx-journey .map-passport-track > span {
+  background: #67bd23;
+}
+.nx-region-passport {
+  position: absolute;
+  left: 28px;
+  bottom: 28px;
+  z-index: 55;
+}
+
+/* The story reads like a friendly card placed over the diorama. */
+.nx-journey.nx-reference-ui .nx-region-panel.nx-topic-panel {
+  border: 1px solid #fffdf4;
+  border-radius: 28px;
+  background: #fffaf0;
+  box-shadow:
+    0 6px 0 #d9c99e66,
+    0 18px 42px #174f4660;
+}
+.nx-journey .nx-topic-header {
+  padding: 24px 28px 4px;
+}
+.nx-journey .nx-topic-emblem {
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 16px;
+  clip-path: none;
+  background: linear-gradient(145deg, #347758, #174b37);
+  box-shadow: 0 3px 0 #b9c8aa;
+}
+.nx-journey .map-control.nx-topic-close {
+  border-radius: 24px;
+  color: #205840;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+.nx-journey .nx-topic-close > .map-control-surface {
+  border: 1px solid #e8e2cf;
+  background: #fffaf0;
+}
+.nx-journey .nx-topic-close > .map-control-inlay,
+.nx-journey .nx-panel-cards > .map-control-inlay {
+  display: none;
+}
+.nx-journey.nx-reference-ui .nx-topic-scroll {
+  padding: 16px 28px 24px;
+}
+.nx-journey.nx-reference-ui .nx-topic-scroll h2 {
+  margin: 12px 0 16px;
+  color: #205a43;
+  font-size: clamp(30px, 3vw, 46px);
+  line-height: 1.08;
+}
+.nx-journey.nx-reference-ui .nx-topic-scroll p {
+  margin: 12px 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.nx-journey.nx-reference-ui .nx-topic-scroll .nx-topic-lead {
+  color: #20523e;
+  line-height: 1.55;
+}
+.nx-journey .nx-topic-inset {
+  margin-top: 22px;
+  padding: 18px;
+  border: 0;
+  border-radius: 22px;
+  background: #eef2e3;
+}
+.nx-journey.nx-reference-ui .nx-topic-inset h3 {
+  color: #205a43;
+  font-size: 16px;
+  font-weight: 800;
+}
+.nx-journey .nx-topic-inset h3 svg {
+  width: 23px;
+  height: 23px;
+}
+.nx-journey .map-control.nx-panel-cards {
+  min-height: 48px;
+  margin-top: 8px;
+  border-radius: 14px;
+  color: #fffdf4;
+  font-size: 12px;
+  font-weight: 800;
+}
+.nx-journey .nx-panel-cards > .map-control-surface {
+  border: 1px solid #2d6d50;
+  background: linear-gradient(#317657, #194d38);
+  box-shadow: 0 3px 0 #b8c9ab;
+}
+.nx-journey.nx-reference-ui .nx-topic-footer {
+  border-top: 1px solid #eae4d3;
+  background: #fffaf0;
+}
+.nx-journey .nx-topic-stepper button {
+  border-radius: 10px;
+  color: #204b3d;
+  font-size: 11px;
+}
+.nx-journey .nx-chapter-position {
+  color: #345044;
+  font-size: 11px;
+}
+.nx-journey .nx-panel-fabric-list article {
+  border: 1px solid #dce5d1;
+  border-radius: 15px;
+  background: #f2f5e9;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .nx-region-passport {
+    left: 16px;
+    bottom: 16px;
+  }
+  .nx-journey .map-control--passport {
+    width: 215px;
+    max-width: 215px;
+    min-height: 62px;
+    padding: 8px 12px;
+    border-radius: 17px;
+  }
+  .nx-journey .map-passport-book {
+    width: 43px;
+    height: 57px;
+    padding-top: 8px;
+  }
+  .nx-journey .map-passport-book > span {
+    font-size: 7px;
+  }
+  .nx-journey .map-passport-book > i {
+    top: 27px;
+    width: 16px;
+    height: 16px;
+  }
+  .nx-journey .map-passport-copy strong {
+    font-size: 13px;
+  }
+  .nx-journey .map-passport-copy small {
+    font-size: 10px;
+  }
+  .nx-journey.nx-reference-ui .nx-region-panel.nx-topic-panel {
+    bottom: 94px;
+    border-radius: 22px;
+  }
+  .nx-journey.nx-is-region .nx-world-overview {
+    bottom: 94px;
+  }
+  .nx-journey .nx-topic-header {
+    padding: 16px 20px 0;
+  }
+  .nx-journey .nx-topic-emblem {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+  }
+  .nx-journey.nx-reference-ui .nx-topic-scroll {
+    padding: 12px 20px 18px;
+  }
+  .nx-journey.nx-reference-ui .nx-topic-scroll h2 {
+    font-size: 28px;
+  }
+  .nx-journey .nx-topic-inset {
+    padding: 14px;
+    margin-top: 14px;
+  }
+}

@@ -1,0 +1,322 @@
+/* Collectible dioramas in the same blue archipelago as the illustrated atlas. */
+@font-face {
+  font-family: TenaraDisplay;
+  src: url("/fonts/fraunces-variable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+.nx-art-v2 {
+  --nx-gold: #edbc68;
+  --nx-paper: #fff3d9;
+}
+.nx-art-v2.nx-is-region {
+  background:
+    radial-gradient(ellipse at 13% 10%, #d7ead3a3, transparent 38%),
+    radial-gradient(ellipse at 76% 37%, #90d3cb70, transparent 45%),
+    radial-gradient(ellipse at 50% 100%, #418f9b55, transparent 70%), #79b9ba;
+  color: #274f50;
+}
+.nx-art-v2.nx-is-region .nx-atmosphere {
+  background: linear-gradient(180deg, #e5f4ed25, transparent 35%, #24677b12);
+  box-shadow: inset 0 -90px 150px #26667818;
+}
+.nx-art-v2.nx-is-region[data-light="sunset"] .nx-atmosphere {
+  background: linear-gradient(165deg, #ffe2b74a, transparent 48%, #405e8a30);
+}
+.nx-art-v2 .nx-game-button {
+  border-color: #ffedc5;
+  background: #fff5dc;
+  box-shadow:
+    0 4px 0 #c49b60,
+    0 8px 22px #653b2318;
+  border-radius: 9px;
+}
+.nx-art-v2 .nx-game-button.nx-primary {
+  background: #3e633c;
+  color: #fff0cf;
+  border-color: #6b8150;
+  box-shadow:
+    0 4px 0 #29462e,
+    0 9px 20px #56312420;
+}
+.nx-art-v2.nx-is-intro .nx-world {
+  inset: 54px 0 265px;
+}
+.nx-art-v2.nx-is-region:not(.nx-is-intro):not(.nx-has-panel) .nx-world {
+  inset: 50px 0 70px;
+}
+.nx-art-v2 .nx-hud {
+  top: 24px;
+}
+.nx-art-v2.nx-is-region .nx-hud .brand,
+.nx-art-v2.nx-is-region .nx-brand-caption {
+  color: #274f50;
+}
+.nx-art-v2 .nx-region-back {
+  top: 100px;
+}
+.nx-cinematic-title {
+  position: absolute;
+  z-index: 40;
+  left: 50%;
+  bottom: 100px;
+  transform: translateX(-50%);
+  width: min(1000px, 90%);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  pointer-events: none;
+}
+.nx-cinematic-title .nx-eyebrow {
+  display: none;
+  color: #865538;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  margin-bottom: 6px;
+}
+.nx-title-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+.nx-title-line h1 {
+  font-family: TenaraDisplay, var(--serif);
+  font-variation-settings:
+    "SOFT" 65,
+    "WONK" 1,
+    "opsz" 80;
+  font-size: clamp(48px, 6.6vw, 96px);
+  line-height: 1.15;
+  text-transform: uppercase;
+  letter-spacing: -0.05em;
+  font-weight: 850;
+  margin: 0;
+  color: #fff0c8;
+  text-shadow:
+    0 3px 0 #9e5e3d30,
+    0 12px 45px #7d3f2830;
+}
+.nx-title-line > span {
+  color: #f5c464;
+  font-size: 46px;
+  text-shadow: 0 2px 0 #945d3920;
+}
+.nx-cinematic-title > p {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
+  color: #76482d;
+  margin: 10px 0 7px;
+  line-height: 1.7;
+}
+.nx-cinematic-title > svg {
+  width: 180px;
+  height: 20px;
+  color: #e9b34e;
+  margin: 2px 0 12px;
+}
+.nx-cinematic-title .nx-start-explore {
+  pointer-events: auto;
+  min-width: 170px;
+  min-height: 45px;
+  padding: 12px 22px;
+  font-size: 11px;
+}
+.nx-art-v2 .nx-region-panel {
+  background: #fff2dcef;
+  border-color: #ffe8bb;
+  box-shadow:
+    0 5px 0 #bc935e,
+    0 20px 45px #774b3020;
+}
+.nx-art-v2 .nx-panel-kicker {
+  align-items: center;
+}
+.nx-close-story {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #bfa37d70;
+  border-radius: 50%;
+  margin-left: 6px;
+  color: #7e6246;
+}
+.nx-art-v2 .nx-panel-kicker > span:nth-child(2) {
+  margin-left: auto;
+}
+.nx-explore-dock {
+  position: absolute;
+  bottom: 104px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  text-align: center;
+  white-space: nowrap;
+}
+.nx-explore-dock > span {
+  display: block;
+  font-size: 10px;
+  color: #79553c;
+  margin-bottom: 13px;
+}
+.nx-explore-dock > div {
+  display: flex;
+  gap: 12px;
+}
+.nx-art-v2 .nx-landscape-note {
+  display: none;
+}
+.nx-art-v2:not(.nx-has-panel) .nx-discovery {
+  left: 50%;
+}
+.nx-art-v2.nx-is-intro .nx-discovery {
+  bottom: 290px;
+}
+.nx-art-v2 .nx-life-hint {
+  color: #81583c;
+  bottom: 92px;
+  left: 50%;
+  border-color: #99744150;
+}
+.nx-art-v2.nx-has-panel .nx-life-hint {
+  left: calc((100% - 390px) / 2);
+  bottom: 130px;
+}
+.nx-art-v2 .nx-map-title {
+  top: 13%;
+}
+.nx-art-v2 .nx-map-title > svg {
+  display: none;
+}
+.nx-art-v2 .nx-destination-card {
+  background: #fff3d9f5;
+  box-shadow:
+    0 6px 0 #bc995c,
+    0 20px 40px #1949572a;
+}
+.nx-art-v2.nx-is-map .nx-atmosphere {
+  background: linear-gradient(
+    180deg,
+    #e4f2df30,
+    transparent 28%,
+    transparent 75%,
+    #1f718317
+  );
+  box-shadow: inset 0 0 180px #1a657d15;
+}
+@media (max-width: 1100px) {
+  .nx-title-line h1 {
+    font-size: 65px;
+  }
+  .nx-cinematic-title {
+    bottom: 108px;
+  }
+  .nx-title-line > span {
+    font-size: 34px;
+  }
+}
+@media (max-width: 900px) {
+  .nx-art-v2 .nx-hud {
+    top: 18px;
+  }
+  .nx-art-v2 .nx-region-back {
+    top: 82px;
+  }
+  .nx-art-v2.nx-is-intro .nx-world {
+    inset: 95px 0 240px;
+  }
+  .nx-art-v2.nx-is-region:not(.nx-is-intro):not(.nx-has-panel) .nx-world {
+    inset: 100px 0 115px;
+  }
+  .nx-art-v2.nx-has-panel .nx-world {
+    inset: 70px 0 35%;
+  }
+  .nx-cinematic-title {
+    bottom: 135px;
+    width: calc(100% - 32px);
+  }
+  .nx-title-line {
+    gap: 12px;
+  }
+  .nx-title-line h1 {
+    font-size: clamp(40px, 13vw, 64px);
+  }
+  .nx-long-title .nx-title-line h1 {
+    font-size: clamp(31px, 9.3vw, 54px);
+  }
+  .nx-title-line > span {
+    font-size: 24px;
+  }
+  .nx-cinematic-title .nx-eyebrow {
+    font-size: 7px;
+    letter-spacing: 0.09em;
+  }
+  .nx-cinematic-title > p {
+    max-width: 320px;
+    font-size: 11px;
+    margin: 8px 0 4px;
+  }
+  .nx-cinematic-title > svg {
+    margin-bottom: 8px;
+    height: 15px;
+    width: 130px;
+  }
+  .nx-cinematic-title .nx-start-explore {
+    min-height: 42px;
+    font-size: 10px;
+  }
+  .nx-explore-dock {
+    bottom: 108px;
+    max-width: calc(100% - 28px);
+  }
+  .nx-explore-dock > div {
+    gap: 7px;
+  }
+  .nx-explore-dock .nx-game-button {
+    font-size: 9px;
+    padding: 10px 11px;
+    gap: 6px;
+    min-height: 42px;
+  }
+  .nx-explore-dock > span {
+    font-size: 9px;
+  }
+  .nx-art-v2 .nx-life-hint {
+    display: none;
+  }
+  .nx-art-v2 .nx-region-heading {
+    top: 137px;
+  }
+  .nx-art-v2 .nx-region-heading h1 {
+    font-size: 27px;
+  }
+  .nx-art-v2 .nx-region-panel {
+    bottom: 85px;
+  }
+  .nx-art-v2 .nx-discovery {
+    bottom: calc(35% + 105px);
+  }
+}
+@media (max-height: 750px) and (min-width: 901px) {
+  .nx-art-v2.nx-is-intro .nx-world {
+    bottom: 180px;
+  }
+  .nx-cinematic-title {
+    bottom: 80px;
+  }
+  .nx-title-line h1 {
+    font-size: 65px;
+  }
+  .nx-cinematic-title > p {
+    font-size: 12px;
+    margin: 5px 0;
+  }
+  .nx-cinematic-title > svg {
+    margin: 0 0 7px;
+  }
+}

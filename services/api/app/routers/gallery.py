@@ -43,6 +43,12 @@ def gallery_passport(ref: str, session: Session = Depends(get_session)):
     return ok(svc.passport(session, svc.get_published_by_ref(session, ref)))
 
 
+@router.get("/gallery/{ref}/variants")
+def gallery_variants(ref: str, session: Session = Depends(get_session)):
+    entry = svc.get_published_by_ref(session, ref)
+    return ok(svc.variants(session, entry.id))
+
+
 @router.post("/search/semantic")
 def semantic_search(
     body: SearchIn,

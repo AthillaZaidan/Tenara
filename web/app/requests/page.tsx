@@ -7,6 +7,7 @@ import { Notice, Page, RequireAuth, useLoad } from "@/components/ui";
 import { api, when } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { REQUEST_STATUS } from "@/lib/design";
+import { MerchantRecords } from "@/components/MerchantRecords";
 
 type Row = { id: string; status: string; submitted_at: string | null; selling_unit?: string; requested_quantity?: string };
 
@@ -42,10 +43,14 @@ function List() {
 }
 
 export default function RequestsPage() {
-  return (
-    <Page>
-      <h1 className="t-head mb-10 mt-8">Permintaan baju</h1>
-      <RequireAuth><Suspense fallback={null}><List /></Suspense></RequireAuth>
-    </Page>
-  );
+  return <Suspense fallback={null}><RequireAuth><RequestsView /></RequireAuth></Suspense>;
+}
+
+function RequestsView() {
+  const { has } = useAuth();
+  const roles = (["buyer", "merchant", "tailor"] as const).filter((role) => has(role));
+  const asParam = useSearchParams().get("as");
+  const as = roles.find((role) => role === asParam) ?? roles[0] ?? "buyer";
+  if (as === "merchant" || as === "tailor") return <MerchantRecords key={as} kind="requests" roles={roles} workspace={as} />;
+  return <Page><h1 className="t-head mb-10 mt-8">Permintaan baju</h1><List /></Page>;
 }

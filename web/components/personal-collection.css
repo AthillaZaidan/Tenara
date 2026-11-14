@@ -1,0 +1,95 @@
+.personal-collection {
+  min-height: calc(100svh - 84px);
+  padding: 32px 40px 80px;
+  color: var(--green-dark);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.personal-shell { max-width: 1184px; margin-inline: auto; }
+.personal-breadcrumb { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
+.personal-breadcrumb a { text-decoration: none; }
+.personal-breadcrumb a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.personal-breadcrumb span { color: var(--green-dark); }
+.personal-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 38px 0 32px; }
+.personal-eyebrow { margin: 0 0 12px; color: #74806c; font-size: 10px; font-weight: 600; letter-spacing: .16em; }
+.personal-heading h1 { margin: 0; font-size: clamp(30px, 3vw, 42px); line-height: 1.2; letter-spacing: -.035em; }
+.personal-description { max-width: 540px; margin: 14px 0 0; color: var(--muted); font-size: 14px; }
+.personal-catalog-link { display: inline-flex; flex-shrink: 0; align-items: center; gap: 10px; padding-block: 10px; font-size: 13px; font-weight: 600; text-decoration: none; }
+.personal-catalog-link:hover { text-decoration: underline; text-underline-offset: 5px; }
+.personal-panel { overflow: hidden; border: 1px solid #dfe2d5; border-radius: 12px; background: #fffefa; }
+.personal-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 66px; padding: 16px 26px; border-bottom: 1px solid #e7e8df; }
+.personal-panel-title { display: flex; align-items: center; gap: 10px; }
+.personal-panel-title h2 { margin: 0; font-family: var(--sans); font-size: 14px; font-weight: 600; line-height: 1.5; }
+.personal-count { padding: 3px 10px; border-radius: 30px; background: var(--sage); color: #66705e; font-size: 11px; white-space: nowrap; }
+.personal-empty { display: flex; min-height: 382px; flex-direction: column; align-items: center; justify-content: center; padding: 38px 24px 48px; text-align: center; }
+.personal-illustration { position: relative; width: 154px; height: 120px; margin-bottom: 16px; }
+.personal-illustration > svg { display: block; width: 100%; height: 100%; }
+.personal-illustration-badge { position: absolute; right: 26px; bottom: 15px; display: grid; width: 30px; height: 30px; place-items: center; border: 3px solid #fffefa; border-radius: 50%; background: #dce5d3; }
+.personal-empty h2 { margin: 0; font-size: 25px; line-height: 1.35; letter-spacing: -.025em; }
+.personal-empty > p { max-width: 390px; margin: 12px 0 0; color: var(--muted); font-size: 13px; line-height: 1.8; text-wrap: pretty; }
+.personal-empty .btn { gap: 12px; min-height: 44px; margin-top: 24px; padding-inline: 22px; font-size: 12px; }
+.personal-note { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 20px 0 0; color: #7b8073; font-size: 11px; text-align: center; }
+.personal-role-tabs { display: flex; align-self: stretch; gap: 26px; }
+.personal-role-tabs a { display: inline-flex; position: relative; align-items: center; gap: 8px; min-height: 65px; color: var(--muted); font-size: 13px; text-decoration: none; white-space: nowrap; }
+.personal-role-tabs a[aria-current="page"] { color: var(--green-dark); font-weight: 600; }
+.personal-role-tabs a[aria-current="page"]::after { position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; background: var(--green-dark); content: ""; }
+.personal-role-tabs a:hover { color: var(--green); }
+.personal-panel-heading--tabs { padding-block: 0; }
+.personal-loading { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 382px; padding: 24px; color: var(--muted); font-size: 13px; }
+.personal-loading-dot { width: 7px; height: 7px; border-radius: 50%; background: #9aa68e; }
+.personal-feedback { display: grid; gap: 16px; padding: 24px; }
+.personal-feedback button { justify-self: start; }
+.personal-designs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 0; padding: 26px; list-style: none; }
+.personal-design-card { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding: 24px; border: 1px solid #e0e4d7; border-radius: 8px; background: #f6f7f0; }
+.personal-design-card > svg { margin-bottom: 8px; color: #7a8b6d; }
+.personal-design-card h3 { margin: 0; font-size: 23px; line-height: 1.35; }
+.personal-design-card p { margin: 0; font-size: 12px; color: var(--muted); }
+.personal-design-card .personal-design-meta { font-size: 10px; }
+.personal-design-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: auto; padding-top: 10px; font-size: 12px; }
+.personal-design-actions .btn { min-height: 40px; padding-inline: 16px; font-size: 11px; }
+.personal-more { padding: 0 26px 26px; }
+.personal-more .btn { min-height: 42px; font-size: 12px; }
+.personal-orders { margin: 0; padding: 0 26px; list-style: none; }
+.personal-orders li + li { border-top: 1px solid #e7e8df; }
+.personal-order { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto 16px; align-items: center; gap: 18px; padding-block: 24px; text-decoration: none; }
+.personal-order:hover .personal-order-title { text-decoration: underline; text-underline-offset: 4px; }
+.personal-order-icon { display: grid; height: 42px; place-items: center; border-radius: 8px; background: var(--sage); }
+.personal-order-details, .personal-order-summary { display: grid; gap: 6px; }
+.personal-order-title { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.personal-order-meta { color: var(--muted); font-size: 11px; }
+.personal-order-summary { justify-items: end; text-align: right; font-size: 13px; }
+.personal-order-status { border-radius: 30px; padding: 3px 9px; background: var(--sage); font-size: 10px; }
+@media (max-width: 800px) {
+  .personal-collection { padding-inline: 24px; }
+  .personal-designs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .personal-heading { align-items: flex-start; }
+}
+@media (max-width: 540px) {
+  .personal-collection { padding: 24px 18px 48px; }
+  .personal-heading { flex-direction: column; gap: 12px; margin-block: 28px 24px; }
+  .personal-eyebrow { font-size: 9px; }
+  .personal-description { font-size: 13px; }
+  .personal-catalog-link { font-size: 12px; }
+  .personal-panel-heading { min-height: 60px; padding-inline: 18px; }
+  .personal-panel-title h2 { font-size: 12px; }
+  .personal-panel-title { gap: 8px; }
+  .personal-count { font-size: 10px; padding-inline: 8px; }
+  .personal-role-tabs { min-width: 0; max-width: 100%; gap: 16px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  .personal-role-tabs::-webkit-scrollbar { display: none; }
+  .personal-role-tabs a { min-height: 59px; font-size: 11px; }
+  .personal-role-tabs a[aria-current="page"]::after { bottom: 0; }
+  .personal-panel-heading--tabs { flex-wrap: wrap; gap: 0 16px; }
+  .personal-panel-heading--tabs > .personal-count { margin-block: 12px; }
+  .personal-empty { min-height: 370px; padding: 32px 22px 40px; }
+  .personal-empty h2 { font-size: 23px; }
+  .personal-empty > p { font-size: 12px; }
+  .personal-note { align-items: flex-start; font-size: 10px; }
+  .personal-note svg { flex-shrink: 0; margin-top: 2px; }
+  .personal-designs { grid-template-columns: 1fr; padding: 18px; }
+  .personal-orders { padding-inline: 18px; }
+  .personal-order { grid-template-columns: 32px minmax(0, 1fr) 12px; gap: 12px; padding-block: 20px; }
+  .personal-order-icon { height: 36px; }
+  .personal-order-summary { grid-column: 2; grid-row: 2; justify-items: start; text-align: left; }
+  .personal-order > .personal-order-chevron { grid-column: 3; grid-row: 1 / 3; }
+  .personal-order-title { font-size: 13px; }
+}

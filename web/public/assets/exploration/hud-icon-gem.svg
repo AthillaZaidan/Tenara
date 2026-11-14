@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="66 37 26 26" overflow="visible"><defs>
+      <linearGradient id="cream-tanah_batak" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdfbf7" /><stop offset="0.52" stop-color="#f9f4ea" /><stop offset="1" stop-color="#f1ede2" /></linearGradient>
+      <linearGradient id="gold-tanah_batak" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8d5b9" /><stop offset="1" stop-color="#5f4228" /></linearGradient>
+      <linearGradient id="green-tanah_batak" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8baf7e" /><stop offset="1" stop-color="#304729" /></linearGradient>
+    </defs>
+    <path d="M69,50.0 l10,-10 10,10 -10,10 Z" fill="#f9f4ea" stroke="#5f4228" stroke-width="2.8" />
+        <path d="M72,50.0 l7,-7 7,7 -7,7 Z" fill="#8baf7e" />
+        </svg>

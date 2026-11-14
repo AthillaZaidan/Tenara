@@ -1,0 +1,112 @@
+/* Shared journey language on the existing, detailed Hinggi exhibition. */
+.gallery-workspace .gallery-workspace-header {
+  background: #faf4e4f5;
+  border-bottom: 1px solid #b6a578;
+  box-shadow: 0 4px 20px #1c29151a;
+}
+.gallery-workspace .gallery-workspace-intro {
+  background: #faf4e4f0;
+  border: 1px solid #fff6dd;
+  border-radius: 10px;
+  box-shadow: 0 5px 0 #b7aa82;
+  padding: 26px 32px;
+  width: 330px;
+  overflow: hidden;
+}
+.gallery-workspace .gallery-workspace-intro::after {
+  content: "◇";
+  position: absolute;
+  right: -10px;
+  top: -48px;
+  color: #cda978;
+  opacity: 0.14;
+  font: 150px/1 var(--serif);
+  pointer-events: none;
+}
+.gallery-workspace .gallery-workspace-intro h1 {
+  font-weight: 400;
+  font-size: 42px;
+  line-height: 1.08;
+  max-width: 200px;
+}
+.gallery-intro-ornament {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  color: #a77b48;
+  font-size: 18px;
+  line-height: 1;
+  margin: 20px 0;
+}
+.gallery-intro-ornament::before,
+.gallery-intro-ornament::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #b89b72;
+}
+.gallery-workspace .gallery-hotspot {
+  border-radius: 9px;
+  box-shadow:
+    0 3px 0 #b7aa82,
+    0 6px 15px #23180c33;
+}
+.gallery-workspace .gallery-hotspot-dot {
+  border-radius: 5px;
+}
+.gallery-workspace .gallery-progress {
+  border-radius: 8px;
+  box-shadow: 0 3px 0 #b7aa82;
+}
+.gallery-workspace .gallery-map-trigger {
+  background: #674021;
+  color: #fff8e8;
+  border-color: #8a6742;
+  box-shadow: 0 3px 0 #b59b70;
+}
+.gallery-workspace
+  :is(.gallery-tool-button, .gallery-map-trigger, .gallery-enter-button) {
+  border-radius: 7px;
+  box-shadow: 0 3px 0 #b0a27b;
+  border: 1px solid #fff3d3;
+  transition: transform 0.2s;
+}
+.gallery-workspace
+  :is(.gallery-tool-button, .gallery-map-trigger, .gallery-enter-button):hover {
+  transform: translateY(-2px);
+}
+.gallery-workspace .gallery-enter-button {
+  background: #3d5a33;
+  border-color: #7d8f60;
+  box-shadow: 0 4px 0 #233921;
+  color: #faf4e4;
+}
+.gallery-workspace .gallery-room-nav {
+  border-radius: 10px;
+  background: #faf4e4;
+  box-shadow:
+    0 4px 0 #b7aa82,
+    0 12px 30px #172a2520;
+  border: 1px solid #fff7dc;
+}
+.gallery-workspace .gallery-room-nav button {
+  border-radius: 6px;
+}
+@media (max-width: 700px) {
+  .gallery-workspace .gallery-workspace-intro {
+    padding: 14px 18px;
+    width: 230px;
+  }
+  .gallery-workspace .gallery-workspace-intro h1 {
+    font-size: 25px;
+  }
+  .gallery-intro-ornament {
+    margin: 10px 0;
+  }
+  .gallery-workspace
+    .gallery-workspace-actions
+    .gallery-header-catalog:first-child {
+    display: none;
+  }
+}

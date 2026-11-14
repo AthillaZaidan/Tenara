@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 
 from app.models import (
     DemoPayment,
+    FabricCheckout,
     FabricListing,
     FabricStockUnit,
     StockReservation,
@@ -121,6 +122,107 @@ def test_review_shows_itemised_simulated_totals(client, buyer, address, make_lis
     assert (c["subtotal_idr"], c["shipping_idr"], c["service_fee_idr"], c["total_idr"]) == (
         150_000, 35_000, 0, 185_000)
     assert c["status"] == "review" and "SIMULASI" in c["simulation_notice"]
+
+
+def test_checkout_estimate_uses_server_shipping_rate_without_creating_checkout(
+        client, session, buyer, make_listing, auth_header):
+    listing, *_ = make_listing()
+    local = client.post(f"{API}/addresses", headers=auth_header(buyer),
+                        json={**ADDRESS, "city": "Cimahi", "province": "Jawa Barat"}).json()["data"]
+
+    response = client.get(f"{API}/fabric-checkouts/estimate", headers=auth_header(buyer), params={
+        "listing_id": str(listing.id), "quantity": "1.5", "delivery_address_id": local["id"],
+    })
+
+    assert response.status_code == 200
+    estimate = response.json()["data"]
+    assert estimate["subtotal_idr"] == 150_000
+    assert estimate["shipping_idr"] == 20_000
+    assert estimate["total_idr"] == 170_000
+    assert session.scalar(select(func.count()).select_from(FabricCheckout)) == 0
+    assert session.scalar(select(func.count()).select_from(StockReservation)) == 0
+
+
+def test_continue_checkout_creates_payment_hold_idempotently(
+        client, session, buyer, address, make_listing, auth_header):
+    listing, *_ = make_listing(stock=((Decimal(3), 1),))
+    body = {"listing_id": str(listing.id), "quantity": "1.5",
+            "delivery_address_id": address["id"]}
+    headers = {**auth_header(buyer), "Idempotency-Key": "continue-checkout-once"}
+
+    first = client.post(f"{API}/fabric-checkouts/continue", headers=headers, json=body)
+    replay = client.post(f"{API}/fabric-checkouts/continue", headers=headers, json=body)
+
+    assert first.status_code == 201
+    checkout = first.json()["data"]
+    assert checkout["status"] == "payment_pending"
+    assert checkout["payment"]["status"] == "pending"
+    assert replay.status_code == 201
+    assert replay.json()["data"]["id"] == checkout["id"]
+    assert session.scalar(select(func.count()).select_from(StockReservation).where(
+        StockReservation.checkout_id == uuid.UUID(checkout["id"]))) == 1
+
+
+def test_continue_checkout_rejects_another_buyers_address(
+        client, buyer, make_user, make_listing, auth_header):
+    listing, *_ = make_listing()
+    other = make_user("continue-address-other@example.com")
+    other_address = client.post(f"{API}/addresses", headers=auth_header(other), json=ADDRESS).json()["data"]
+
+    response = client.post(f"{API}/fabric-checkouts/continue",
+                           headers={**auth_header(buyer), "Idempotency-Key": "continue-private-address"},
+                           json={"listing_id": str(listing.id), "quantity": "1",
+                                 "delivery_address_id": other_address["id"]})
+
+    assert response.status_code == 404
+
+
+def test_checkout_review_can_change_delivery_address_and_recalculate_shipping(
+        client, buyer, address, make_listing, auth_header):
+    listing, *_ = make_listing()
+    checkout = _checkout(client, buyer, listing, address, "1", auth_header).json()["data"]
+    destination = client.post(f"{API}/addresses", headers=auth_header(buyer),
+                              json={**ADDRESS, "label": "Studio", "city": "Bandung",
+                                    "province": "Jawa Barat"}).json()["data"]
+
+    response = client.patch(f"{API}/fabric-checkouts/{checkout['id']}/address",
+                            headers=auth_header(buyer),
+                            json={"delivery_address_id": destination["id"]})
+
+    assert response.status_code == 200
+    updated = response.json()["data"]
+    assert updated["address"]["id"] == destination["id"]
+    assert updated["address"]["label"] == "Studio"
+    assert updated["shipping_idr"] == 10_000
+    assert updated["total_idr"] == updated["subtotal_idr"] + 10_000 + updated["service_fee_idr"]
+
+
+def test_checkout_address_change_rejects_another_users_address(
+        client, buyer, address, make_listing, make_user, auth_header):
+    listing, *_ = make_listing()
+    checkout = _checkout(client, buyer, listing, address, "1", auth_header).json()["data"]
+    other = make_user("checkout-address-other@example.com")
+    other_address = client.post(f"{API}/addresses", headers=auth_header(other), json=ADDRESS).json()["data"]
+
+    response = client.patch(f"{API}/fabric-checkouts/{checkout['id']}/address",
+                            headers=auth_header(buyer),
+                            json={"delivery_address_id": other_address["id"]})
+
+    assert response.status_code == 404
+
+
+def test_checkout_address_cannot_change_after_payment_is_started(
+        client, buyer, address, make_listing, auth_header):
+    listing, *_ = make_listing()
+    checkout = _checkout(client, buyer, listing, address, "1", auth_header).json()["data"]
+    pending = _confirm(client, buyer, checkout, auth_header).json()["data"]
+
+    response = client.patch(f"{API}/fabric-checkouts/{checkout['id']}/address",
+                            headers=auth_header(buyer),
+                            json={"delivery_address_id": address["id"]})
+
+    assert pending["status"] == "payment_pending"
+    assert response.status_code == 409
 
 
 def test_shipping_is_cheaper_within_province(client, buyer, auth_header, make_listing):

@@ -1,5 +1,5 @@
 export const OPTION_LABEL: Record<string, string> = {
-  collar: "Kerah", buttons: "Kancing", pockets: "Saku", motif_placement: "Penempatan motif",
+  collar: "Kerah", buttons: "Kancing", pockets: "Saku", motif_placement: "Penempatan motif", trim: "Hiasan tepi",
   hem_length_delta_cm: "Ubah panjang bawahan (cm)", sleeve_length_delta_cm: "Ubah panjang lengan (cm)",
   neckline: "Garis leher", skirt_length_delta_cm: "Ubah panjang rok (cm)", waist: "Pinggang", closure: "Penutup",
 };
@@ -8,6 +8,9 @@ export const VALUE_LABEL: Record<string, string> = {
   classic: "Klasik", mandarin: "Mandarin", none: "Tanpa", plain_01: "Polos", wood_option_01: "Kayu", shell_option_01: "Kerang",
   left_chest_single: "Satu di dada kiri", double_chest: "Dua di dada", all_over: "Seluruh bagian", center_front: "Tengah depan",
   left_chest: "Dada kiri", hem_border: "Pinggiran bawah",
+  round_neck: "Leher bulat", v_neck: "Leher V", buttons_front: "Kancing depan", side_zip: "Ritsleting samping",
+  double_welt: "Dua saku pipih", side_double: "Dua saku samping", open_front: "Terbuka di depan", tie_front: "Ikat depan",
+  shawl: "Kerah selendang", fringe_short: "Rumbai pendek", fringe_long: "Rumbai panjang",
 };
 
 export const DIM_LABEL: Record<string, string> = {

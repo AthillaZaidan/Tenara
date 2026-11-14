@@ -74,14 +74,14 @@ export function useAction() {
 }
 
 /** Sends visitors without a session to /login and back; optionally requires a role. */
-export function RequireAuth({ role, children }: { role?: string; children: React.ReactNode }) {
+export function RequireAuth({ role, children, loadingFallback }: { role?: string; children: React.ReactNode; loadingFallback?: React.ReactNode }) {
   const { me, ready, has } = useAuth();
   const router = useRouter();
   const path = usePathname();
   useEffect(() => {
     if (ready && !me) router.replace(`/login?next=${encodeURIComponent(path)}`);
   }, [ready, me, router, path]);
-  if (!ready || !me) return <p className="py-24">Memuat…</p>;
+  if (!ready || !me) return loadingFallback ?? <p className="py-24">Memuat…</p>;
   if (role && !has(role)) {
     return (
       <div className="grid gap-4 py-16">

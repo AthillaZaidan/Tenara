@@ -1,0 +1,43 @@
+/* Catalog browsing shares the detail page's calm motion without remounting results. */
+.catalog-browser .catalog-card-grid { position: relative; }
+.catalog-browser .catalog-card-photo > .catalog-image-incoming { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.catalog-browser .catalog-card-photo > .catalog-image-incoming.is-ready { opacity: 1; }
+.catalog-filter-content { min-height: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes catalog-browser-arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes catalog-filter-chip { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes catalog-favorite-settle { from { transform: scale(.9); } to { transform: scale(1); } }
+  .catalog-shell .catalog-intro { animation: catalog-browser-arrive .75s cubic-bezier(.22, 1, .36, 1); }
+  .catalog-browser .catalog-filters { animation: catalog-browser-arrive .7s cubic-bezier(.22, 1, .36, 1) .06s backwards; }
+  .catalog-browser .catalog-result-meta { animation: catalog-browser-arrive .7s cubic-bezier(.22, 1, .36, 1) .1s backwards; }
+  .js .catalog-browser .catalog-card.rise { transform: translateY(12px); transition: opacity .7s ease, transform .7s cubic-bezier(.22, 1, .36, 1); transition-delay: var(--d, 0ms); }
+  .js .catalog-browser .catalog-card.rise.in { transform: translateY(0); }
+  .catalog-browser .catalog-card-photo > img { transition: opacity .65s cubic-bezier(.22, 1, .36, 1), transform .75s cubic-bezier(.22, 1, .36, 1); }
+  .catalog-browser .catalog-accordion-collapse { transition: grid-template-rows .6s cubic-bezier(.22, 1, .36, 1); }
+  .catalog-browser .catalog-accordion-trigger svg, .catalog-mobile-filter-bar button > svg:last-child { transition: transform .5s cubic-bezier(.22, 1, .36, 1); }
+  .catalog-mobile-filter-bar button[aria-expanded="true"] > svg:last-child { transform: rotate(180deg); }
+  .catalog-browser .catalog-active-filters > button { animation: catalog-filter-chip .4s ease-out; }
+  .catalog-browser .catalog-empty { animation: catalog-browser-arrive .6s cubic-bezier(.22, 1, .36, 1); }
+  .catalog-browser .catalog-card-favorite { transition: transform .45s ease, color .4s ease, background-color .4s ease; }
+  .catalog-browser .catalog-card-favorite.is-favorite svg { animation: catalog-favorite-settle .4s ease-out; }
+  .catalog-browser .catalog-card-thumbnails img { transition: opacity .4s ease, border-color .4s ease; }
+  .catalog-browser .catalog-filter-option, .catalog-browser .catalog-active-filters > button,
+  .catalog-browser .catalog-search, .catalog-browser .catalog-sort select { transition: color .4s ease, border-color .4s ease, background-color .4s ease, box-shadow .4s ease; }
+  .catalog-browser .catalog-search:focus-within { border-color: var(--green); box-shadow: 0 0 0 2px #3d5a3312; }
+}
+@media (max-width: 900px) {
+  .catalog-browser .catalog-filters { display: grid; grid-template-rows: 0fr; margin: 0; padding: 0; border: 0; background: transparent; opacity: 0; visibility: hidden; }
+  .catalog-browser .catalog-filters-open { grid-template-rows: 1fr; margin-bottom: 24px; opacity: 1; visibility: visible; }
+  .catalog-browser .catalog-filter-content { overflow: hidden; }
+  .catalog-browser .catalog-filter-inner { border: 1px solid var(--catalog-line); padding: 16px 20px; background: #fffefa; }
+}
+@media (max-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .catalog-browser .catalog-filters { animation: none; transition: grid-template-rows .6s cubic-bezier(.22, 1, .36, 1), margin-bottom .6s cubic-bezier(.22, 1, .36, 1), opacity .4s ease, visibility 0s .6s; }
+  .catalog-browser .catalog-filters-open { transition-delay: 0s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalog-shell .catalog-intro, .catalog-browser *, .catalog-browser *::before, .catalog-browser *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .js .catalog-browser .catalog-card.rise { opacity: 1; transform: none; }
+  .catalog-browser .catalog-card-photo:hover > img, .catalog-browser .catalog-card-favorite:hover { transform: none; }
+}

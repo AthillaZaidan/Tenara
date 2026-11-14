@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { Entry } from "@/lib/types";
+import { regionExploreHrefForEntry } from "@/lib/regions";
 
 /** The page's one live thing: type a place, a motif or a technique and the Gallery answers. */
 export function GallerySearch({ entries }: { entries: Entry[] }) {
@@ -47,7 +48,7 @@ export function GallerySearch({ entries }: { entries: Entry[] }) {
       <ul className="mt-6 grid list-none gap-0 p-0">
         {rows.map((e) => (
           <li key={e.id}>
-            <Link href={`/gallery/${e.slug}`} className="group grid grid-cols-[1fr_auto] items-baseline gap-x-6 py-[13px] no-underline">
+            <Link href={regionExploreHrefForEntry(e)} className="group grid grid-cols-[1fr_auto] items-baseline gap-x-6 py-[13px] no-underline">
               <span className="text-lg group-hover:underline underline-offset-4">{e.name}</span>
               <span className="text-base text-muted text-right">{e.region ?? "Nusantara"} →</span>
               <span className="col-span-2 text-base text-muted">{e.technique ?? e.textile_type}</span>

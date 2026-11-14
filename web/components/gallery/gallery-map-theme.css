@@ -1,0 +1,208 @@
+/* Share the map's inset frames, forest outlines and paper palette in the gallery. */
+.gallery-workspace {
+  --map-forest: var(--green);
+  --map-sage: #8baf7e;
+  --map-paper: var(--cream);
+  --map-ink: var(--ink);
+  --map-coffee: var(--coffee);
+  --map-line: color-mix(in srgb, var(--map-sage) 62%, var(--map-paper));
+  --map-ease: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+
+.gallery-workspace
+  :is(
+    .gallery-enter-button,
+    .gallery-map-trigger,
+    .gallery-tool-button,
+    .gallery-hotspot,
+    .gallery-room-nav > button
+  ) {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--map-ink);
+}
+.gallery-workspace :is(.gallery-enter-button, .gallery-map-trigger) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  font: 600 14px/1.4 var(--sans);
+}
+.gallery-workspace
+  :is(.gallery-enter-button, .gallery-map-trigger)
+  > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.gallery-workspace
+  :is(
+    .gallery-enter-button,
+    .gallery-map-trigger,
+    .gallery-tool-button,
+    .gallery-hotspot,
+    .gallery-room-nav > button
+  ):is(:hover, :focus-visible, [aria-pressed="true"], [aria-expanded="true"])
+  .map-control-wash {
+  transform: translateX(0);
+  opacity: 1;
+}
+.gallery-workspace
+  :is(
+    .gallery-enter-button,
+    .gallery-map-trigger,
+    .gallery-tool-button,
+    .gallery-hotspot,
+    .gallery-room-nav > button
+  ):is(:hover, :focus-visible)
+  > :is(.map-control-surface, .map-control-inlay) {
+  transform: translateY(-1px);
+}
+.gallery-workspace
+  :is(
+    .gallery-enter-button,
+    .gallery-map-trigger,
+    .gallery-tool-button,
+    .gallery-hotspot,
+    .gallery-room-nav > button
+  ):focus-visible {
+  outline: 2px solid var(--map-forest);
+  outline-offset: 3px;
+}
+.gallery-workspace
+  :is(.gallery-tool-button, .gallery-hotspot, .gallery-room-nav > button)
+  .map-control-inlay::before,
+.gallery-workspace
+  :is(.gallery-tool-button, .gallery-hotspot, .gallery-room-nav > button)
+  .map-control-inlay::after {
+  content: none;
+}
+.gallery-workspace .gallery-hotspot-dot {
+  position: relative;
+  color: var(--map-paper);
+  background: var(--map-forest);
+}
+.gallery-workspace .gallery-room-nav {
+  gap: 5px;
+  padding: 5px;
+  background: var(--map-paper);
+  border: 1.5px solid var(--map-forest);
+  box-shadow:
+    inset 0 0 0 4px var(--map-paper),
+    inset 0 0 0 5px var(--map-line),
+    0 2px 0 #30472950;
+}
+.gallery-workspace .gallery-room-nav > button[aria-pressed="true"] {
+  background: transparent;
+  color: var(--map-forest);
+}
+.gallery-workspace
+  .gallery-room-nav
+  > button[aria-pressed="true"]
+  .map-control-inlay {
+  border-color: var(--map-sage);
+}
+.gallery-workspace
+  .gallery-room-nav
+  > button
+  > span:not(.map-control-surface):not(.map-control-inlay) {
+  color: var(--map-coffee);
+}
+.gallery-workspace
+  :is(.gallery-progress, .gallery-story-list, .gallery-story-panel) {
+  background: var(--map-paper);
+  border: 1.5px solid var(--map-forest);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 0 0 4px var(--map-paper),
+    inset 0 0 0 5px var(--map-line),
+    0 4px 0 #30472935,
+    0 12px 30px #1d191426;
+}
+.gallery-workspace .gallery-story-panel {
+  overflow: hidden;
+}
+.gallery-workspace
+  :is(.gallery-room-story-links > button, .gallery-story-list > div > button) {
+  border-radius: 8px;
+  color: var(--map-forest);
+}
+.gallery-workspace .gallery-room-story-links > button {
+  border: 1px solid var(--map-forest);
+  box-shadow:
+    inset 0 0 0 3px var(--map-paper),
+    inset 0 0 0 4px var(--map-line),
+    0 2px 0 #30472950;
+}
+
+/* These dialogs use MapDialog's focus handling and the same shell as the maps. */
+.gallery-workspace .map-dialog-theme .modal:has(.gallery-passport),
+.gallery-workspace .map-dialog-theme .modal:has(.gallery-map) {
+  max-width: 736px;
+  padding: 26px;
+  border-radius: 14px;
+  background: var(--map-paper);
+}
+.gallery-workspace .map-dialog-theme .modal:has(.gallery-passport) {
+  max-width: 1040px;
+}
+.gallery-workspace .map-dialog-theme .modal > .row-between h2 {
+  font: 700 25px/1.25 var(--sans);
+  color: var(--map-forest);
+}
+.gallery-workspace .map-dialog-theme :is(.gallery-passport, .gallery-map) {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 4px 4px;
+  scrollbar-color: var(--map-sage) transparent;
+  scrollbar-width: thin;
+}
+.gallery-workspace .gallery-map > button {
+  padding: 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--map-forest);
+  border-radius: 9px;
+  background: linear-gradient(150deg, #fffdf7, var(--map-paper));
+  box-shadow:
+    inset 0 0 0 4px var(--map-paper),
+    inset 0 0 0 5px var(--map-line),
+    0 2px 0 #30472950;
+}
+.gallery-workspace .gallery-map > button:hover {
+  background: #e5efdc;
+}
+.gallery-workspace .gallery-map .gallery-map-overview {
+  padding: 16px;
+}
+.gallery-workspace .gallery-passport-tabs button[aria-selected="true"] {
+  color: var(--map-forest);
+  border-color: var(--map-forest);
+  background: #8baf7e1c;
+}
+.gallery-workspace .gallery-passport-cta {
+  border-radius: 8px;
+  box-shadow: 0 2px 0 var(--green-dark);
+}
+@media (max-width: 760px) {
+  .gallery-workspace .gallery-map-trigger {
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+  .gallery-workspace .gallery-room-nav {
+    gap: 3px;
+  }
+  .gallery-workspace .map-dialog-theme .modal:has(.gallery-passport),
+  .gallery-workspace .map-dialog-theme .modal:has(.gallery-map) {
+    padding: 18px;
+    border-radius: 12px;
+  }
+  .gallery-workspace .map-dialog-theme .modal > .row-between h2 {
+    font-size: 22px;
+  }
+}

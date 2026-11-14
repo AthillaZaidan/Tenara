@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="54" viewBox="65 29 52 54" overflow="visible"><defs>
+      <linearGradient id="cream-kartu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdfbf7" /><stop offset="0.52" stop-color="#f9f4ea" /><stop offset="1" stop-color="#f1ede2" /></linearGradient>
+      <linearGradient id="gold-kartu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8d5b9" /><stop offset="1" stop-color="#5f4228" /></linearGradient>
+      <linearGradient id="green-kartu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8baf7e" /><stop offset="1" stop-color="#304729" /></linearGradient>
+    </defs>
+    <g transform="translate(69,33) scale(1)" fill="none" stroke="#1d1914" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M0 4 Q18 -1 22 11 L22 45 Q13 36 0 39 Z M22 11 Q29 -1 44 4 L44 39 Q31 35 22 45 Z" /></g></svg>

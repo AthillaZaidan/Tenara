@@ -1,0 +1,93 @@
+.nx-atlas-3d-stage {
+  position: absolute;
+  inset: 204px 16px 145px;
+  z-index: 2;
+  touch-action: none;
+}
+.nx-region-3d-stage {
+  position: absolute;
+  inset: 0;
+}
+.nx-atlas-3d-stage canvas {
+  cursor: grab;
+  touch-action: none;
+}
+.nx-atlas-3d-stage canvas:focus-visible {
+  outline: 1px dashed #fff5ccaa;
+  outline-offset: -5px;
+  border-radius: 8px;
+}
+.nx-atlas-touch-hint {
+  display: none;
+}
+.nx-has-atlas-3d .nx-atlas-navigation-hint {
+  bottom: 166px;
+}
+.nx-refined-journey.nx-has-atlas-3d .nx-map-pin {
+  border-radius: 18px 15px 17px 14px !important;
+  border-color: #e4d197 !important;
+  background: linear-gradient(175deg, #fffbed, #f4e8cb) !important;
+  color: #4a492d !important;
+  font-size: 11px !important;
+  padding: 7px 12px !important;
+  box-shadow:
+    0 3px 0 #936e4126,
+    0 5px 12px #2c5b4320 !important;
+  min-height: 33px !important;
+}
+.nx-refined-journey.nx-has-atlas-3d .nx-map-pin[aria-pressed="true"] {
+  background: #45623a !important;
+  color: #fff7dc !important;
+  border-color: #e5d79e !important;
+}
+.nx-has-atlas-3d .nx-atlas-3d-frame .nx-atlas-sunset {
+  opacity: 0;
+}
+.nx-has-atlas-3d .nx-atlas-3d-frame[data-light="sunset"] {
+  background:
+    radial-gradient(ellipse at 13% 10%, #e9d4a59c, transparent 42%),
+    radial-gradient(ellipse at 80% 60%, #84ada580, transparent 55%), #8fb5af;
+}
+@media (min-width: 1800px) {
+  .nx-atlas-3d-stage {
+    inset: 214px 2% 154px;
+  }
+}
+@media (max-width: 900px) {
+  .nx-atlas-3d-stage {
+    inset: 224px 0 196px;
+  }
+  .nx-has-atlas-3d .nx-atlas-navigation-hint {
+    bottom: 179px;
+  }
+  .nx-refined-journey.nx-has-atlas-3d .nx-map-pin {
+    font-size: 10px !important;
+    padding: 6px 8px !important;
+    min-height: 36px !important;
+  }
+  .nx-refined-journey.nx-has-atlas-3d .nx-map-pin::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+  }
+  .nx-atlas-desktop-hint {
+    display: none;
+  }
+  .nx-atlas-touch-hint {
+    display: inline;
+  }
+}
+@media (max-width: 520px) {
+  .nx-atlas-3d-stage {
+    inset: 247px 0 194px;
+  }
+}
+@media (max-height: 760px) and (min-width: 901px) {
+  .nx-atlas-3d-stage {
+    top: 187px;
+    bottom: 129px;
+  }
+  .nx-has-atlas-3d .nx-atlas-navigation-hint {
+    bottom: 135px;
+  }
+}

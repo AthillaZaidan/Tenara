@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="116" height="116" viewBox="0 0 116 116" overflow="visible"><defs>
+      <linearGradient id="cream-pengaturan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdfbf7" /><stop offset="0.52" stop-color="#f9f4ea" /><stop offset="1" stop-color="#f1ede2" /></linearGradient>
+      <linearGradient id="gold-pengaturan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8d5b9" /><stop offset="1" stop-color="#5f4228" /></linearGradient>
+      <linearGradient id="green-pengaturan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8baf7e" /><stop offset="1" stop-color="#304729" /></linearGradient>
+    </defs><path d="M 20,8 H 96 Q 108,8 108,20 V 96 Q 108,108 96,108 H20 Q8,108 8,96 V20 Q8,8 20,8 Z" transform="translate(0,5)" fill="#1d1914" opacity=".17" /><path d="M 20,8 H 96 Q 108,8 108,20 V 96 Q 108,108 96,108 H20 Q8,108 8,96 V20 Q8,8 20,8 Z" fill="#3d5a33" stroke="#f9f4ea" stroke-width="6" /><path d="M 20,8 H 96 Q 108,8 108,20 V 96 Q 108,108 96,108 H20 Q8,108 8,96 V20 Q8,8 20,8 Z" fill="none" stroke="#8baf7e" stroke-width="2.5" />
+       <rect x="17" y="17" width="82" height="82" rx="8" fill="url(#cream-pengaturan)" stroke="#c8d5b9" stroke-width="3" /></svg>

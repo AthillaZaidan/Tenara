@@ -21,6 +21,10 @@ class CheckoutCreate(BaseModel):
     delivery_address_id: uuid.UUID
 
 
+class CheckoutAddressUpdate(BaseModel):
+    delivery_address_id: uuid.UUID
+
+
 class CheckoutConfirm(BaseModel):
     expected_total_idr: int = Field(gt=0)
 

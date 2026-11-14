@@ -3,6 +3,8 @@ import { fileUrl, idr } from "@/lib/api";
 
 export type Listing = {
   id: string;
+  entry_id: string;
+  variant_id: string | null;
   title: string;
   material: string | null;
   selling_unit: "meter" | "piece";
@@ -16,8 +18,8 @@ export type Listing = {
   description: string | null;
   min_quantity: number;
   quantity_increment: number;
-  images: { url: string; caption: string | null }[];
-  stock: { unit: string; total_length_m: number | null; longest_continuous_m: number | null; pieces: number; in_stock: boolean };
+  images: { id: string; url: string; caption: string | null }[];
+  stock: { unit: string; total_length_m: number | null; longest_continuous_m: number | null; pieces: number; available_pieces?: number; in_stock: boolean };
   origin: { visual_match: unknown; merchant_claimed_origin: string | null; curator_verified_origin: string | null };
   custom_order_ready: boolean;
   missing_for_custom: string[];

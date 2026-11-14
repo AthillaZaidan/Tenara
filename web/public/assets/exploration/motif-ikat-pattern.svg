@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none" stroke="#b77d2e">
+  <defs>
+    <path id="thread" d="m0-25 4 5-2 3 7 2-2 4 8 3-3 4 8 4-8 4 3 4-8 3 2 4-7 2 2 3-4 5-4-5 2-3-7-2 2-4-8-3 3-4-8-4 8-4-3-4 8-3-2-4 7-2-2-3Z" fill="#b77d2e" stroke="none"/>
+    <g id="ikat"><path d="m0-61 61 61L0 61-61 0Zm0 9L52 0 0 52-52 0Z" stroke-width="3" stroke-dasharray="2 2"/><use href="#thread"/><use href="#thread" x="0" y="-41" transform="scale(.5)"/><use href="#thread" x="0" y="41" transform="scale(.5)"/></g>
+  </defs>
+  <use href="#ikat" x="80" y="80"/>
+  <use href="#ikat"/><use href="#ikat" x="160"/><use href="#ikat" y="160"/><use href="#ikat" x="160" y="160"/>
+</svg>

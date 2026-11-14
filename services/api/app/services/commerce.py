@@ -221,10 +221,39 @@ def create_checkout(session: Session, buyer: User, listing_id: uuid.UUID, qty: D
     return checkout
 
 
+def preview_checkout(session: Session, buyer: User, listing_id: uuid.UUID, qty: Decimal,
+                     address_id: uuid.UUID) -> dict:
+    """Return server-authoritative totals without creating a checkout or holding stock."""
+    listing = listings_svc.public_listing(session, listing_id)
+    merchant = session.get(MerchantProfile, listing.merchant_id)
+    if merchant.user_id == buyer.id:
+        raise AppValidationError("You cannot buy your own listing", field="listing_id")
+    validate_quantity(listing, qty)
+    if not can_fulfill(session, listing, qty):
+        raise InsufficientStock("This quantity is not currently available")
+    address = address_out(owned_address(session, buyer, address_id))
+    return _totals(listing, qty, address)
+
+
 def owned_checkout(session: Session, buyer: User, checkout_id: uuid.UUID) -> FabricCheckout:
     checkout = session.get(FabricCheckout, checkout_id)
     if checkout is None or checkout.buyer_id != buyer.id:
         raise NotFound("Checkout not found")
+    return checkout
+
+
+def update_checkout_address(session: Session, buyer: User, checkout: FabricCheckout,
+                            address_id: uuid.UUID) -> FabricCheckout:
+    if checkout.status != "review":
+        raise InvalidTransition("Alamat hanya dapat diubah sebelum pembayaran dimulai")
+    listing = listings_svc.public_listing(session, checkout.listing_id)
+    stored = owned_address(session, buyer, address_id)
+    address = {**address_out(stored), "id": str(stored.id)}
+    shipping = estimate(listing.city, listing.province, address["city"], address["province"])
+    checkout.address = address
+    checkout.shipping_idr = shipping
+    checkout.total_idr = checkout.subtotal_idr + shipping + checkout.service_fee_idr
+    session.flush()
     return checkout
 
 

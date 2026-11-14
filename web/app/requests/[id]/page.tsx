@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { Field, Notice, Page, RequireAuth, useAction, useLoad } from "@/components/ui";
-import { api, idr, newKey, when } from "@/lib/api";
+import { MessageCircle, Package, Scissors, X } from "lucide-react";
+import { Field, Notice, RequireAuth, useAction, useLoad } from "@/components/ui";
+import { WorkspaceError, WorkspaceLoading, WorkspaceRoute } from "@/components/PartnerWorkspace";
+import { api, idr, intentKey, when } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { DIM_LABEL, OPTION_LABEL, REQUEST_STATUS, VALUE_LABEL, label } from "@/lib/design";
 
@@ -20,7 +22,7 @@ type Quote = { id: string; revision: number; status: string; total_idr: number; 
 
 const H = { fontFamily: "var(--font-hanken)" } as const;
 const Block = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="grid gap-4"><h2 className="text-xl font-medium" style={H}>{title}</h2>{children}</section>
+  <section className="workspace-detail-card grid gap-4"><h2 className="text-xl font-medium" style={H}>{title}</h2>{children}</section>
 );
 
 function Buyer({ req, quotes, reload }: { req: Req; quotes: Quote[]; reload: () => void }) {
@@ -29,9 +31,9 @@ function Buyer({ req, quotes, reload }: { req: Req; quotes: Quote[]; reload: () 
   const [ack, setAck] = useState(false);
   const open = quotes.find((q) => q.status === "issued" && q.acceptable);
   const pay = async (q: Quote) => {
-    const accepted = await act.run(() => api<{ payment: { id: string } }>(`/quotes/${q.id}/accept`, { body: { expected_quote_revision: q.revision, acknowledged_visual_reference: ack, delivery_address_id: req.address?.id ?? "" }, idempotencyKey: newKey() }));
+    const accepted = await act.run(() => api<{ payment: { id: string } }>(`/quotes/${q.id}/accept`, { body: { expected_quote_revision: q.revision, acknowledged_visual_reference: ack, delivery_address_id: req.address?.id ?? "" }, idempotencyKey: intentKey(`quote.${q.id}.${q.revision}.${req.address?.id ?? ""}`) }));
     if (!accepted) return;
-    const paid = await act.run(() => api<{ order: { id: string } }>(`/demo-payments/${accepted.payment.id}/complete`, { body: { outcome: "succeeded" }, idempotencyKey: newKey() }));
+    const paid = await act.run(() => api<{ order: { id: string } }>(`/demo-payments/${accepted.payment.id}/complete`, { body: { outcome: "succeeded" }, idempotencyKey: intentKey(`payment.${accepted.payment.id}.succeeded`) }));
     if (paid) router.push(`/orders/${paid.order.id}`);
   };
   return (
@@ -58,7 +60,7 @@ function Buyer({ req, quotes, reload }: { req: Req; quotes: Quote[]; reload: () 
 function Merchant({ req, reload }: { req: Req; reload: () => void }) {
   const act = useAction();
   const [reason, setReason] = useState("");
-  if (req.status !== "submitted") return <p>Konfirmasi stok sudah diberikan atau tidak diperlukan.</p>;
+  if (req.status !== "submitted") return <Block title="Konfirmasi stok kain"><p className="text-base text-muted">Konfirmasi stok sudah diberikan atau tidak diperlukan pada tahap ini. Anda dapat mengikuti perkembangan melalui halaman pesanan.</p></Block>;
   return (
     <Block title="Konfirmasi stok kain">
       <p>Pembeli meminta {req.requested_quantity} {req.selling_unit === "meter" ? "m" : "potong"}{req.required_continuous_cut_m ? `, potongan utuh sekitar ${req.required_continuous_cut_m} m` : ""}. Data tubuh dan desain pembeli tidak ditampilkan kepada penjual.</p>
@@ -90,6 +92,7 @@ function Tailor({ req, quotes, reload }: { req: Req; quotes: Quote[]; reload: ()
       {act.error && <Notice tone="error">{act.error}</Notice>}
       {["submitted", "validating", "ready_for_quote", "awaiting_buyer"].includes(req.status) && (
         <Block title="Keputusan penjahit">
+          <p className="text-base text-muted">Tinjau detail rancangan sebelum melanjutkan. Jika ada yang perlu disesuaikan, sampaikan alasannya kepada pembeli.</p>
           <Field label="Alasan (wajib untuk meminta revisi atau menolak)"><input className="field" value={reason} onChange={(e) => setReason(e.target.value)} /></Field>
           <div className="flex flex-wrap gap-3">
             <button className="btn btn-quiet" disabled={act.busy || !reason.trim()} onClick={async () => { const r = await act.run(() => api(`/custom-requests/${req.id}/tailor-decision`, { body: { action: "return_for_revision", reason } })); if (r) reload(); }}>Minta revisi desain</button>
@@ -99,7 +102,8 @@ function Tailor({ req, quotes, reload }: { req: Req; quotes: Quote[]; reload: ()
       )}
       {canSpec && (
         <Block title="Spesifikasi produksi dan penawaran">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <p className="text-base text-muted">Tentukan kebutuhan kain, ukuran jadi, dan waktu pengerjaan sebagai dasar penawaran Anda.</p>
+          <div className="workspace-form-grid grid gap-4 sm:grid-cols-2">
             <Field label="Kain yang dibeli (m / potong)"><input className="field" inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} /></Field>
             <Field label="Lama pengerjaan (hari)"><input className="field" inputMode="numeric" value={lead} onChange={(e) => setLead(e.target.value)} /></Field>
             {dimKeys.map((k) => <Field key={k} label={`Ukuran jadi: ${k === "chest_width" ? "lebar dada" : "panjang"} (cm)`}><input className="field" inputMode="decimal" value={dims[k] ?? ""} onChange={(e) => setDims({ ...dims, [k]: e.target.value })} /></Field>)}
@@ -108,9 +112,11 @@ function Tailor({ req, quotes, reload }: { req: Req; quotes: Quote[]; reload: ()
           <div className="grid gap-2">
             <p className="text-base">Biaya tambahan</p>
             {sur.map((s, i) => (
-              <div key={i} className="grid gap-3 sm:grid-cols-[1fr_10rem]">
+              <div key={i} className="workspace-repeat-row grid gap-3">
+                <div className="workspace-form-grid">
                 <input className="field" placeholder="Deskripsi" aria-label="Deskripsi biaya" value={s.description} onChange={(e) => setSur(sur.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))} />
                 <input className="field" placeholder="Rp" aria-label="Jumlah biaya" inputMode="numeric" value={s.amount} onChange={(e) => setSur(sur.map((x, j) => (j === i ? { ...x, amount: e.target.value.replace(/\D/g, "") } : x)))} />
+                </div><button type="button" className="workspace-link justify-self-start" aria-label={`Hapus biaya tambahan ${i + 1}`} onClick={() => setSur(sur.filter((_, j) => j !== i))}><X size={13} />Hapus biaya</button>
               </div>
             ))}
             <button type="button" className="btn btn-quiet w-fit" onClick={() => setSur([...sur, { description: "", amount: "" }])}>Tambah biaya</button>
@@ -118,10 +124,11 @@ function Tailor({ req, quotes, reload }: { req: Req; quotes: Quote[]; reload: ()
           <div className="grid gap-2">
             <p className="text-base">Bahan tambahan</p>
             {mat.map((m, i) => (
-              <div key={i} className="grid gap-3 sm:grid-cols-[1fr_9rem_10rem]">
+              <div key={i} className="workspace-repeat-row grid gap-3">
                 <input className="field" placeholder="Nama bahan" aria-label="Nama bahan" value={m.name} onChange={(e) => setMat(mat.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
-                <select className="field" aria-label="Penyedia" value={m.provider} onChange={(e) => setMat(mat.map((x, j) => (j === i ? { ...x, provider: e.target.value as "tailor" | "merchant" } : x)))}><option value="tailor">Penjahit</option><option value="merchant">Penjual</option></select>
+                <div className="workspace-form-grid"><select className="field" aria-label="Penyedia" value={m.provider} onChange={(e) => setMat(mat.map((x, j) => (j === i ? { ...x, provider: e.target.value as "tailor" | "merchant" } : x)))}><option value="tailor">Penjahit</option><option value="merchant">Penjual</option></select>
                 <input className="field" placeholder="Rp" aria-label="Harga bahan" inputMode="numeric" value={m.price} onChange={(e) => setMat(mat.map((x, j) => (j === i ? { ...x, price: e.target.value.replace(/\D/g, "") } : x)))} />
+                </div><button type="button" className="workspace-link justify-self-start" aria-label={`Hapus bahan tambahan ${i + 1}`} onClick={() => setMat(mat.filter((_, j) => j !== i))}><X size={13} />Hapus bahan</button>
               </div>
             ))}
             <button type="button" className="btn btn-quiet w-fit" onClick={() => setMat([...mat, { name: "", provider: "tailor", price: "" }])}>Tambah bahan</button>
@@ -135,52 +142,60 @@ function Tailor({ req, quotes, reload }: { req: Req; quotes: Quote[]; reload: ()
                 extra_materials: mat.filter((m) => m.name).map((m) => ({ name: m.name, provider: m.provider, price_idr: Number(m.price || 0) })),
               } }));
               if (spec) { setSpecId(spec.id); reload(); }
-            }}>Terbitkan spesifikasi</button>
+            }}>{act.busy ? "Memproses…" : "Terbitkan spesifikasi"}</button>
             {specId && <button className="btn btn-quiet" disabled={act.busy} onClick={() => issue(specId)}>Terbitkan penawaran</button>}
           </div>
         </Block>
       )}
-      {quotes.length > 0 && <p className="text-base text-muted">Penawaran terakhir: {idr(quotes[0].total_idr)} ({quotes[0].status}).</p>}
+      {quotes.length > 0 && <p className="text-base text-muted">Penawaran terakhir: {idr(quotes[0].total_idr)} ({{ issued: "Terbit", accepted: "Disetujui", expired: "Kedaluwarsa", withdrawn: "Ditarik" }[quotes[0].status] ?? quotes[0].status}).</p>}
     </>
   );
 }
 
 function Detail() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const chatAction = useAction();
   const { has } = useAuth();
   const roles = (["buyer", "merchant", "tailor"] as const).filter((r) => has(r));
   const asParam = useSearchParams().get("as");
   const role = roles.find((r) => r === asParam) ?? roles[0] ?? "buyer";
   const { data: req, error, loading, reload } = useLoad(() => api<Req>(`/custom-requests/${id}`), `${id}-${role}`);
   const quotes = useLoad(() => api<Quote[]>(`/custom-requests/${id}/quotes`).catch(() => [] as Quote[]), `${id}-${req?.status ?? ""}`);
-  if (loading) return <p>Memuat…</p>;
-  if (error || !req) return <Notice tone="error">{error ?? "Permintaan tidak ditemukan."}</Notice>;
+  if (loading) return <WorkspaceLoading>Memuat detail permintaan…</WorkspaceLoading>;
+  if (error || !req) return <WorkspaceError message={error ?? "Permintaan tidak ditemukan."} retry={reload} />;
   return (
-    <div className="grid gap-12 md:grid-cols-12">
-      <div className="grid content-start gap-10 md:col-span-7">
-        <div>
+    <div className="workspace-detail workspace-request-detail grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="workspace-detail-main grid content-start gap-6">
+        <div className="workspace-detail-hero">
           <p className="text-base text-muted">Permintaan baju · revisi {req.revision}</p>
-          <h1 className="t-head" style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.5rem)" }}>{REQUEST_STATUS[req.status] ?? req.status}</h1>
+          <h2 className="workspace-detail-title t-statement">{REQUEST_STATUS[req.status] ?? req.status}</h2>
+          <span className="workspace-id">ID permintaan · {req.id}</span>
         </div>
+        {chatAction.error && <Notice tone="error">{chatAction.error}</Notice>}
+        <div className="flex flex-wrap gap-3">{(role === "buyer" ? ["merchant", "tailor"] : [role]).map((partner) => <button key={partner} className="btn btn-quiet" disabled={chatAction.busy} onClick={async () => {
+          const conversation = await chatAction.run(() => api<{ id: string }>("/conversations", { body: { request_id: id, with: partner } }));
+          if (conversation) router.push(`/messages/${conversation.id}?as=${role}`);
+        }}><MessageCircle size={15} />Chat {role === "buyer" ? partner === "merchant" ? "penjual" : "penjahit" : "pembeli"}</button>)}</div>
         {role === "buyer" && <Buyer req={req} quotes={quotes.data ?? []} reload={() => { reload(); quotes.reload(); }} />}
         {role === "merchant" && <Merchant req={req} reload={reload} />}
         {role === "tailor" && <Tailor req={req} quotes={quotes.data ?? []} reload={() => { reload(); quotes.reload(); }} />}
       </div>
-      <aside className="grid content-start gap-6 md:col-span-4 md:col-start-9">
-        {req.design_state && (
-          <div className="grid gap-1 bg-surface p-5 text-base">
-            <h3 className="mb-1 text-lg font-medium" style={H}>Desain</h3>
+      <aside className="workspace-detail-aside grid content-start gap-6">
+        {req.design_state && role !== "merchant" && (
+          <section className="workspace-detail-card grid gap-3 text-base">
+            <h2 className="flex items-center gap-2"><Scissors size={16} strokeWidth={1.5} />Detail rancangan</h2>
             {Object.entries(req.design_state).map(([k, v]) => <p key={k} className="flex justify-between gap-4"><span className="text-muted">{label(OPTION_LABEL, k)}</span><span>{label(VALUE_LABEL, String(v))}</span></p>)}
-          </div>
+          </section>
         )}
-        {req.measurements_cm && (
-          <div className="grid gap-1 bg-surface p-5 text-base">
-            <h3 className="mb-1 text-lg font-medium" style={H}>Ukuran (cm)</h3>
+        {req.measurements_cm && role !== "merchant" && (
+          <section className="workspace-detail-card grid gap-3 text-base">
+            <h2>Ukuran tubuh (cm)</h2>
             {Object.entries(req.measurements_cm).map(([k, v]) => <p key={k} className="flex justify-between gap-4"><span className="text-muted">{label(DIM_LABEL, k)}</span><span>{v}</span></p>)}
-          </div>
+          </section>
         )}
-        {req.estimate?.purchase_quantity && <p className="text-base">Estimasi kain: beli {req.estimate.purchase_quantity}, sisa {req.estimate.surplus_m} m.</p>}
-        {req.address && role !== "merchant" && <p className="text-base text-muted">Tujuan: {req.address.city}, {req.address.province}</p>}
+        <section className="workspace-detail-card grid gap-3"><h2 className="flex items-center gap-2"><Package size={16} strokeWidth={1.5} />Kebutuhan kain</h2><dl className="workspace-key-values"><div><dt>Jumlah</dt><dd>{req.estimate?.purchase_quantity ?? req.requested_quantity ?? "—"} {req.selling_unit === "piece" ? "potong" : "m"}</dd></div>{req.required_continuous_cut_m && <div><dt>Potongan utuh</dt><dd>{req.required_continuous_cut_m} m</dd></div>}{req.estimate?.surplus_m && <div><dt>Estimasi sisa</dt><dd>{req.estimate.surplus_m} m</dd></div>}</dl></section>
+        {req.address && role !== "merchant" && <section className="workspace-detail-card"><h2>Tujuan pengiriman</h2><p className="text-base text-muted">{req.address.city}, {req.address.province}</p></section>}
       </aside>
     </div>
   );
@@ -188,9 +203,6 @@ function Detail() {
 
 export default function RequestPage() {
   return (
-    <Page>
-      <p className="mb-2 mt-6 text-base"><Link href="/requests" className="link">← Semua permintaan</Link></p>
-      <RequireAuth><Suspense fallback={null}><Detail /></Suspense></RequireAuth>
-    </Page>
+    <Suspense fallback={<WorkspaceLoading />}><RequireAuth><WorkspaceRoute active="requests" title="Detail permintaan" description="Tinjau kebutuhan pembeli dan susun langkah untuk mewujudkannya." back={{ href: "/requests", label: "Permintaan baju" }}><Detail /></WorkspaceRoute></RequireAuth></Suspense>
   );
 }

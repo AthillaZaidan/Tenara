@@ -1,0 +1,731 @@
+/* The same Manrope 600 and forest/cream palette as Tenara's landing navbar. */
+.nx-journey,
+.map-dialog-theme {
+  --map-forest: var(--green);
+  --map-sage: #8baf7e;
+  --map-paper: var(--cream);
+  --map-ink: var(--ink);
+  --map-coffee: var(--coffee);
+  --map-line: color-mix(in srgb, var(--map-sage) 62%, var(--map-paper));
+  --map-ease: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+.nx-journey .map-control {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 44px;
+  width: auto;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--map-ink);
+  font: 600 14px/1.4 var(--sans);
+  letter-spacing: 0;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.map-control-surface {
+  position: absolute;
+  inset: 0;
+  display: block;
+  z-index: -1;
+  overflow: hidden;
+  border: 1.5px solid var(--map-forest);
+  border-radius: inherit;
+  background: linear-gradient(150deg, #fffdf7, var(--map-paper));
+  box-shadow:
+    0 2px 0 #30472950,
+    0 4px 12px #30472912;
+  pointer-events: none;
+  transition:
+    transform 180ms var(--map-ease),
+    border-color 180ms ease;
+}
+.map-control-wash {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: linear-gradient(100deg, #8baf7e18, #8baf7e40);
+  transform: translateX(-105%);
+  opacity: 0;
+  transition:
+    transform 280ms var(--map-ease),
+    opacity 180ms ease;
+}
+.map-control-inlay {
+  position: absolute;
+  inset: 4px;
+  z-index: 0;
+  display: block;
+  border: 1px solid var(--map-line);
+  border-radius: 5px;
+  pointer-events: none;
+  transition:
+    transform 180ms var(--map-ease),
+    border-color 180ms ease;
+}
+.map-control-inlay::before,
+.map-control-inlay::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 3px);
+  left: -8px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--map-sage);
+  background: var(--map-paper);
+  rotate: 45deg;
+}
+.nx-journey .map-control > .map-control-surface,
+.nx-journey .map-control > .map-control-inlay {
+  display: block;
+}
+.map-control-inlay::after {
+  left: auto;
+  right: -8px;
+}
+.nx-journey .map-control > .map-control-content {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 0;
+  width: 100%;
+  transition: transform 180ms var(--map-ease);
+}
+.map-control-label {
+  display: block;
+}
+.map-control-leading,
+.map-control-trailing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.map-control-badge {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 5px;
+  color: var(--map-paper);
+  background: var(--map-forest);
+  font-size: 12px;
+  line-height: 1;
+}
+.nx-journey .map-control--region {
+  min-height: 40px;
+  height: 40px;
+  padding: 0 16px;
+}
+.nx-is-map .map-control.nx-gpu-atlas-destination {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content;
+}
+.nx-is-map .map-fallback-destination {
+  width: max-content;
+}
+.map-fallback-destination .map-icon {
+  scale: var(--map-fallback-icon-scale, 1);
+}
+.nx-is-map .map-fallback-destination > .map-control-content {
+  gap: var(--map-fallback-gap, 9px);
+}
+.nx-journey .map-control--icon {
+  width: 44px;
+  padding: 0;
+}
+.map-control--icon .map-control-inlay::before,
+.map-control--icon .map-control-inlay::after {
+  content: none;
+}
+.nx-journey .map-control--menu {
+  min-width: 142px;
+}
+.nx-journey .map-control--text {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 5px;
+}
+.nx-journey .map-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.nx-journey
+  .map-control:not(:disabled):is(
+    :hover,
+    :focus-visible,
+    [aria-pressed="true"],
+    [aria-expanded="true"]
+  ) {
+  color: var(--map-forest);
+}
+.map-control:not(:disabled):is(
+    :hover,
+    :focus-visible,
+    [aria-pressed="true"],
+    [aria-expanded="true"]
+  )
+  .map-control-wash {
+  transform: translateX(0);
+  opacity: 1;
+}
+.map-control:not(:disabled):is(:hover, :focus-visible)
+  > :is(.map-control-surface, .map-control-inlay, .map-control-content) {
+  transform: translateY(-1px);
+}
+.map-control[aria-pressed="true"] > .map-control-inlay,
+.map-control[aria-expanded="true"] > .map-control-inlay {
+  border-color: var(--map-sage);
+}
+.nx-journey .map-control:focus-visible {
+  outline: 2px solid var(--map-forest);
+  outline-offset: 4px;
+}
+.map-control:not(:disabled):active
+  > :is(.map-control-surface, .map-control-inlay, .map-control-content) {
+  transform: translateY(1px) scale(0.98);
+  transition-duration: 90ms;
+}
+.map-control:not(:disabled):is(:hover, :focus-visible) .map-icon--arrow {
+  translate: 2px -2px;
+}
+.map-control[aria-expanded="true"] .map-icon--chevron {
+  rotate: 180deg;
+}
+.map-control[aria-pressed="true"] .map-icon--gem {
+  color: var(--map-forest);
+  background: #8baf7e2b;
+}
+
+/* CSS pictograms; the northeast arrow uses the site's standard vector icon. */
+.map-icon {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: currentColor;
+  pointer-events: none;
+  transition:
+    translate 200ms var(--map-ease),
+    rotate 200ms var(--map-ease);
+}
+.map-icon i {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+}
+.map-icon--catalog i {
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid currentColor;
+  rotate: 45deg;
+  scale: 1 0.55;
+  background: var(--map-paper);
+}
+.map-icon--catalog i:nth-child(1) {
+  top: 7px;
+}
+.map-icon--catalog i:nth-child(2) {
+  top: 3px;
+}
+.map-icon--catalog i:nth-child(3) {
+  top: -1px;
+}
+.map-icon--book::before,
+.map-icon--book::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  width: 9px;
+  height: 14px;
+  border: 1.5px solid currentColor;
+}
+.map-icon--book::before {
+  left: 0;
+  border-radius: 2px 5px 0 1px;
+}
+.map-icon--book::after {
+  right: 0;
+  border-radius: 5px 2px 1px 0;
+}
+.map-icon--settings::before,
+.map-icon--settings::after {
+  content: "";
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  height: 1.5px;
+  background: currentColor;
+}
+.map-icon--settings::before {
+  top: 5px;
+}
+.map-icon--settings::after {
+  bottom: 5px;
+}
+.map-icon--settings i {
+  z-index: 1;
+  width: 6px;
+  height: 6px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background: var(--map-paper);
+}
+.map-icon--settings i:first-child {
+  top: 2.5px;
+  left: 4px;
+}
+.map-icon--settings i:nth-child(2) {
+  bottom: 2.5px;
+  right: 4px;
+}
+.map-icon--settings i:last-child {
+  display: none;
+}
+.map-icon--close::before,
+.map-icon--close::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 19px;
+  height: 1.8px;
+  border-radius: 1px;
+  background: currentColor;
+  rotate: 45deg;
+}
+.map-icon--close::after {
+  rotate: -45deg;
+}
+.map-icon--chevron {
+  width: 12px;
+}
+.map-icon--chevron::before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  left: 2px;
+  top: 3px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  rotate: 45deg;
+}
+.map-icon--display i {
+  left: 6px;
+  width: 12px;
+  height: 1.5px;
+  background: currentColor;
+}
+.map-icon--display i::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: -0.5px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.map-icon--display i:first-child {
+  top: 3px;
+}
+.map-icon--display i:nth-child(2) {
+  top: 8px;
+}
+.map-icon--display i:last-child {
+  top: 13px;
+}
+.map-icon--gem {
+  width: 12px;
+  height: 12px;
+  margin: 0 2px;
+  border: 1.5px solid var(--map-forest);
+  rotate: 45deg;
+  background: var(--map-paper);
+}
+.map-icon--gem::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background: var(--map-sage);
+}
+.map-icon--compass {
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+.map-icon--compass::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  background: linear-gradient(
+    135deg,
+    var(--map-forest) 50%,
+    var(--map-sage) 50%
+  );
+  clip-path: polygon(15% 85%, 35% 25%, 85% 15%, 65% 75%);
+}
+.map-icon--pin::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid currentColor;
+  border-radius: 50% 50% 50% 0;
+  rotate: -45deg;
+}
+.map-icon--pin::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 5px;
+  width: 4px;
+  height: 4px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.map-icon--check::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 6px;
+  height: 11px;
+  border-right: 1.75px solid currentColor;
+  border-bottom: 1.75px solid currentColor;
+  rotate: 45deg;
+}
+
+.nx-journey .map-hud {
+  gap: 8px;
+}
+.nx-refined-journey.nx-is-map .nx-atlas-navigation-hint {
+  bottom: 42px;
+}
+.nx-journey .map-control--passport {
+  width: 270px;
+  min-height: 74px;
+  padding: 10px 14px;
+  text-align: left;
+  border-radius: 11px;
+}
+.map-control--passport .map-control-inlay::before,
+.map-control--passport .map-control-inlay::after {
+  content: none;
+}
+.map-control--passport .map-control-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.map-passport-book {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 52px;
+  padding-top: 7px;
+  border: 1px solid var(--map-sage);
+  border-radius: 4px;
+  background: var(--map-forest);
+  color: var(--map-paper);
+  box-shadow: 2px 2px 0 #8baf7e66;
+  rotate: -9deg;
+}
+.map-passport-book > span {
+  font: 700 6px/1 var(--sans);
+  letter-spacing: 0.04em;
+}
+.map-passport-book > i {
+  position: absolute;
+  top: 23px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--map-sage);
+  border-radius: 50%;
+}
+.map-passport-book > i::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid var(--map-paper);
+  rotate: 45deg;
+}
+.map-passport-copy {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--map-line);
+}
+.map-passport-copy strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.map-passport-copy small {
+  display: block;
+  margin: 3px 0 7px;
+  color: var(--map-coffee);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.map-passport-track {
+  display: block;
+  width: 100%;
+  height: 6px;
+  border-radius: 5px;
+  background: var(--sand);
+  box-shadow: inset 0 0 0 1px var(--map-line);
+  overflow: hidden;
+}
+.map-passport-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--map-forest), var(--map-sage));
+  transition: width 350ms var(--map-ease);
+}
+.nx-journey .nx-view-options {
+  color: var(--map-ink);
+  background: var(--map-paper);
+  border-color: var(--map-forest);
+  border-radius: 9px;
+  box-shadow:
+    0 3px 0 #30472950,
+    0 12px 30px #3047291c;
+  font-family: var(--sans);
+}
+.nx-journey .nx-view-options button {
+  border-radius: 5px;
+}
+.nx-journey .nx-view-options header strong {
+  font: 700 14px/1.4 var(--sans);
+}
+.nx-journey .nx-view-zoom {
+  font: 600 12px/1.5 var(--sans);
+}
+.nx-journey .nx-view-zoom output {
+  font: 600 13px/1.4 var(--sans);
+}
+.nx-journey .nx-view-row {
+  min-height: 40px;
+  font: 600 12px/1.5 var(--sans);
+}
+.nx-journey .nx-view-light {
+  font: 600 12px/1.5 var(--sans);
+}
+.nx-journey .nx-view-light button {
+  min-height: 36px;
+  font: 600 12px/1.5 var(--sans);
+}
+.nx-journey .nx-view-options > p {
+  font: 400 11px/1.6 var(--sans);
+  color: var(--map-coffee);
+}
+.nx-journey .nx-view-options button:focus-visible {
+  outline-color: var(--map-forest);
+}
+.nx-journey .nx-view-options :is(button:hover, button[aria-pressed="true"]) {
+  color: var(--map-forest);
+}
+.nx-is-map .nx-gpu-atlas-connectors line {
+  stroke: var(--map-paper);
+}
+.nx-is-map .nx-gpu-atlas-connectors circle {
+  fill: var(--map-paper);
+  stroke: var(--map-forest);
+}
+.nx-is-map .nx-atlas-label-line {
+  stroke: var(--map-paper);
+}
+
+@media (max-width: 900px) {
+  .nx-journey .map-control {
+    font-size: 12px;
+    min-height: 40px;
+    padding: 0 14px;
+  }
+  .nx-journey .map-control--region {
+    height: 40px;
+    padding: 0 13px;
+  }
+  .nx-journey .map-control--icon {
+    width: 40px;
+    padding: 0;
+  }
+  .nx-journey .map-control > .map-control-content {
+    gap: 7px;
+  }
+  .nx-journey .map-hud .map-control-label,
+  .nx-journey .map-hud .map-control-trailing {
+    display: none;
+  }
+  .nx-journey .map-hud .map-control {
+    width: 40px;
+    padding: 0;
+  }
+  .nx-journey .map-hud .map-control:has(.map-control-badge) {
+    width: 62px;
+  }
+  .nx-journey .map-hud {
+    gap: 5px;
+  }
+  .nx-journey .map-control--menu {
+    min-width: 130px;
+  }
+  .nx-journey .nx-bottom-hud {
+    left: 16px;
+    right: 16px;
+    bottom: 18px;
+    gap: 10px;
+  }
+  .nx-journey .map-control--passport {
+    width: 210px;
+    max-width: 210px;
+    min-width: 0;
+    flex: 1;
+    min-height: 68px;
+    padding: 9px 10px;
+  }
+  .map-control--passport .map-control-label {
+    gap: 9px;
+  }
+  .map-passport-book {
+    width: 32px;
+    height: 44px;
+  }
+  .map-passport-book > i {
+    top: 20px;
+    width: 16px;
+    height: 16px;
+  }
+  .map-passport-copy {
+    padding-left: 8px;
+  }
+  .map-passport-copy strong {
+    font-size: 12px;
+  }
+  .map-passport-copy small {
+    font-size: 10px;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-navigation-hint {
+    bottom: 96px;
+  }
+}
+@media (max-width: 520px) {
+  .nx-journey .nx-hud {
+    left: 14px;
+    right: 14px;
+    gap: 8px;
+  }
+  .nx-journey .map-hud {
+    gap: 4px;
+  }
+  .nx-journey .map-control-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 3px;
+    font-size: 10px;
+  }
+  .nx-journey .map-hud .map-control:has(.map-control-badge) {
+    width: 56px;
+  }
+  .map-passport-extra {
+    display: none;
+  }
+  .nx-refined-journey.nx-is-map .nx-atlas-navigation-hint {
+    display: none;
+  }
+}
+@media (max-width: 360px) {
+  .nx-journey .map-hud .map-control {
+    width: 35px;
+  }
+  .nx-journey .map-hud .map-control:has(.map-control-badge) {
+    width: 35px;
+  }
+  .nx-journey .map-hud .map-control-badge {
+    display: none;
+  }
+  .nx-journey .map-control--menu {
+    min-width: 116px;
+    padding: 0 10px;
+  }
+  .nx-journey .map-control--passport {
+    padding: 9px 9px;
+  }
+  .map-control--passport .map-control-label {
+    gap: 7px;
+  }
+  .map-passport-book {
+    width: 27px;
+    height: 40px;
+  }
+  .map-passport-book > i {
+    width: 15px;
+    height: 15px;
+  }
+  .map-passport-copy {
+    padding-left: 6px;
+  }
+}
+@media (max-height: 760px) and (min-width: 901px) {
+  .nx-refined-journey.nx-is-map .nx-atlas-navigation-hint {
+    display: none;
+  }
+}
+.nx-journey[data-motion="reduced"]
+  :is(.map-control *, .map-passport-track > span),
+.nx-journey[data-motion="reduced"] .map-control-inlay::before,
+.nx-journey[data-motion="reduced"] .map-control-inlay::after {
+  transition: none !important;
+  animation: none !important;
+}
+.nx-journey[data-motion="reduced"]
+  .map-control
+  > :is(.map-control-surface, .map-control-inlay, .map-control-content) {
+  transform: none !important;
+}
+.nx-journey[data-motion="reduced"] .map-icon--arrow {
+  translate: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-journey :is(.map-control *, .map-passport-track > span),
+  .nx-journey .map-control-inlay::before,
+  .nx-journey .map-control-inlay::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  .nx-journey
+    .map-control
+    > :is(.map-control-surface, .map-control-inlay, .map-control-content) {
+    transform: none !important;
+  }
+  .nx-journey .map-icon--arrow {
+    translate: none !important;
+  }
+}

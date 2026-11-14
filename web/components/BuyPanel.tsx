@@ -7,6 +7,7 @@ import { api, idr, newKey } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Field, Notice, useAction, useLoad } from "./ui";
 import type { Listing } from "./ListingCard";
+import { AddressForm } from "./AddressForm";
 
 type Address = { id: string; label: string; recipient_name: string; line1: string; city: string; province: string };
 type Template = { code: string; name: string; compatible: boolean; reasons: string[] };
@@ -28,52 +29,37 @@ export function BuyPanel({ listing }: { listing: Listing }) {
   if (!ready) return null;
   if (!me) {
     return (
-      <div className="grid gap-4 bg-surface p-6">
-        <p>Masuk untuk membeli kain ini atau menjadikannya baju.</p>
-        <Link href={`/login?next=${encodeURIComponent(here)}`} className="btn w-fit no-underline">Masuk</Link>
+      <div className="listing-login">
+        <Link href={`/login?next=${encodeURIComponent(here)}`} className="btn no-underline">Masuk untuk membeli</Link>
+        <p>Masuk untuk membeli kain atau menjadikannya baju.</p>
       </div>
     );
   }
   const inStock = listing.stock.in_stock;
-  const addAddress = async () => {
-    const created = await run(() =>
-      api<Address>("/addresses", { body: { label: "Rumah", recipient_name: me.display_name, phone: "081200000000", line1: "Jl. Contoh No. 1", city: "Jakarta", province: "DKI Jakarta", postal_code: "10110" } }),
-    );
-    if (created) {
-      setAddressId(created.id);
-      addresses.reload();
-    }
-  };
-
   return (
-    <div className="grid gap-8">
-      <div className="grid gap-5 bg-surface p-6">
-        <h2 className="text-xl font-medium" style={{ fontFamily: "var(--font-hanken)" }}>Beli kainnya saja</h2>
-        {meter && (
-          <Field label={`Jumlah (meter, kelipatan ${listing.quantity_increment})`}>
+    <div className="listing-buy">
+      <div className="listing-buy-main">
+        <h2>Beli kain</h2>
+          <Field label={`Jumlah (${meter ? "meter" : "potong"}, kelipatan ${listing.quantity_increment})`}>
             <input className="field" type="number" min={listing.min_quantity} step={listing.quantity_increment} value={qty} onChange={(e) => setQty(e.target.value)} />
           </Field>
-        )}
-        <Field label="Alamat pengiriman">
+        <div className="grid gap-2"><label htmlFor="listing-address">Alamat pengiriman</label>
           {addresses.data && addresses.data.length > 0 ? (
-            <select className="field" value={chosen} onChange={(e) => setAddressId(e.target.value)}>
+            <select id="listing-address" className="field" value={chosen} onChange={(e) => setAddressId(e.target.value)}>
               {addresses.data.map((a) => <option key={a.id} value={a.id}>{a.label}: {a.recipient_name}, {a.line1}, {a.city}</option>)}
             </select>
-          ) : (
-            <button type="button" className="btn btn-quiet w-fit" onClick={addAddress} disabled={busy}>Tambah alamat contoh</button>
-          )}
-        </Field>
-        <p className="text-base">
-          Harga {idr(listing.price_idr)} per {meter ? "meter" : "potong"}
-          {meter && !Number.isNaN(Number(qty)) && <> · subtotal {idr(Number(qty) * listing.price_idr)}</>}. Ongkir dihitung di langkah berikutnya.
-        </p>
+          ) : <p>Belum ada alamat tersimpan.</p>}
+          <AddressForm onCreated={(id) => { setAddressId(id); addresses.reload(); }} />
+        </div>
+        <div className="listing-subtotal"><span>Subtotal</span><strong>{idr((Number(qty) || 0) * listing.price_idr)}</strong></div>
+        <p className="listing-shipping-note">Ongkir dihitung di langkah berikutnya.</p>
         {error && <Notice tone="error">{error}</Notice>}
         <button
           className="btn"
           disabled={busy || !inStock || !chosen}
           onClick={async () => {
             const co = await run(() =>
-              api<{ id: string }>("/fabric-checkouts", { body: { listing_id: listing.id, quantity: meter ? qty : "1", delivery_address_id: chosen }, idempotencyKey: newKey() }),
+              api<{ id: string }>("/fabric-checkouts", { body: { listing_id: listing.id, quantity: qty, delivery_address_id: chosen }, idempotencyKey: newKey() }),
             );
             if (co) router.push(`/checkout/${co.id}`);
           }}
@@ -82,8 +68,8 @@ export function BuyPanel({ listing }: { listing: Listing }) {
         </button>
       </div>
 
-      <div className="grid gap-5 bg-surface p-6">
-        <h2 className="text-xl font-medium" style={{ fontFamily: "var(--font-hanken)" }}>Jadikan baju</h2>
+      <div className="listing-custom">
+        <div><h2>Jadikan baju</h2><p>Rancang pakaian dari kain pilihanmu.</p></div>
         {!listing.custom_order_ready ? (
           <p className="text-base">Kain ini belum dapat dipakai untuk pesanan baju: data yang kurang ({listing.missing_for_custom.join(", ") || "tidak diketahui"}).</p>
         ) : (
@@ -95,7 +81,7 @@ export function BuyPanel({ listing }: { listing: Listing }) {
               </select>
             </Field>
             <button
-              className="btn"
+              className="btn listing-custom-button"
               disabled={busy || !pick}
               onClick={async () => {
                 const c = await run(() => api<{ id: string }>("/customizations", { body: { listing_id: listing.id, template_code: pick } }));

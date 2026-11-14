@@ -1,14 +1,15 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.deps import current_user
+from app.core.errors import InvalidTransition, NotFound
 from app.core.pagination import paginate
 from app.core.responses import ok
 from app.db.base import get_session
-from app.models import FabricListing, FabricStockUnit, User
+from app.models import FabricListing, FabricStockUnit, ListingImage, User
 from app.schemas.listing import (
     ListingCreate,
     ListingImageIn,
@@ -16,6 +17,7 @@ from app.schemas.listing import (
     StockUnitIn,
     StockUnitUpdate,
 )
+from app.services import audit
 from app.services import gallery as gallery_svc
 from app.services import listings as svc
 from app.services.partners import active_merchant
@@ -32,12 +34,13 @@ def _unit_out(u: FabricStockUnit) -> dict:
 @router.get("/gallery/{ref}/listings")
 def entry_listings(ref: str, city: str | None = Query(default=None),
                    max_price: int | None = Query(default=None, gt=0),
+                   variant_id: uuid.UUID | None = Query(default=None),
                    sort: str = Query(default="price_asc", pattern="^(price_asc|newest)$"),
                    limit: int = Query(default=20, ge=1, le=50),
                    session: Session = Depends(get_session)):
     entry = gallery_svc.get_published_by_ref(session, ref)
     rows = svc.listings_for_entry(session, entry, city=city, max_price=max_price, sort=sort,
-                                  limit=limit)
+                                  limit=limit, variant_id=variant_id)
     return ok({"gallery_entry": gallery_svc.brief(entry),
                "items": [svc.listing_out(session, r) for r in rows],
                "notice": "Gallery menjelaskan budaya; setiap listing adalah barang nyata milik "
@@ -85,7 +88,7 @@ def update_listing(listing_id: uuid.UUID, body: ListingUpdate, user: User = Depe
                    session: Session = Depends(get_session)):
     merchant = active_merchant(session, user)
     listing = svc.owned_listing(session, merchant, listing_id)
-    changes = body.model_dump(exclude={"expected_revision"}, exclude_none=True)
+    changes = body.model_dump(exclude={"expected_revision"}, exclude_unset=True)
     svc.update_listing(session, user, listing, body.expected_revision, changes)
     session.commit()
     return ok(svc.listing_out(session, listing, include_merchant=False))
@@ -117,6 +120,27 @@ def add_image(listing_id: uuid.UUID, body: ListingImageIn, user: User = Depends(
     image = svc.add_image(session, user, listing, body.file_id, body.caption, body.sort_order)
     session.commit()
     return ok({"id": image.id, "url": f"/api/v1/files/{image.file_id}"})
+
+
+@router.delete("/listings/{listing_id}/images/{image_id}")
+def remove_image(listing_id: uuid.UUID, image_id: uuid.UUID, user: User = Depends(current_user),
+                 session: Session = Depends(get_session)):
+    merchant = active_merchant(session, user)
+    listing = svc.owned_listing(session, merchant, listing_id)
+    image = session.get(ListingImage, image_id)
+    if image is None or image.listing_id != listing.id:
+        raise NotFound("Listing image not found")
+    if listing.status == "published":
+        count = session.scalar(select(func.count()).select_from(ListingImage)
+                               .where(ListingImage.listing_id == listing.id))
+        if count <= 1:
+            raise InvalidTransition("Listing terbit harus memiliki setidaknya satu foto")
+    session.delete(image)
+    session.flush()
+    audit.record(session, actor=user, action="listing.image_removed", target_type="fabric_listing",
+                 target_id=listing.id, metadata={"image_id": str(image_id), "file_kept": True})
+    session.commit()
+    return ok({"removed": str(image_id), "file_kept": True})
 
 
 @router.post("/listings/{listing_id}/stock-units", status_code=201)

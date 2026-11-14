@@ -7,18 +7,18 @@ import { AvatarViewer } from "@/components/AvatarViewer";
 import { PhotoMeasure } from "@/components/PhotoMeasure";
 import { Field, Notice, Page, RequireAuth, useAction, useLoad } from "@/components/ui";
 import { api, fileUrl, idr } from "@/lib/api";
-import { DIM_LABEL, OPTION_LABEL, VALUE_LABEL, label, type OptionDef } from "@/lib/design";
+import { DIM_LABEL, OPTION_LABEL, VALUE_LABEL, label, layoutText, optionText, type MotifLayout, type OptionDef } from "@/lib/design";
 
 type Customization = {
   id: string; listing_id: string; template: { code: string; name: string; required_dimensions: string[] };
-  current_revision: number; state: Record<string, string | number>;
+  current_revision: number; state: Record<string, string | number | MotifLayout>;
   open_clarifications: { id: string; field: string; question: string; choices: string[] }[];
   measurement_set: { id: string; status: string; revision: number } | null;
   material_estimate: { id: string; stale: boolean } | null; ready_for_tailor_validation: boolean;
 };
 type Proposal = {
   proposal_id: string;
-  changes: { field: string; value: string | number; from: string | number; status: string }[];
+  changes: { field: string; value: unknown; from: unknown; status: string }[];
   unsupported_requests: { text: string; reason: string }[];
   clarifications: { id: string; field: string; text: string; question: string; choices: string[]; direction: number }[];
   fallback: string | null;
@@ -41,13 +41,15 @@ function DesignOptions({ cust, onChanged }: { cust: Customization; onChanged: ()
   const tpl = useLoad(() => api<{ options: Record<string, OptionDef> }>(`/garment-templates/${cust.template.code}`), cust.template.code);
   const act = useAction();
   const [draft, setDraft] = useState<Record<string, string | number>>({});
-  const options = tpl.data?.options ?? {};
+  // the motif layout has its own controls (FabricMapBox); here only the plain options
+  const options = Object.fromEntries(Object.entries(tpl.data?.options ?? {}).filter(([, d]) => d.type !== "layout"));
   const changed = Object.fromEntries(Object.entries(draft).filter(([k, v]) => String(v) !== String(cust.state[k])));
   return (
     <div className="grid gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         {Object.entries(options).map(([key, def]) => {
-          const value = draft[key] ?? cust.state[key] ?? def.default;
+          if (def.type === "layout") return null;
+          const value = draft[key] ?? (cust.state[key] as string | number | undefined) ?? def.default;
           return (
             <Field key={key} label={label(OPTION_LABEL, key)} hint={def.type === "number" ? `${def.min} sampai ${def.max} ${def.unit ?? ""}` : undefined}>
               {def.type === "enum" ? (
@@ -70,6 +72,65 @@ function DesignOptions({ cust, onChanged }: { cust: Customization; onChanged: ()
   );
 }
 
+type Region = { id: string; kind: "zone" | "motif"; label: string; box: number[]; repeats: number | null };
+type FabricMap = { id: string; status: string; error: string | null; regions: Region[]; photo_url: string; label: string };
+
+/** The listing photo with where its zones and motifs sit, so the buyer knows what to name in a prompt. */
+function FabricMapBox({ cust, onChanged }: { cust: Customization; onChanged: () => void }) {
+  const act = useAction();
+  const map = useLoad(() => api<FabricMap | null>(`/listings/${cust.listing_id}/fabric-map`), cust.listing_id);
+  const m = map.data;
+  const pending = m?.status === "pending";
+  const { reload } = map;
+  useEffect(() => {
+    if (!pending) return;
+    const t = setInterval(reload, 2500);
+    return () => clearInterval(t);
+  }, [pending, reload]);
+  const layout = cust.state.motif_layout as MotifLayout | undefined;
+  const hasLayout = !!layout && (Object.keys(layout.panels ?? {}).length > 0 || (layout.avoid ?? []).length > 0);
+  const usable = (m?.regions ?? []).filter((r) => r.label !== "rumbai");
+  return (
+    <div className="grid gap-4">
+      <h3 className="text-xl font-medium" style={H}>Peta motif kain</h3>
+      <p className="text-base">Petakan dulu bagian-bagian kain asli ini (kepala kain, badan kain, motif-motifnya). Setelah itu kamu bisa menulis bagian kain mana yang ditaruh di bagian baju mana.</p>
+      {(!m || m.status === "failed") && (
+        <button className="btn btn-quiet w-fit" disabled={act.busy} onClick={async () => { const r = await act.run(() => api(`/listings/${cust.listing_id}/fabric-map`, { method: "POST" })); if (r) reload(); }}>
+          {m?.status === "failed" ? "Coba petakan lagi" : "Petakan motif kain"}
+        </button>
+      )}
+      {act.error && <Notice tone="error">{act.error}</Notice>}
+      {m?.status === "failed" && <Notice tone="error">Peta kain gagal dibuat{m.error ? `: ${m.error}` : "."}</Notice>}
+      {pending && <p role="status">Kain sedang dipetakan…</p>}
+      {m && (m.status === "estimated" || m.status === "confirmed") && (
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,260px)_1fr] sm:items-start">
+          <div className="relative">
+            <img src={fileUrl(m.photo_url)} alt="Foto kain dengan bagian-bagian yang dipetakan" className="block w-full" />
+            {m.regions.map((r) => (
+              <span key={r.id} title={r.label}
+                className={`absolute ${r.kind === "zone" ? "border border-dashed border-surface" : "border-2 border-ink"}`}
+                style={{ left: `${r.box[0] * 100}%`, top: `${r.box[1] * 100}%`, width: `${(r.box[2] - r.box[0]) * 100}%`, height: `${(r.box[3] - r.box[1]) * 100}%` }}>
+                <span className={`absolute left-0 top-0 px-1 text-xs leading-5 ${r.kind === "zone" ? "bg-surface text-ink" : "bg-ink text-bg"}`}>{r.label}</span>
+              </span>
+            ))}
+          </div>
+          <div className="grid gap-2 text-base">
+            <p>Bagian kain yang bisa kamu sebut:</p>
+            <ul className="flex flex-wrap gap-2 p-0">{usable.map((r) => <li key={r.id} className="list-none bg-surface px-3 py-1">{r.label}{r.repeats ? ` ×${r.repeats}` : ""}</li>)}</ul>
+            <p className="text-muted">{m.label}</p>
+          </div>
+        </div>
+      )}
+      {hasLayout && (
+        <div className="flex flex-wrap items-center gap-3 bg-surface p-4 text-base">
+          <span>Tata letak kain: {layoutText(layout)}</span>
+          <button className="btn btn-quiet" disabled={act.busy} onClick={async () => { const r = await act.run(() => api(`/customizations/${cust.id}/revisions`, { body: { expected_design_revision: cust.current_revision, changes: { motif_layout: {} } } })); if (r) onChanged(); }}>Kembalikan otomatis</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => void }) {
   const act = useAction();
   const [prompt, setPrompt] = useState("");
@@ -77,7 +138,7 @@ function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => 
   const [picks, setPicks] = useState<Record<string, string>>({});
   return (
     <div className="grid gap-4">
-      <Field label="Ceritakan perubahan dengan kalimat biasa" hint="Contoh: tambah saku dada kiri, kancing kayu, pendekkan hem 3 cm. Sistem hanya menerapkan opsi yang didukung pola ini.">
+      <Field label="Ceritakan perubahan dengan kalimat biasa" hint="Contoh: tambah saku dada kiri, kancing kayu, pendekkan hem 3 cm. Setelah kain dipetakan: motif manusianya taruh di dada, burung di bawahan, kepala kainnya jangan dipakai. Sistem hanya menerapkan opsi yang didukung pola ini.">
         <textarea className="field" value={prompt} onChange={(e) => setPrompt(e.target.value)} />
       </Field>
       {act.error && <Notice tone="error">{act.error}</Notice>}
@@ -88,15 +149,15 @@ function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => 
       {proposal && (
         <div className="grid gap-4 bg-surface p-5">
           <h3 className="text-xl font-medium" style={H}>Usulan perubahan</h3>
-          {proposal.fallback && <p className="text-base">{proposal.fallback}</p>}
+          {proposal.fallback && <p className="text-base">Permintaan ini belum bisa diterapkan otomatis. Gunakan pilihan desain di atas, atau tulis ulang dengan opsi yang didukung.</p>}
           {proposal.changes.length > 0 ? (
-            <ul className="grid list-disc gap-1 pl-5">{proposal.changes.map((c) => <li key={c.field}>{label(OPTION_LABEL, c.field)}: {label(VALUE_LABEL, String(c.from))} → {label(VALUE_LABEL, String(c.value))}</li>)}</ul>
+            <ul className="grid list-disc gap-1 pl-5">{proposal.changes.map((c) => <li key={c.field}>{label(OPTION_LABEL, c.field)}: {optionText(c.from)} → {optionText(c.value)}</li>)}</ul>
           ) : <p className="text-base">Belum ada perubahan yang bisa diterapkan.</p>}
           {proposal.clarifications.map((c) => (
             <Field key={c.id} label={`${c.question} (“${c.text}”)`}>
               <select className="field" value={picks[c.id] ?? ""} onChange={(e) => setPicks({ ...picks, [c.id]: e.target.value })}>
                 <option value="">Pilih…</option>
-                {c.choices.map((v) => <option key={v} value={v}>{label(OPTION_LABEL, v)}</option>)}
+                {c.choices.map((v) => <option key={v} value={v}>{OPTION_LABEL[v] ?? label(VALUE_LABEL, v)}</option>)}
               </select>
             </Field>
           ))}
@@ -222,7 +283,7 @@ function AvatarBox({ cust }: { cust: Customization }) {
     if (p) setPreview(p);
   };
   // warnings start with a machine code ("avatar_mismatch:back_length: ..."); show the sentence after it
-  const notes = preview?.warnings.map((w) => w.replace(/^[a-z_]+(:[a-z_]+)?: /, "")) ?? [];
+  const notes = preview?.warnings.map((w) => w.replace(/^[a-z_]+(:[a-z0-9_]+)?: /, "")) ?? [];
   return (
     <div className="grid gap-4">
       <p className="text-base">Lihat baju ini dipakai badan 3D yang dibentuk dari ukuranmu: tinggi, lingkar, dan panjang yang kamu isi. Avatar dibuat dari angka saja, tanpa foto, dan hanya bisa dilihat olehmu; penjahit tidak menerimanya.</p>
@@ -304,7 +365,7 @@ function Workspace() {
   return (
     <div className="grid max-w-3xl gap-[clamp(56px,8vw,96px)]">
       <p className="text-lg">{cust.template.name} · revisi desain {cust.current_revision}</p>
-      <Section title="Desain"><DesignOptions cust={cust} onChanged={reload} /><PromptBox cust={cust} onChanged={reload} /></Section>
+      <Section title="Desain"><DesignOptions cust={cust} onChanged={reload} /><FabricMapBox cust={cust} onChanged={reload} /><PromptBox cust={cust} onChanged={reload} /></Section>
       <Section title="Ukuran badan"><Measurements cust={cust} onChanged={reload} /></Section>
       <Section title="Kebutuhan kain"><EstimateBox cust={cust} onChanged={reload} /></Section>
       <Section title="Ilustrasi"><PreviewBox cust={cust} /></Section>

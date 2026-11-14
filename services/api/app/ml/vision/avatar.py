@@ -89,11 +89,64 @@ def fabric_texture(data: bytes, size: int = 256) -> Image.Image:
     return out
 
 
+@dataclass
+class PanelTexture:
+    """A piece of the actual fabric photo shown on one part of the garment, at real size."""
+    image: Image.Image
+    tile_w_m: float  # width of one repeat of `image` on the garment
+    tile_h_m: float
+    label: str
+
+
+def photo_scale(photo_width_px: int, zone_widths: list[float], fabric_width_cm: float | None) -> tuple[float, bool]:
+    """Centimetres per photo pixel. The widest zone (head panel, body, tumpal) spans the cloth's width;
+    without a known width 100 cm is assumed. Also says whether it was assumed."""
+    span = max(zone_widths, default=0.9) * photo_width_px
+    return (fabric_width_cm or 100.0) / max(span, 1.0), fabric_width_cm is None
+
+
+def _trim_background(crop: Image.Image, min_std: float = 10.0) -> Image.Image:
+    """Cut away plain edges (paper, wall, mount) a box drawn to the photo's edge picked up: rows and columns
+    at the sides whose brightness hardly varies. Keeps at least half of each side."""
+    g = np.asarray(crop.convert("L"), dtype=np.float32)
+    if g.shape[0] < 8 or g.shape[1] < 8:
+        return crop
+
+    def span(stds: np.ndarray) -> tuple[int, int]:
+        busy = np.nonzero(stds >= min_std)[0]
+        if len(busy) == 0:
+            return 0, len(stds)
+        lo, hi = int(busy[0]), int(busy[-1]) + 1
+        return (lo, hi) if hi - lo >= len(stds) // 2 else (0, len(stds))
+
+    x0, x1 = span(g.std(axis=0))
+    y0, y1 = span(g.std(axis=1))
+    return crop.crop((x0, y0, x1, y1))
+
+
+def region_texture(photo: Image.Image, box: list[float], cm_per_px: float, label: str,
+                   max_px: int = 384) -> PanelTexture:
+    """The boxed part of the photo, paired with its mirror image left-right so repeats meet without a seam
+    (top and bottom are not mirrored: figures stay upright)."""
+    from PIL import ImageOps
+
+    photo = photo.convert("RGB")
+    x0, y0, x1, y1 = (round(box[0] * photo.width), round(box[1] * photo.height),
+                      round(box[2] * photo.width), round(box[3] * photo.height))
+    crop = _trim_background(photo.crop((x0, y0, max(x1, x0 + 2), max(y1, y0 + 2))))
+    w_m, h_m = crop.width * cm_per_px / 100, crop.height * cm_per_px / 100
+    crop.thumbnail((max_px, max_px))
+    pair = Image.new("RGB", (2 * crop.width, crop.height))
+    pair.paste(crop, (0, 0))
+    pair.paste(ImageOps.mirror(crop), (crop.width, 0))
+    return PanelTexture(image=pair, tile_w_m=max(2 * w_m, 0.03), tile_h_m=max(h_m, 0.03), label=label)
+
+
 # ---------- 1. shape from measurements ----------
 
 def shape_for(body, height_cm: float, values: dict[str, float], iters: int = 20,
               prior: float = 0.05, step: float = 0.5) -> tuple[np.ndarray, dict[str, float]]:
-    """Betas whose T-pose body measures as `values` (cm) at `height_cm`; also its measurements."""
+    """Betas whose T-pose body measures as `values` (cm) at `height_cm`; also all its measurements."""
     keys = [k for k, v in values.items() if v is not None] + ["height"]
     target = np.array([float(values[k]) for k in keys[:-1]] + [float(height_cm)])
     weight = np.array([1.0] * (len(keys) - 1) + [3.0])  # height sets the scale of everything else
@@ -120,7 +173,7 @@ def shape_for(body, height_cm: float, values: dict[str, float], iters: int = 20,
                 break
         else:
             break
-    return betas, dict(zip(keys, (round(float(x), 1) for x in current), strict=True))
+    return betas, body3d.measure(body, betas)  # every measurement of the rebuilt body, asked for or not
 
 
 def _posed(body, betas: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -209,13 +262,14 @@ def _ring(point, u, v, center, radii) -> np.ndarray:
 
 
 def _tube(rings: list[np.ndarray]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Vertices, quad-split faces and UVs of rings stacked in order; UVs are metres / TILE_M."""
+    """Vertices, quad-split faces and UVs of rings stacked in order. UVs are in metres (scaled per material
+    in _sub); v runs downwards so the top of a fabric picture stays at the top of the garment."""
     verts = np.concatenate(rings)
     n = COLUMNS + 1
     girth = float(np.mean([np.linalg.norm(np.diff(r, axis=0), axis=1).sum() for r in rings]))
     along = np.concatenate([[0.0], np.cumsum([np.linalg.norm(b.mean(0) - a.mean(0))
                                               for a, b in itertools.pairwise(rings)])])
-    uv = np.stack([np.tile(ANGLES / (2 * math.pi) * girth, len(rings)), np.repeat(along, n)], axis=1) / TILE_M
+    uv = np.stack([np.tile(ANGLES / (2 * math.pi) * girth, len(rings)), -np.repeat(along, n)], axis=1)
     faces = []
     for i in range(len(rings) - 1):
         for j in range(COLUMNS):
@@ -358,6 +412,19 @@ def _textured(piece: _Piece, placement: str, chest_y: float) -> np.ndarray:
     return np.ones(len(piece.faces), dtype=bool)
 
 
+HEM_BAND_M = 0.12
+
+
+def _panel_of(piece: _Piece, sleeve: bool, hem_assigned: bool) -> np.ndarray:
+    """front / back / hem / sleeves for every face (the hem band counts only when it has its own fabric)."""
+    if sleeve:
+        return np.full(len(piece.faces), "sleeves", dtype=object)
+    panel = np.where(np.sin(piece.angle) >= 0, "front", "back").astype(object)
+    if hem_assigned:
+        panel[piece.hem < HEM_BAND_M] = "hem"
+    return panel
+
+
 def _buttons(torso: _Piece, state: dict, hem_y: float, neck_y: float):
     import trimesh
 
@@ -387,17 +454,20 @@ def _material(texture: Image.Image | None, rgba):
                        roughnessFactor=0.92, doubleSided=True)
 
 
-def _sub(piece: _Piece, faces_mask: np.ndarray, material):
+def _sub(piece: _Piece, faces_mask: np.ndarray, material, tile_w_m: float = TILE_M, tile_h_m: float = TILE_M):
     import trimesh
 
     mesh = trimesh.Trimesh(vertices=piece.verts, faces=piece.faces[faces_mask], process=False)
-    mesh.visual = trimesh.visual.TextureVisuals(uv=piece.uv, material=material)
+    mesh.visual = trimesh.visual.TextureVisuals(uv=piece.uv / [tile_w_m, tile_h_m], material=material)
     mesh.remove_unreferenced_vertices()
     return mesh
 
 
 def build(body, template_code: str, state: dict, ease_cm: float, height_cm: float,
-          values: dict[str, float], texture: Image.Image) -> Avatar:
+          values: dict[str, float], texture: Image.Image,
+          panels: dict[str, PanelTexture] | None = None, default: PanelTexture | None = None) -> Avatar:
+    """`panels`: fabric for named garment parts (the motif layout); `default`: fabric for the other parts
+    instead of the middle of the photo (used when the layout avoids part of the cloth)."""
     import trimesh
 
     betas, fitted = shape_for(body, height_cm, values)
@@ -442,12 +512,20 @@ def build(body, template_code: str, state: dict, ease_cm: float, height_cm: floa
     body_mesh.visual.vertex_colors = MANNEQUIN_RGBA
     scene.add_geometry(body_mesh, node_name="body", geom_name="body")
     placement = state.get("motif_placement", "all_over")
+    panels = panels or {}
+    base = (textured, TILE_M, TILE_M) if default is None else \
+        (_material(default.image, [255, 255, 255, 255]), default.tile_w_m, default.tile_h_m)
+    own = {p: (_material(t.image, [255, 255, 255, 255]), t.tile_w_m, t.tile_h_m) for p, t in panels.items()}
     for i, piece in enumerate(pieces):
         keep = _keep(piece, state, neck_y)
         motif = _textured(piece, placement, chest_y)
-        for name, mask, mat in (("motif", keep & motif, textured), ("plain", keep & ~motif, plain)):
+        panel = _panel_of(piece, i > 0, "hem" in panels)
+        assigned = np.isin(panel, list(panels))
+        groups = [("motif", keep & motif & ~assigned, base), ("plain", keep & ~motif & ~assigned, (plain, TILE_M, TILE_M))]
+        groups += [(f"panel_{p}", keep & (panel == p), own[p]) for p in panels]
+        for name, mask, (mat, tw, th) in groups:
             if mask.any():
-                scene.add_geometry(_sub(piece, mask, mat), node_name=f"garment_{i}_{name}",
+                scene.add_geometry(_sub(piece, mask, mat, tw, th), node_name=f"garment_{i}_{name}",
                                    geom_name=f"garment_{i}_{name}")
     buttons = _buttons(pieces[0], state, hem_y, neck_y)
     if buttons is not None:

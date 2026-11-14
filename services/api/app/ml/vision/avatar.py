@@ -16,7 +16,6 @@ SMPL-X is non-commercial research and education only (see body3d); the mesh made
 from __future__ import annotations
 
 import io
-import itertools
 import math
 from dataclasses import dataclass, field
 
@@ -106,8 +105,8 @@ def photo_scale(photo_width_px: int, zone_widths: list[float], fabric_width_cm: 
 
 
 def _trim_background(crop: Image.Image, min_std: float = 10.0) -> Image.Image:
-    """Cut away plain edges (paper, wall, mount) a box drawn to the photo's edge picked up: rows and columns
-    at the sides whose brightness hardly varies. Keeps at least half of each side."""
+    """Cut away edges a box drawn to the photo's edge picked up: plain rows and columns (paper, wall, mount)
+    and then edge lines whose brightness stands out from the cloth inside."""
     g = np.asarray(crop.convert("L"), dtype=np.float32)
     if g.shape[0] < 8 or g.shape[1] < 8:
         return crop
@@ -121,7 +120,22 @@ def _trim_background(crop: Image.Image, min_std: float = 10.0) -> Image.Image:
 
     x0, x1 = span(g.std(axis=0))
     y0, y1 = span(g.std(axis=1))
-    return crop.crop((x0, y0, x1, y1))
+    g = g[y0:y1, x0:x1]
+
+    def outliers(means: np.ndarray) -> tuple[int, int]:
+        """Edge lines much brighter or darker than the cloth inside (a mount's shading, a lit fold), at
+        most 15 % from each side: mirrored repeats would double them into stripes."""
+        cap = int(0.15 * len(means))
+        inner = means[cap:len(means) - cap] if len(means) > 2 * cap + 4 else means
+        # outside the range of the cloth's own lines (so a striped cloth keeps its edge stripes)
+        bad = (means < np.percentile(inner, 2) - 8) | (means > np.percentile(inner, 98) + 8)
+        lo = next((i for i in range(cap) if not bad[i]), cap)
+        hi = next((i for i in range(cap) if not bad[len(means) - 1 - i]), cap)
+        return lo, len(means) - hi
+
+    a0, a1 = outliers(g.mean(axis=0))
+    b0, b1 = outliers(g.mean(axis=1))
+    return crop.crop((x0 + a0, y0 + b0, x0 + a1, y0 + b1))
 
 
 def region_texture(photo: Image.Image, box: list[float], cm_per_px: float, label: str,
@@ -261,28 +275,64 @@ def _ring(point, u, v, center, radii) -> np.ndarray:
     return point + xy[:, :1] * u + xy[:, 1:] * v
 
 
-def _tube(rings: list[np.ndarray]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Vertices, quad-split faces and UVs of rings stacked in order. UVs are in metres (scaled per material
-    in _sub); v runs downwards so the top of a fabric picture stays at the top of the garment."""
-    verts = np.concatenate(rings)
+def _tube(rings: list[np.ndarray], top_first: bool, side_seams: bool = False):
+    """Vertices, quad-split faces, UVs, each vertex's distance from the open end (hem or cuff), and the
+    indices of the vertices down the front line.
+
+    UVs are surface lengths in metres, so the fabric is neither stretched nor squeezed: u is the arc length
+    round each ring from the front line (motifs centre on the front), v the distance down the surface of
+    each column from the top ring (a sloping shoulder gets its true length). With `side_seams` the front
+    and back halves are separate pieces of cloth, as on a real garment: each is measured from its own
+    centre line, so the narrowing to the neck does not twist the back. Scaled per material in _sub; v runs
+    downwards so the top of a fabric picture stays at the top of the garment."""
     n = COLUMNS + 1
-    girth = float(np.mean([np.linalg.norm(np.diff(r, axis=0), axis=1).sum() for r in rings]))
-    along = np.concatenate([[0.0], np.cumsum([np.linalg.norm(b.mean(0) - a.mean(0))
-                                              for a, b in itertools.pairwise(rings)])])
-    uv = np.stack([np.tile(ANGLES / (2 * math.pi) * girth, len(rings)), -np.repeat(along, n)], axis=1)
+    grid = np.stack(rings)  # rings x columns x 3
+    arc = np.concatenate([np.zeros((len(rings), 1)),
+                          np.cumsum(np.linalg.norm(np.diff(grid, axis=1), axis=2), axis=1)], axis=1)
+    step = np.linalg.norm(np.diff(grid, axis=0), axis=2)  # between consecutive rings, per column
+    from_first = np.concatenate([np.zeros((1, n)), np.cumsum(step, axis=0)], axis=0)
+    from_last = from_first[-1:] - from_first
+    d_top, d_end = (from_first, from_last) if top_first else (from_last, from_first)
+    if side_seams:  # columns 0..half are the front (angle 0-180 degrees), half..COLUMNS the back
+        half = COLUMNS // 2
+        pieces = [(0, half, half // 2), (half, COLUMNS, half + half // 2)]
+    else:
+        depth = grid[:, :-1, 2] - grid[:, :-1, 2].mean(axis=1, keepdims=True)
+        pieces = [(0, COLUMNS, int(np.argmax(depth.mean(axis=0))))]
+    verts, uvs, ends, offsets = [], [], [], []
+    for lo, hi, centre in pieces:
+        offsets.append(sum(len(v) for v in verts))
+        cols = slice(lo, hi + 1)
+        verts.append(grid[:, cols].reshape(-1, 3))
+        u = arc[:, cols] - arc[:, centre:centre + 1]
+        uvs.append(np.stack([u.ravel(), d_top[:, cols].ravel()], axis=1))
+        ends.append(d_end[:, cols].ravel())
+
+    def index(i, j):  # vertex of ring i, column j, in the piece that owns the quad starting at column j
+        k = next(k for k, (lo, hi, _) in enumerate(pieces) if lo <= j < hi or (j == hi and k == len(pieces) - 1))
+        lo, hi, _ = pieces[k]
+        return offsets[k] + i * (hi - lo + 1) + (j - lo)
+
     faces = []
     for i in range(len(rings) - 1):
         for j in range(COLUMNS):
-            a, b = i * n + j, (i + 1) * n + j
+            k = next(k for k, (lo, hi, _) in enumerate(pieces) if lo <= j < hi)
+            lo, hi, _ = pieces[k]
+            a, b = offsets[k] + i * (hi - lo + 1) + (j - lo), offsets[k] + (i + 1) * (hi - lo + 1) + (j - lo)
             faces += [(a, a + 1, b + 1), (a, b + 1, b)]
-    return verts, np.array(faces, dtype=np.int64), uv
+    centre = pieces[0][2]
+    front_line = np.array([index(i, centre) for i in range(len(rings))])
+    return (np.concatenate(verts), np.array(faces, dtype=np.int64), np.concatenate(uvs), np.concatenate(ends),
+            front_line)
 
 
 @dataclass
 class _Piece:
     verts: np.ndarray
     faces: np.ndarray
-    uv: np.ndarray
+    uv: np.ndarray  # metres: (arc length from the front, distance from the top)
+    d_end: np.ndarray  # per vertex: distance from the open end (hem or cuff), metres
+    front_line: np.ndarray  # per ring: index of the vertex on the front centre line
     row_y: np.ndarray  # per face: height of the face (torso) or -inf (sleeves)
     angle: np.ndarray  # per face: centre angle
     hem: np.ndarray  # per face: distance from the hem, m
@@ -327,8 +377,8 @@ def _torso(mesh, body, joints, hem_y, neck_y, chest_y, offset, neck_cm, sleeved:
         rings.append(ring)
         heights.append((1 - rise) * y0 + rise * neck_y)
     heights = np.array(heights)
-    pv, pf, puv = _tube(rings)
-    return _Piece(pv, pf, puv, *_face_meta(rings, heights - hem_y, heights))
+    pv, pf, puv, d_end, line = _tube(rings, top_first=False, side_seams=True)
+    return _Piece(pv, pf, puv, d_end, line, *_face_meta(rings, heights - hem_y, heights))
 
 
 def _sleeve(mesh, body, joints, side: str, length_m: float, offset: float) -> _Piece | None:
@@ -369,9 +419,9 @@ def _sleeve(mesh, body, joints, side: str, length_m: float, offset: float) -> _P
     rings.insert(0, rings[0] + 0.06 * inward)
     dist.insert(0, dist[0] - 0.06)
     dist = np.array(dist)
-    pv, pf, puv = _tube(rings)
+    pv, pf, puv, d_end, line = _tube(rings, top_first=True)
     _, angle, hem = _face_meta(rings, dist.max() - dist, dist)
-    return _Piece(pv, pf, puv, np.full(len(pf), -np.inf), angle, hem)
+    return _Piece(pv, pf, puv, d_end, line, np.full(len(pf), -np.inf), angle, hem)
 def _clear(piece: _Piece, body_verts: np.ndarray, normals: np.ndarray, gap: float) -> None:
     """Push garment points that ended up inside the body back out, `gap` above the skin."""
     from scipy.spatial import cKDTree
@@ -430,9 +480,7 @@ def _buttons(torso: _Piece, state: dict, hem_y: float, neck_y: float):
 
     if "buttons" not in state or state.get("closure") not in (None, "buttons_front"):
         return None
-    front_col = round(FRONT / (2 * math.pi) * COLUMNS)
-    n = COLUMNS + 1
-    rows = torso.verts.reshape(-1, n, 3)[:, front_col]
+    rows = torso.verts[torso.front_line]  # after _clear, so buttons sit on the cloth
     color = list(BUTTON_COLORS.get(state["buttons"], (200, 200, 200))) + [255]
     spheres = []
     top = neck_y - (0.18 if state.get("collar") == "v_neck" else 0.06)
@@ -454,11 +502,17 @@ def _material(texture: Image.Image | None, rgba):
                        roughnessFactor=0.92, doubleSided=True)
 
 
-def _sub(piece: _Piece, faces_mask: np.ndarray, material, tile_w_m: float = TILE_M, tile_h_m: float = TILE_M):
+def _sub(piece: _Piece, faces_mask: np.ndarray, material, tile_w_m: float = TILE_M, tile_h_m: float = TILE_M,
+         anchor: str = "top", centred: bool = False):
+    """One material's faces. A cut-out piece of fabric is `centred` on the front line, and anchored at the
+    top of the part (its top edge under the neckline or shoulder) or at the `bottom` (its lower edge on
+    the hem), as a tailor would place it."""
     import trimesh
 
+    u = (piece.uv[:, 0] + (tile_w_m / 4 if centred else 0.0)) / tile_w_m  # the crop's middle, not its edge
+    v = 1.0 - piece.d_end / tile_h_m if anchor == "bottom" else piece.uv[:, 1] / tile_h_m
     mesh = trimesh.Trimesh(vertices=piece.verts, faces=piece.faces[faces_mask], process=False)
-    mesh.visual = trimesh.visual.TextureVisuals(uv=piece.uv / [tile_w_m, tile_h_m], material=material)
+    mesh.visual = trimesh.visual.TextureVisuals(uv=np.stack([u, v], axis=1), material=material)
     mesh.remove_unreferenced_vertices()
     return mesh
 
@@ -522,10 +576,12 @@ def build(body, template_code: str, state: dict, ease_cm: float, height_cm: floa
         panel = _panel_of(piece, i > 0, "hem" in panels)
         assigned = np.isin(panel, list(panels))
         groups = [("motif", keep & motif & ~assigned, base), ("plain", keep & ~motif & ~assigned, (plain, TILE_M, TILE_M))]
-        groups += [(f"panel_{p}", keep & (panel == p), own[p]) for p in panels]
-        for name, mask, (mat, tw, th) in groups:
+        groups = [(name, mask, cfg, "top", False) for name, mask, cfg in groups]
+        groups += [(f"panel_{p}", keep & (panel == p), own[p], "bottom" if p == "hem" else "top", True)
+                   for p in panels]
+        for name, mask, (mat, tw, th), anchor, centred in groups:
             if mask.any():
-                scene.add_geometry(_sub(piece, mask, mat, tw, th), node_name=f"garment_{i}_{name}",
+                scene.add_geometry(_sub(piece, mask, mat, tw, th, anchor, centred), node_name=f"garment_{i}_{name}",
                                    geom_name=f"garment_{i}_{name}")
     buttons = _buttons(pieces[0], state, hem_y, neck_y)
     if buttons is not None:

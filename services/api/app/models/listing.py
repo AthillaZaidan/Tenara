@@ -143,3 +143,43 @@ class ProductStory(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class FabricMap(Base):
+    """Where the zones and main motifs sit on a listing's fabric photo (see app/ml/vision/fabric_map).
+
+    An AI estimate until the merchant confirms or corrects it. Buyers' motif layouts copy the regions
+    they use into the design revision, so later edits here never change a submitted design.
+    regions: [{"id": "z1" | "m1", "kind": "zone" | "motif", "label", "box": [x0, y0, x1, y1] (0..1),
+               "repeats": int | null}]
+    """
+    __tablename__ = "fabric_maps"
+    __table_args__ = (
+        CheckConstraint("status in ('pending','estimated','confirmed','failed')",
+                        name="ck_fabric_maps_status_valid"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    listing_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("fabric_listings.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    file_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("files.id", ondelete="CASCADE"), nullable=False
+    )
+    regions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
+    status: Mapped[str] = mapped_column(String(12), nullable=False, server_default="pending")
+    method: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    job_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("jobs.id", ondelete="SET NULL"), nullable=True
+    )
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    confirmed_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )

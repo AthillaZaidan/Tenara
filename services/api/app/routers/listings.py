@@ -10,12 +10,14 @@ from app.core.responses import ok
 from app.db.base import get_session
 from app.models import FabricListing, FabricStockUnit, User
 from app.schemas.listing import (
+    FabricMapConfirmIn,
     ListingCreate,
     ListingImageIn,
     ListingUpdate,
     StockUnitIn,
     StockUnitUpdate,
 )
+from app.services import fabric_maps
 from app.services import gallery as gallery_svc
 from app.services import listings as svc
 from app.services.partners import active_merchant
@@ -149,3 +151,30 @@ def my_stock(user: User = Depends(current_user), session: Session = Depends(get_
         out.append({"listing_id": listing.id, "title": listing.title, "summary":
                     svc.stock_summary(session, listing), "units": [_unit_out(u) for u in units]})
     return ok(out)
+
+
+# ----- fabric map: where the zones and motifs sit on the fabric photo -----
+
+@router.get("/listings/{listing_id}/fabric-map")
+def get_fabric_map(listing_id: uuid.UUID, session: Session = Depends(get_session)):
+    listing = svc.public_listing(session, listing_id)
+    return ok(fabric_maps.map_out(session, fabric_maps.current_map(session, listing)))
+
+
+@router.post("/listings/{listing_id}/fabric-map", status_code=202)
+def request_fabric_map(listing_id: uuid.UUID, user: User = Depends(current_user),
+                       session: Session = Depends(get_session)):
+    listing = svc.public_listing(session, listing_id)
+    fmap = fabric_maps.request_map(session, user, listing)
+    session.commit()
+    return ok(fabric_maps.map_out(session, fmap))
+
+
+@router.put("/merchant/listings/{listing_id}/fabric-map")
+def confirm_fabric_map(listing_id: uuid.UUID, body: FabricMapConfirmIn, user: User = Depends(current_user),
+                       session: Session = Depends(get_session)):
+    merchant = active_merchant(session, user)
+    listing = svc.owned_listing(session, merchant, listing_id)
+    fmap = fabric_maps.confirm(session, user, listing, body.expected_revision, body.regions)
+    session.commit()
+    return ok(fabric_maps.map_out(session, fmap))

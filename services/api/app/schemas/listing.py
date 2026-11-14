@@ -61,3 +61,8 @@ class StockUnitIn(BaseModel):
 
 class StockUnitUpdate(BaseModel):
     quantity: int = Field(ge=0, le=100000)
+
+
+class FabricMapConfirmIn(BaseModel):
+    expected_revision: int
+    regions: list[dict] | None = None  # None: accept the estimate as it is

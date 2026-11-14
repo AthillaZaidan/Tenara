@@ -2,8 +2,10 @@
 
 Failures that retrying cannot fix raise PermanentJobError so they are reported honestly, never faked.
 """
+import io
 import uuid
 
+from PIL import Image, ImageOps
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -11,7 +13,7 @@ from app.core.errors import AppValidationError, ServiceUnavailable
 from app.ml.text import product_story
 from app.ml.text.embedding import get_embedder
 from app.ml.text.story_gen import get_story_llm
-from app.ml.vision import avatar, body3d, body_measure, render
+from app.ml.vision import avatar, body3d, body_measure, fabric_map, render
 from app.ml.vision.body_measure import MeasurementFailure
 from app.ml.vision.pose import get_pose_detector
 from app.models import (
@@ -28,7 +30,7 @@ from app.models import (
     TemplateVersion,
     User,
 )
-from app.services import jobs, photos
+from app.services import fabric_maps, jobs, motif_layout, photos
 from app.services.files import create_file
 from app.services.jobs import PermanentJobError
 from app.services.measurements import DIMENSION_RANGES
@@ -191,6 +193,45 @@ AVATAR_LABEL = ("Avatar dibentuk dari angka ukuran saja (tanpa foto). Baju digam
                 "kelonggaran template; bukan simulasi jatuhnya kain atau pola potong.")
 
 
+def _layout_textures(session: Session, listing: FabricListing, state: dict, photo_bytes: bytes):
+    """Fabric for the garment parts named in the design's motif layout, cut from the listing photo."""
+    layout = state.get("motif_layout") or {}
+    if not (layout.get("panels") or layout.get("avoid")):
+        return {}, None, []
+    photo = ImageOps.exif_transpose(Image.open(io.BytesIO(photo_bytes)))
+    fmap = fabric_maps.current_map(session, listing)
+    zones = [r for r in (fmap.regions if fmap else []) if r["kind"] == "zone"]
+    cm_per_px, assumed = avatar.photo_scale(photo.width, [z["box"][2] - z["box"][0] for z in zones],
+                                            listing.piece_width_cm or listing.usable_width_cm)
+    panels = {p: avatar.region_texture(photo, snap["box"], cm_per_px, snap["label"])
+              for p, snap in layout.get("panels", {}).items()}
+    avoided = {snap["region"] for snap in layout.get("avoid", [])}
+    default = None
+    if avoided:  # the other parts take the body of the cloth (or the largest zone left), not the middle
+        left = [z for z in zones if z["id"] not in avoided and z["label"] not in motif_layout.UNUSABLE]
+        pick = next((z for z in left if z["label"] == "badan kain"), None) or max(
+            left, key=lambda z: (z["box"][2] - z["box"][0]) * (z["box"][3] - z["box"][1]), default=None)
+        if pick is not None:
+            default = avatar.region_texture(photo, pick["box"], cm_per_px, pick["label"])
+    notes = [f"motif_layout: tata letak kain: {motif_layout.describe(layout)}"]
+    if fmap is None or fmap.status != "confirmed":
+        notes.append("map_estimate: letak motif memakai peta kain perkiraan AI yang belum dikonfirmasi penjual; "
+                     "penjahit memastikannya pada kain asli")
+    if assumed:
+        notes.append("scale_assumed: lebar kain belum diisi penjual, ukuran motif dianggap dari kain selebar 100 cm")
+    repeats = {r["id"]: r.get("repeats") for r in (fmap.regions if fmap else [])}
+    used: dict[str, list[str]] = {}
+    for panel, snap in layout.get("panels", {}).items():
+        used.setdefault(snap["region"], []).append(panel)
+    for region_id, where in used.items():
+        n = repeats.get(region_id)
+        if n is not None and len(where) > n:
+            label = layout["panels"][where[0]]["label"]
+            notes.append(f"motif_short:{region_id}: '{label}' terlihat {n} kali di foto kain tetapi dipakai di "
+                         f"{len(where)} bagian baju; penjahit memeriksa apakah kainnya cukup")
+    return panels, default, notes
+
+
 def handle_avatar_preview(session: Session, job: Job) -> dict:
     """The buyer's body rebuilt from their measurements (SMPL-X) wearing the design, as a GLB."""
     preview = session.get(Preview, uuid.UUID(job.input["preview_id"]))
@@ -204,11 +245,30 @@ def handle_avatar_preview(session: Session, job: Job) -> dict:
     values = {v.key: float(v.value_cm) for v in session.scalars(
         select(MeasurementValue).where(MeasurementValue.set_id == mset.id)) if v.value_cm is not None}
     rules = session.get(TemplateVersion, cust.template_version_id).definition["material_rules"]
+    photo = _fabric_photo(session, listing)
+    panels, default, notes = _layout_textures(session, listing, revision.state, photo)
     result = avatar.build(body, cust.template_code, revision.state, float(rules["ease_cm"]),
-                          float(mset.height_cm), values, avatar.fabric_texture(_fabric_photo(session, listing)))
-    out = _save(session, preview, cust, None, avatar.METHOD, result.warnings, job, data=result.glb,
+                          float(mset.height_cm), values, avatar.fabric_texture(photo), panels=panels,
+                          default=default)
+    out = _save(session, preview, cust, None, avatar.METHOD, notes + result.warnings, job, data=result.glb,
                 content_type="model/gltf-binary", label=AVATAR_LABEL)
     return {**out, "fitted": result.fitted}
+
+
+def handle_fabric_map(session: Session, job: Job) -> dict:
+    """Zones and main motifs on the listing's first photo (an estimate until the merchant confirms)."""
+    fmap = fabric_maps.by_id(session, job.input["map_id"])
+    file = session.get(File, fmap.file_id) if fmap else None
+    if fmap is None or file is None or file.deleted_at is not None:
+        raise PermanentJobError("Foto kain tidak tersedia lagi")
+    raw = fabric_map.locate(_storage().open(file.storage_key), file.content_type or "image/jpeg")
+    regions = fabric_map.normalise(raw)
+    if not regions:
+        raise PermanentJobError("Model tidak menemukan zona atau motif pada foto kain ini")
+    fmap.regions, fmap.status, fmap.method = regions, "estimated", fabric_map.METHOD
+    job.model_version = fabric_map.METHOD
+    session.flush()
+    return {"map_id": str(fmap.id), "regions": len(regions)}
 
 
 def _story_llm():
@@ -241,4 +301,5 @@ jobs.register_handler("measurement.estimate", handle_measurement_estimate)
 jobs.register_handler("preview.product", handle_product_preview)
 jobs.register_handler("preview.on_body", handle_on_body_preview)
 jobs.register_handler("preview.avatar_3d", handle_avatar_preview)
+jobs.register_handler(fabric_maps.JOB, handle_fabric_map)
 jobs.register_handler("story.generate", handle_story_generate)

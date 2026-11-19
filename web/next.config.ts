@@ -6,6 +6,7 @@ import type { NextConfig } from "next";
 loadEnvConfig(path.resolve(process.cwd(), ".."));
 
 const nextConfig: NextConfig = {
+  output: "standalone", // minimal server for the Docker image (web/Dockerfile)
   turbopack: {
     rules: {
       "*.css": {

@@ -1,0 +1,81 @@
+# Production override. Always combined with docker-compose.yml, which owns the `db` service:
+#
+#   export COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml   # once per shell (or put it in ~/.bashrc)
+#   docker compose up -d db                       # 1. database only
+#   python3 scripts/portable.py restore           # 2. optional: load a snapshot into the empty db
+#   docker compose up -d --build                  # 3. api (runs alembic), worker, web, caddy
+#
+# portable.py runs `docker compose exec db ...`, so COMPOSE_FILE makes it see this setup too.
+# Settings come from the repo-root .env (never committed). Required there:
+#   DB_PASSWORD, JWT_SECRET, FILE_URL_SECRET, SITE_ADDRESS, NEXT_PUBLIC_API_URL (= https://<SITE_ADDRESS>),
+#   OPENROUTER_API_KEY / OPENAI_API_KEY (+ LLM_* model names).
+
+x-api: &api
+  build: ./services/api
+  restart: unless-stopped
+  env_file: .env
+  environment: &api-env
+    APP_ENV: production
+    DATABASE_URL: postgresql+psycopg://tenara:${DB_PASSWORD:?set DB_PASSWORD in .env}@db:5432/tenara
+    JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+    FILE_URL_SECRET: ${FILE_URL_SECRET:?set FILE_URL_SECRET in .env}
+    CORS_ORIGINS: ${NEXT_PUBLIC_API_URL:?set NEXT_PUBLIC_API_URL in .env}
+    STORAGE_DIR: /data/storage
+  volumes:
+    - ${STORAGE_HOST_DIR:-./services/api/storage}:/data/storage
+    - ${MODELS_HOST_DIR:-./services/api/models}:/srv/tenara/services/api/models:ro
+    - fastembed_cache:/data/fastembed
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    ports: !reset []  # reachable only from the other containers
+    restart: unless-stopped
+
+  api:
+    <<: *api
+    command: >
+      sh -c "alembic upgrade head &&
+             exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/api/v1/health', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  worker:
+    <<: *api
+    command: ["python", "worker.py"]
+
+  web:
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?set NEXT_PUBLIC_API_URL in .env}
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - web
+
+volumes:
+  fastembed_cache:
+  caddy_data:
+  caddy_config:

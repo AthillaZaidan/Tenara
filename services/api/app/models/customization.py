@@ -197,7 +197,7 @@ class MaterialEstimate(Base):
 class Preview(Base):
     __tablename__ = "previews"
     __table_args__ = (
-        CheckConstraint("kind in ('product','on_body','avatar_3d')", name="ck_previews_kind_valid"),
+        CheckConstraint("kind in ('product','on_body','avatar_3d','avatar_ai')", name="ck_previews_kind_valid"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)

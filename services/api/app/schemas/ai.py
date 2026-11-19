@@ -28,6 +28,8 @@ class TryOnIn(BaseModel):
 class AvatarIn(BaseModel):
     measurement_set_id: uuid.UUID
     gender: str = "neutral"  # body model: neutral, female or male
+    # an image model draws the design (with its free style) over a front picture of the avatar body
+    use_ai: bool = False
 
 
 class AnalyzeIn(BaseModel):

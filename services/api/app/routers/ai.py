@@ -52,7 +52,8 @@ def consent_notice():
     return ok({"version": photos.NOTICE_VERSION, "text": photos.CONSENT_TEXT,
                "default_retention_minutes": settings.photo_default_retention_minutes,
                "max_retention_days": settings.photo_max_retention_days,
-               "ai_tryon": {"available": tryon_ai.available(), "notice": tryon_ai.NOTICE},
+               "ai_tryon": {"available": tryon_ai.available(), "notice": tryon_ai.NOTICE,
+                            "avatar_notice": tryon_ai.AVATAR_NOTICE},
                "guidance": ["Seluruh badan, satu orang, menghadap depan",
                             "Pakaian pas badan, bahu dan pinggul terlihat jelas",
                             "Foto dari depan setinggi pinggang, cahaya cukup",
@@ -174,7 +175,9 @@ def avatar_preview(cust_id: uuid.UUID, body: AvatarIn, user: User = Depends(curr
                    session: Session = Depends(get_session)):
     cust = cust_svc.owned_customization(session, user, cust_id)
     mset = meas_svc.owned_set(session, user, body.measurement_set_id)
-    preview = cust_svc.request_avatar_preview(session, user, cust, mset, body.gender)
+    if body.use_ai and not tryon_ai.available():
+        raise ServiceUnavailable("Avatar dengan AI belum dikonfigurasi di server ini; pakai avatar 3D")
+    preview = cust_svc.request_avatar_preview(session, user, cust, mset, body.gender, body.use_ai)
     session.commit()
     return ok(cust_svc.preview_out(session, preview))
 

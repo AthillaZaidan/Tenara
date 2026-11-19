@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { ArrowUpRight, Check, ImagePlus, Layers, Package, Plus, Send, Tag } from "lucide-react";
 import type { Listing } from "@/components/ListingCard";
+import { FabricMapEditor } from "@/components/FabricMapEditor";
 import { ScanPanel } from "@/components/ScanPanel";
 import { ListingStory } from "@/components/ListingStory";
 import { Upload } from "@/components/Upload";
@@ -46,6 +47,7 @@ function Manage() {
         <Field label="Varian motif" hint="Perubahan motif langsung disimpan pada penawaran kain ini."><select className="field" value={x.variant_id ?? ""} disabled={act.busy || variants.loading} onChange={(e) => { const variantId = e.target.value || null; void go(() => api(`/listings/${id}`, { method: "PATCH", body: { expected_revision: x.revision, variant_id: variantId } })); }}><option value="">Belum dipetakan</option>{variants.data?.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select></Field>
         <dl className="workspace-key-values"><div><dt>Bahan</dt><dd>{x.material || "Belum diisi"}</dd></div><div><dt>Ukuran</dt><dd>{meter ? `Lebar ${x.usable_width_cm ?? "—"} cm` : `${x.piece_length_cm ?? "—"} × ${x.piece_width_cm ?? "—"} cm`}</dd></div><div><dt>Asal pengiriman</dt><dd>{[x.city, x.province].filter(Boolean).join(", ") || "Belum diisi"}</dd></div></dl>
       </WorkspacePanel>
+      <FabricMapEditor listingId={id} hasPhoto={x.images.length > 0} />
       <ScanPanel listingId={id} current={(x.origin.visual_match as VisualMatchData | null) ?? null} hasPhoto={x.images.length > 0} onChanged={refresh} />
       <ListingStory listingId={id} hasScan={!!x.origin.visual_match} />
       </div><aside className="workspace-stack">

@@ -196,6 +196,12 @@ def handle_on_body_preview(session: Session, job: Job) -> dict:
     return _save(session, preview, cust, composite, ONBODY_METHOD, rendered.warnings, job)
 
 
+def _ai_notes(warnings: list[str]) -> list[str]:
+    """The flat drawing's notes, minus those about what only the flat drawing leaves out: the image model is
+    told the motif layout and the free style in words and draws both."""
+    return [w for w in warnings if not w.startswith(("Tata letak", "Gaya bebas"))]
+
+
 def _on_body_with_ai(session: Session, preview: Preview, cust: Customization, revision, image: Image.Image,
                      rendered: render.Rendered, texture: Image.Image, job: Job) -> dict:
     """The buyer's photo dressed in the design by an image model (opt-in: the photo leaves the server)."""
@@ -215,7 +221,7 @@ def _on_body_with_ai(session: Session, preview: Preview, cust: Customization, re
         raise RuntimeError("gambar dari penyedia tidak dapat dibaca") from exc
     method = f"{tryon_ai.METHOD_PREFIX}:{settings.llm_image_model}"
     job.model_version = method
-    notes = [w for w in rendered.warnings if not w.startswith("Tata letak")]
+    notes = _ai_notes(rendered.warnings)
     cost = result.usage.get("cost")
     if cost is not None:
         notes.append(f"ai_cost_usd: {cost}")
@@ -297,6 +303,44 @@ def handle_avatar_preview(session: Session, job: Job) -> dict:
     return {**out, "fitted": result.fitted}
 
 
+def handle_avatar_ai_preview(session: Session, job: Job) -> dict:
+    """The design, with its free style, drawn by an image model over a front picture of the buyer's
+    measurement-built body. Only that grey picture leaves the server (no photo, no face); a provider failure
+    fails the job instead of passing anything else off as this preview."""
+    preview = session.get(Preview, uuid.UUID(job.input["preview_id"]))
+    mset = session.get(MeasurementSet, preview.measurement_set_id) if preview.measurement_set_id else None
+    if mset is None or mset.owner_id != job.owner_id or mset.revision != preview.measurement_revision:
+        raise PermanentJobError("Ukuran badan sudah berubah atau dihapus; buat avatar lagi")
+    if not tryon_ai.available():
+        raise PermanentJobError("Model gambar AI belum dikonfigurasi di server ini")
+    body = _body_model(job.input.get("gender") or "neutral")
+    if body is None:
+        raise PermanentJobError("Model tubuh 3D (SMPL-X) belum terpasang di server; avatar tidak tersedia")
+    cust, revision, listing = _design(session, preview)
+    values = {v.key: float(v.value_cm) for v in session.scalars(
+        select(MeasurementValue).where(MeasurementValue.set_id == mset.id)) if v.value_cm is not None}
+    mannequin, _ = avatar.front_picture(body, float(mset.height_cm), values)
+    texture = _texture(session, listing)
+    rendered = render.render_garment(cust.template_code, revision.state, texture)
+    from app.services import audit, template_defs
+
+    audit.record(session, actor=job.owner_id, action="avatar.sent_to_ai_image_service", target_type="preview",
+                 target_id=str(preview.id), metadata={"model": settings.llm_image_model})
+    name = template_defs.DEFINITIONS[cust.template_code]["name"]
+    try:
+        result = tryon_ai.generate_on_avatar(mannequin, rendered.image, texture, name, revision.state,
+                                             model=settings.llm_image_model)
+        output = Image.open(io.BytesIO(result.png)).convert("RGB")
+    except (RuntimeError, OSError, ValueError) as exc:
+        raise PermanentJobError(f"Avatar AI gagal dibuat: {exc}") from exc
+    method = f"{tryon_ai.AVATAR_METHOD_PREFIX}:{settings.llm_image_model}"
+    notes = _ai_notes(rendered.warnings)
+    cost = result.usage.get("cost")
+    if cost is not None:
+        notes.append(f"ai_cost_usd: {cost}")
+    return _save(session, preview, cust, output, method, notes, job, label=tryon_ai.AVATAR_LABEL)
+
+
 def handle_fabric_map(session: Session, job: Job) -> dict:
     """Zones and main motifs on the listing's first photo (an estimate until the merchant confirms)."""
     fmap = fabric_maps.by_id(session, job.input["map_id"])
@@ -343,5 +387,6 @@ jobs.register_handler("measurement.estimate", handle_measurement_estimate)
 jobs.register_handler("preview.product", handle_product_preview)
 jobs.register_handler("preview.on_body", handle_on_body_preview)
 jobs.register_handler("preview.avatar_3d", handle_avatar_preview)
+jobs.register_handler("preview.avatar_ai", handle_avatar_ai_preview)
 jobs.register_handler(fabric_maps.JOB, handle_fabric_map)
 jobs.register_handler("story.generate", handle_story_generate)

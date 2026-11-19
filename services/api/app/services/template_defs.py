@@ -6,6 +6,9 @@ version they were issued against.
 """
 import copy
 
+from app.services.style import MAX_ITEMS as _STYLE_MAX
+from app.services.style import PARTS as _STYLE_PARTS
+
 DEMO_NOTICE = "Nilai demo; penjahit/produk mengonfirmasi batas dan aturan akhir."
 
 _BUTTONS = {"type": "enum", "values": ["plain_01", "wood_option_01", "shell_option_01"],
@@ -129,6 +132,9 @@ for _code, _def in DEFINITIONS.items():
     # which part of the actual fabric goes where (see services/motif_layout); empty = automatic
     _panels = ["front", "back", "hem"] + (["sleeves"] if _def["material_rules"]["sleeve_width_ratio"] else [])
     _def["options"]["motif_layout"] = {"type": "layout", "panels": _panels, "default": {}}
+    # free style on top of the base block, in words (see services/style); the tailor validates it in the quote
+    _def["options"]["style"] = {"type": "style", "parts": list(_STYLE_PARTS), "max_items": _STYLE_MAX,
+                                "default": []}
     _def["code"] = _code
     _def["demo_values_notice"] = DEMO_NOTICE
     _def["preview"] = {"asset": f"{_code.lower()}_flat", "renders": ["product", "on_body"]}

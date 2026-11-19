@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.errors import AppValidationError, NotFound, StaleRevision
 from app.core.revision import check_revision
 from app.ml.text.prompt_interpreter import InterpretationFailed, get_interpreters
+from app.ml.vision import tryon_ai
 from app.models import (
     Customization,
     DesignRevision,
@@ -20,6 +21,7 @@ from app.models import (
 )
 from app.services import audit, fabric_maps, jobs, motif_layout
 from app.services import listings as listings_svc
+from app.services import style as style_rules
 from app.services import templates as templates_svc
 from app.services.signing import make_token
 from app.services.template_defs import defaults
@@ -85,10 +87,25 @@ def _checked(defn: dict, listing: FabricListing, fmap, state: dict, field: str, 
     return templates_svc.validate_value(defn, field, value, listing)
 
 
+def _keep_allowed_styles(items: list, unsupported: list) -> list:
+    """A refused style request is explained on its own; the other requests in the list still apply."""
+    kept = []
+    for item in items:
+        try:
+            style_rules.check([item])
+            kept.append(item)
+        except ValueError as exc:
+            text = item.get("text", "") if isinstance(item, dict) else str(item)
+            unsupported.append({"text": text, "reason": str(exc).split("': ", 1)[-1], "alternatives": []})
+    return kept
+
+
 def _validate_candidates(defn: dict, listing: FabricListing, fmap, state: dict, raw: dict) -> dict:
     changes, unsupported, clarifications = [], [], []
     for cand in raw.get("changes", []):
         field = cand.get("field")
+        if field == "style" and isinstance(cand.get("value"), list) and "style" in defn["options"]:
+            cand = {**cand, "value": _keep_allowed_styles(cand["value"], unsupported)}
         try:
             value = _checked(defn, listing, fmap, state, field, cand.get("value"))
         except ValueError as exc:
@@ -286,13 +303,16 @@ def request_on_body_preview(session: Session, user: User, cust: Customization,
 
 
 AVATAR_GENDERS = ("neutral", "female", "male")
+AVATAR_KINDS = ("avatar_3d", "avatar_ai")
 AVATAR_LABEL = ("Perkiraan bentuk badan dari ukuran Anda dengan baju rancangan; bukan simulasi jatuhnya kain, "
                 "pola potong, atau jaminan hasil akhir.")
 
 
 def request_avatar_preview(session: Session, user: User, cust: Customization, mset: MeasurementSet,
-                           gender: str) -> Preview:
-    """The buyer's body rebuilt from a measurement set (numbers only, no photo) wearing the current design."""
+                           gender: str, use_ai: bool = False) -> Preview:
+    """The buyer's body rebuilt from a measurement set (numbers only, no photo) wearing the current design:
+    as a 3D model (avatar_3d), or drawn by an image model over a front picture of that body (avatar_ai), which
+    can show the free style the 3D garment cannot."""
     if gender not in AVATAR_GENDERS:
         raise AppValidationError(f"gender harus salah satu dari {', '.join(AVATAR_GENDERS)}", field="gender")
     if mset.height_cm is None:
@@ -302,11 +322,12 @@ def request_avatar_preview(session: Session, user: User, cust: Customization, ms
                                                               MeasurementValue.value_cm.is_not(None)).limit(1))
     if filled is None:
         raise AppValidationError("Isi minimal satu ukuran badan", field="measurement_set_id")
-    preview = Preview(customization_id=cust.id, design_revision=cust.current_revision, kind="avatar_3d",
+    kind = "avatar_ai" if use_ai else "avatar_3d"
+    preview = Preview(customization_id=cust.id, design_revision=cust.current_revision, kind=kind,
                       measurement_set_id=mset.id, measurement_revision=mset.revision)
     session.add(preview)
     session.flush()
-    job = jobs.enqueue(session, "preview.avatar_3d", user.id,
+    job = jobs.enqueue(session, f"preview.{kind}", user.id,
                        {"preview_id": str(preview.id), "gender": gender},
                        subject_type="customization", subject_id=cust.id,
                        subject_revision=cust.current_revision)
@@ -328,7 +349,7 @@ def preview_out(session: Session, preview: Preview) -> dict:
     job = session.get(Job, preview.job_id) if preview.job_id else None
     status, warnings = preview.status, list(preview.warnings)
     outdated = preview.design_revision != cust.current_revision
-    if preview.kind == "avatar_3d":  # also stale once the measurements it was built from change
+    if preview.kind in AVATAR_KINDS:  # also stale once the measurements it was built from change
         mset = session.get(MeasurementSet, preview.measurement_set_id) if preview.measurement_set_id else None
         outdated = outdated or mset is None or mset.revision != preview.measurement_revision
     if job is not None and job.status == "failed":
@@ -345,5 +366,5 @@ def preview_out(session: Session, preview: Preview) -> dict:
             "design_revision": preview.design_revision, "method": preview.method,
             "warnings": warnings, "job_id": preview.job_id, "url": url,
             "measurement_set_id": preview.measurement_set_id,
-            "label": AVATAR_LABEL if preview.kind == "avatar_3d"
-            else "Ilustrasi konseptual; bukan pola potong atau jaminan hasil akhir."}
+            "label": {"avatar_3d": AVATAR_LABEL, "avatar_ai": tryon_ai.AVATAR_LABEL}.get(
+                preview.kind, "Ilustrasi konseptual; bukan pola potong atau jaminan hasil akhir.")}

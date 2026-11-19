@@ -104,6 +104,24 @@ def test_merchant_confirms_or_corrects_the_map(client, session, ai, h, make_list
     assert client.put(url, headers=mh, json={"expected_revision": 1}).status_code == 409
 
 
+def test_merchant_maps_and_reads_their_own_draft_listing(client, session, ai, h, make_listing, fake_map,
+                                                         auth_header):
+    listing = make_listing()
+    cust = _create(client, h, listing)
+    _add_texture(session, make_listing, cust)
+    listing.status = "draft"  # not public yet: the public map endpoints do not see it
+    session.flush()
+    url = f"{API}/merchant/listings/{listing.id}/fabric-map"
+    mh = _merchant_header(session, listing, auth_header)
+    assert client.get(f"{API}/listings/{listing.id}/fabric-map").status_code == 404
+    assert client.get(url, headers=mh).json()["data"] is None
+    assert client.post(url, headers=mh).status_code == 202
+    run_jobs(session)
+    assert client.get(url, headers=mh).json()["data"]["status"] == "estimated"
+    assert client.get(url, headers=h).status_code in (403, 404)  # another user's listing
+    assert client.post(url, headers=h).status_code in (403, 404)
+
+
 # ---------- prompt -> layout ----------
 
 def _interpret(prompt, code="T05", state=None):

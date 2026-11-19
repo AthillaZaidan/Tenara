@@ -167,6 +167,10 @@ def render_garment(code: str, state: dict, texture: Image.Image) -> Rendered:
     for name, value in state.items():
         if name == "motif_layout" and value:
             out.warnings.append("Tata letak motif kain hanya ditampilkan pada avatar 3D")
+        elif name == "style":
+            if value:
+                out.warnings.append("Gaya bebas tidak digambar pada ilustrasi datar ini; lihat avatar AI atau "
+                                    "Fit On dengan AI")
         elif name not in HANDLED and value not in ({}, None):
             out.warnings.append(f"Detail '{name}' belum digambar pada pratinjau ini")
     return out

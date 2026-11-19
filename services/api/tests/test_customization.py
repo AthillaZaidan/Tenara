@@ -167,8 +167,8 @@ def test_relative_lengths_accumulate(client, h, make_listing):
     assert p2["changes"][0]["value"] == -5 and p2["changes"][0]["from"] == -3
 
 
-@pytest.mark.parametrize("text", ["ubah jadi gaun", "kancing emas", "kerah bulu", "lengan panjang",
-                                  "tambahkan bordir naga"])
+@pytest.mark.parametrize("text", ["ubah jadi gaun", "kancing emas", "kerah bulu", "tambahkan bordir naga",
+                                  "warnanya jadi biru", "pakai logo gucci"])
 def test_unsupported_requests_are_explained_not_accepted(client, h, make_listing, text):
     cust = _create(client, h, make_listing())
     p = _prompt(client, h, cust["id"], text)

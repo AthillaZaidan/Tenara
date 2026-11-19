@@ -432,7 +432,7 @@ def test_every_template_renders_every_option_without_errors(code):
     base = template_defs.defaults(defn)
     baseline = render.to_png(render.render_garment(code, base, texture).image)
     for field, spec in defn["options"].items():
-        if spec["type"] == "layout":  # the motif layout is drawn on the 3D avatar only (tests/test_motif_layout.py)
+        if spec["type"] in ("layout", "style"):  # drawn on the avatars only (test_motif_layout.py, test_style.py)
             continue
         values = spec["values"] if spec["type"] == "enum" else [spec["min"], spec["max"]]
         for value in values:

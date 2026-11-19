@@ -88,7 +88,7 @@
   border-radius: 28px;
   outline: 3px solid #738d57;
   /* Pre-rasterized grain keeps the paper finish without a live turbulence filter. */
-  background: url("/assets/exploration/passport-paper-grain.png"),
+  background: url("/assets/exploration/passport-paper-grain.webp"),
     radial-gradient(ellipse at 90% 10%, #e7d7a42b, transparent 55%),
     #fcf5e5;
   box-shadow: inset 0 0 0 4px #b8aa5e, inset 0 0 0 7px #fff9e9,
@@ -236,7 +236,7 @@
 }
 .map-destination-card .map-control-surface {
   border: 1.5px solid #286b2c;
-  background: url("/assets/exploration/passport-paper-grain.png"),
+  background: url("/assets/exploration/passport-paper-grain.webp"),
     linear-gradient(135deg, #fffdf5, #faf5e6);
   box-shadow: 0 3px 0 #6d7d3f2b, 0 5px 7px #77632c2b;
 }

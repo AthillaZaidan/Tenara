@@ -53,6 +53,9 @@ def compute(defn: dict, dims: dict[str, float], state: dict, *, width_cm: float,
     for option, table in rules["option_extra_cm"].items():
         extras += table.get(str(state.get(option)), 0)
     total = body_cut + sleeves_cut + extras
+    if state.get("style"):
+        notes.append("Permintaan gaya bebas (mis. oversize, lengan balon, belahan) belum masuk hitungan ini; "
+                     "penjahit menetapkan kebutuhan kain akhirnya")
     if pattern_repeat_cm:
         total = math.ceil(total / pattern_repeat_cm) * pattern_repeat_cm
         notes.append(f"Dibulatkan ke kelipatan pengulangan motif {pattern_repeat_cm:.0f} cm")

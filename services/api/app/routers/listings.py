@@ -193,6 +193,23 @@ def request_fabric_map(listing_id: uuid.UUID, user: User = Depends(current_user)
     return ok(fabric_maps.map_out(session, fmap))
 
 
+@router.get("/merchant/listings/{listing_id}/fabric-map")
+def merchant_fabric_map(listing_id: uuid.UUID, user: User = Depends(current_user),
+                        session: Session = Depends(get_session)):
+    """The merchant's own view, also of a draft listing (the public one needs a published listing)."""
+    listing = svc.owned_listing(session, active_merchant(session, user), listing_id)
+    return ok(fabric_maps.map_out(session, fabric_maps.current_map(session, listing)))
+
+
+@router.post("/merchant/listings/{listing_id}/fabric-map", status_code=202)
+def merchant_request_fabric_map(listing_id: uuid.UUID, user: User = Depends(current_user),
+                                session: Session = Depends(get_session)):
+    listing = svc.owned_listing(session, active_merchant(session, user), listing_id)
+    fmap = fabric_maps.request_map(session, user, listing)
+    session.commit()
+    return ok(fabric_maps.map_out(session, fmap))
+
+
 @router.put("/merchant/listings/{listing_id}/fabric-map")
 def confirm_fabric_map(listing_id: uuid.UUID, body: FabricMapConfirmIn, user: User = Depends(current_user),
                        session: Session = Depends(get_session)):

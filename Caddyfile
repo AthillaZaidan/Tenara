@@ -1,0 +1,13 @@
+# SITE_ADDRESS = the public host name (Caddy gets a Let's Encrypt certificate for it),
+# e.g. tenara-demo.southeastasia.cloudapp.azure.com. Use ":80" for plain HTTP on a bare IP.
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

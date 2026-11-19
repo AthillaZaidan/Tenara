@@ -39,7 +39,7 @@ export function PhotoTryOn({ custId, revision, frontPhotoId }: { custId: string;
       <option value="">Pilih foto depan…</option>{photos.data?.map((p) => <option key={p.id} value={p.id}>Diunggah {when(p.created_at)} · tersimpan sampai {when(p.delete_after)}</option>)}
     </select></label>
     {photos.data?.length === 0 && <p>Belum ada foto tersimpan. Unggah foto melalui bagian ukuran badan.</p>}
-    {ai?.available && <label className="flex items-start gap-3 text-base"><input type="checkbox" className="mt-1 size-5" checked={useAi} onChange={(e) => setUseAi(e.target.checked)} /><span><strong>Buat dengan AI (lebih realistis).</strong> {ai.notice}</span></label>}
+    {ai?.available && <label className="flex items-start gap-3 text-base"><input type="checkbox" className="mt-1 size-5" checked={useAi} onChange={(e) => setUseAi(e.target.checked)} /><span><strong>Lihat di fotoku dengan AI (lebih realistis, gaya bebas ikut digambar).</strong> {ai.notice}</span></label>}
     {act.error && <Notice tone="error">{act.error}</Notice>}{pollError && <div className="grid gap-2"><Notice tone="error">{pollError}</Notice><button className="btn btn-quiet w-fit" onClick={async () => {
       if (!preview) return;
       const updated = await act.run(() => api<Preview>(`/previews/${preview.id}`));
@@ -48,7 +48,7 @@ export function PhotoTryOn({ custId, revision, frontPhotoId }: { custId: string;
     <div className="flex flex-wrap gap-3"><button className="btn" disabled={!selected || act.busy || !!pending} onClick={async () => {
       const p = await act.run(() => api<Preview>(`/customizations/${custId}/photo-try-ons`, { body: { body_photo_id: selected!.id, use_ai: !!ai?.available && useAi } }));
       if (p) { setPollError(""); setPreview(p); }
-    }}>{ai?.available && useAi ? "Buat Fit On dengan AI" : "Buat Fit On"}</button>
+    }}>{ai?.available && useAi ? "Lihat di fotoku (AI)" : "Buat Fit On"}</button>
     {selected && <button className="btn btn-quiet" disabled={act.busy} onClick={async () => {
       if (!window.confirm("Hapus foto ini dan ilustrasi Fit On yang menggunakannya? Ukuran yang sudah dibuat tetap tersimpan.")) return;
       const result = await act.run(() => api(`/body-photos/${selected.id}`, { method: "DELETE" }));

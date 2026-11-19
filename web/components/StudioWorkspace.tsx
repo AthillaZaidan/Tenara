@@ -12,11 +12,11 @@ import { AddressForm } from "@/components/AddressForm";
 import type { Listing } from "@/components/ListingCard";
 import { Field, Notice, useAction, useLoad } from "@/components/ui";
 import { api, fileUrl, idr } from "@/lib/api";
-import { DIM_LABEL, OPTION_LABEL, VALUE_LABEL, label, layoutText, optionText, type MotifLayout, type OptionDef } from "@/lib/design";
+import { DIM_LABEL, OPTION_LABEL, STYLE_PART_LABEL, VALUE_LABEL, label, layoutText, optionText, type MotifLayout, type OptionDef, type StyleItem } from "@/lib/design";
 
 type Customization = {
   id: string; listing_id: string; template: { code: string; name: string; required_dimensions: string[] };
-  current_revision: number; state: Record<string, string | number | MotifLayout>;
+  current_revision: number; state: Record<string, string | number | MotifLayout | StyleItem[]>;
   open_clarifications: { id: string; field: string; question: string; choices: string[] }[];
   measurement_set: { id: string; status: string; revision: number } | null;
   material_estimate: { id: string; stale: boolean } | null; ready_for_tailor_validation: boolean;
@@ -50,7 +50,7 @@ function DesignOptions({ cust, initialTemplate, onChanged, onDirtyChange }: { cu
   const [draft, setDraft] = useState<Record<string, string | number>>({});
   const template = tpl.data ?? initialTemplate;
   // the motif layout has its own controls (FabricMapBox); here only the plain options
-  const options = Object.fromEntries(Object.entries(template?.options ?? {}).filter(([, d]) => d.type !== "layout"));
+  const options = Object.fromEntries(Object.entries(template?.options ?? {}).filter(([, d]) => d.type !== "layout" && d.type !== "style"));
   const changed = Object.fromEntries(Object.entries(draft).filter(([k, v]) => String(v) !== String(cust.state[k])));
   const dirty = Object.keys(changed).length > 0;
   useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
@@ -66,7 +66,7 @@ function DesignOptions({ cust, initialTemplate, onChanged, onDirtyChange }: { cu
       <div className="studio-group-heading"><h3>{group.title}</h3><span>{group.number}</span></div>
       <div className="studio-fields">
         {group.entries.map(([key, def]) => {
-          if (def.type === "layout") return null;
+          if (def.type === "layout" || def.type === "style") return null;
           const value = draft[key] ?? (cust.state[key] as string | number | undefined) ?? def.default;
           return (
             <Field key={key} label={label(OPTION_LABEL, key)} hint={def.type === "number" ? `${def.min} sampai ${def.max} ${def.unit ?? ""}` : undefined}>
@@ -159,8 +159,8 @@ function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => 
   return (
     <div className="studio-prompt grid gap-4">
       <div className="studio-group-heading"><h3><Sparkles size={16} /> Ceritakan idemu</h3><span>03</span></div>
-      <Field label="Ceritakan perubahan dengan kalimat biasa" hint="Contoh: tambah saku dada kiri, kancing kayu, pendekkan hem 3 cm. Setelah kain dipetakan: motif manusianya taruh di dada, burung di bawahan, kepala kainnya jangan dipakai. Sistem hanya menerapkan opsi yang didukung pola ini.">
-        <textarea className="field" placeholder="Misalnya, tambahkan saku dada kiri dan kancing kayu…" value={prompt} onChange={(e) => setPrompt(e.target.value)} />
+      <Field label="Ceritakan baju impianmu dengan kalimat biasa" hint="Bebas dan sedetail mungkin: siluet (oversize, crop), lengan (balon, lonceng, kimono), kerah, belahan, bentuk bawahan, lipit, ikat pinggang, saku, kancing, panjang dalam cm. Setelah kain dipetakan: motif manusianya taruh di dada, burung di bawahan. Warna dan motif kain tidak bisa diubah karena kain tenunnya asli.">
+        <textarea className="field" rows={4} placeholder="Misalnya: oversize, lengan balon yang mengerut di pergelangan, kerah sanghai, belahan samping setinggi lutut, bawahnya agak melengkung…" value={prompt} onChange={(e) => setPrompt(e.target.value)} />
       </Field>
       {act.error && <Notice tone="error">{act.error}</Notice>}
       <button className="btn btn-quiet w-fit" disabled={act.busy || !prompt.trim()}
@@ -172,7 +172,9 @@ function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => 
           <h3 className="text-xl font-medium" style={H}>Usulan perubahan</h3>
           {proposal.fallback && <p className="text-base">{proposal.fallback}</p>}
           {proposal.changes.length > 0 ? (
-            <ul className="grid list-disc gap-1 pl-5">{proposal.changes.map((c) => <li key={c.field}>{label(OPTION_LABEL, c.field)}: {optionText(c.from)} → {optionText(c.value)}</li>)}</ul>
+            <ul className="grid list-disc gap-1 pl-5">{proposal.changes.map((c) => c.field === "style"
+              ? <li key={c.field}>Gaya bebas:<ul className="list-[circle] pl-5">{(c.value as StyleItem[]).map((i) => <li key={i.text}>{label(STYLE_PART_LABEL, i.part)}: {i.text}</li>)}</ul></li>
+              : <li key={c.field}>{label(OPTION_LABEL, c.field)}: {optionText(c.from)} → {optionText(c.value)}</li>)}</ul>
           ) : <p className="text-base">Belum ada perubahan yang bisa diterapkan.</p>}
           {proposal.clarifications.map((c) => (
             <Field key={c.id} label={`${c.question} (“${c.text}”)`}>
@@ -185,7 +187,7 @@ function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => 
           {proposal.unsupported_requests.length > 0 && (
             <div className="text-base"><p className="font-medium">Belum didukung pola ini:</p><ul className="list-disc pl-5">{proposal.unsupported_requests.map((u) => <li key={u.text}>“{u.text}”: {u.reason}</li>)}</ul></div>
           )}
-          <p className="text-base text-muted">Penjahit tetap memvalidasi desain sebelum membuat penawaran.</p>
+          <p className="text-base text-muted">Penjahit tetap memvalidasi desain, termasuk gaya bebas, sebelum membuat penawaran.</p>
           <button className="btn w-fit" disabled={act.busy || (proposal.changes.length === 0 && Object.keys(picks).length === 0)}
             onClick={async () => { const r = await act.run(() => api(`/customizations/${cust.id}/revisions`, { body: { expected_design_revision: cust.current_revision, proposal_id: proposal.proposal_id, resolutions: picks } })); if (r) { setProposal(null); setPrompt(""); onChanged(); } }}>
             Terapkan ke desain
@@ -196,7 +198,31 @@ function PromptBox({ cust, onChanged }: { cust: Customization; onChanged: () => 
   );
 }
 
-type DesignRevision = { revision: number; source: string; state: Record<string, string | number | MotifLayout>; prompt_text: string | null; created_at: string };
+/** The buyer's free style requests in this revision; each can be removed. */
+function StyleBox({ cust, onChanged }: { cust: Customization; onChanged: () => void }) {
+  const act = useAction();
+  const items = (Array.isArray(cust.state.style) ? cust.state.style : []) as StyleItem[];
+  if (!items.length) return null;
+  const save = async (next: StyleItem[]) => {
+    const r = await act.run(() => api(`/customizations/${cust.id}/revisions`, { body: { expected_design_revision: cust.current_revision, changes: { style: next } } }));
+    if (r) onChanged();
+  };
+  return (
+    <div className="studio-option-group grid gap-3">
+      <div className="studio-group-heading"><h3>Gaya bebasmu</h3><span>04</span></div>
+      <ul className="grid list-none gap-2 p-0">{items.map((item) => (
+        <li key={item.text} className="flex flex-wrap items-center justify-between gap-3 bg-surface px-4 py-3 text-base">
+          <span><strong>{label(STYLE_PART_LABEL, item.part)}</strong> · {item.text}</span>
+          <button type="button" className="link" disabled={act.busy} onClick={() => save(items.filter((i) => i !== item))}>Hapus</button>
+        </li>
+      ))}</ul>
+      {act.error && <Notice tone="error">{act.error}</Notice>}
+      <p className="text-base text-muted">Gaya bebas tampil di &ldquo;Lihat di avatarku&rdquo; dan Fit On dengan AI pada langkah Ukuran. Penjahit memastikan gaya ini bisa dibuat dan menghitung kain tambahannya di penawaran.</p>
+    </div>
+  );
+}
+
+type DesignRevision = { revision: number; source: string; state: Record<string, string | number | MotifLayout | StyleItem[]>; prompt_text: string | null; created_at: string };
 
 function RevisionHistory({ cust, onChanged }: { cust: Customization; onChanged: () => void }) {
   const versions = useLoad(() => api<DesignRevision[]>(`/customizations/${cust.id}/revisions`), `${cust.id}-${cust.current_revision}`);
@@ -324,21 +350,29 @@ function usePreview(refreshKey: string) {
 
 const GENDERS = [["neutral", "Netral"], ["female", "Perempuan"], ["male", "Laki-laki"]] as const;
 
+type AiNotice = { ai_tryon?: { available: boolean; avatar_notice?: string } };
+
 function AvatarBox({ cust }: { cust: Customization }) {
   const act = useAction();
-  const { preview, setPreview, pending } = usePreview(`${cust.current_revision}-${cust.measurement_set?.revision ?? 0}`);
+  const refreshKey = `${cust.current_revision}-${cust.measurement_set?.revision ?? 0}`;
+  const { preview, setPreview, pending } = usePreview(refreshKey);
+  const aiPreview = usePreview(refreshKey);
+  const notice = useLoad(() => api<AiNotice>("/photo-consent-notice", { token: null }), "notice");
+  const aiReady = !!notice.data?.ai_tryon?.available;
   const [gender, setGender] = useState("neutral");
   const mset = cust.measurement_set;
-  const make = async () => {
+  const make = async (useAi: boolean) => {
     if (!mset) return;
-    const p = await act.run(() => api<Preview>(`/customizations/${cust.id}/avatar-previews`, { body: { measurement_set_id: mset.id, gender } }));
-    if (p) setPreview(p);
+    const p = await act.run(() => api<Preview>(`/customizations/${cust.id}/avatar-previews`, { body: { measurement_set_id: mset.id, gender, use_ai: useAi } }));
+    if (p) (useAi ? aiPreview.setPreview : setPreview)(p);
   };
   // warnings start with a machine code ("avatar_mismatch:back_length: ..."); show the sentence after it
   const notes = preview?.warnings.map((w) => w.replace(/^[a-z_]+(:[a-z0-9_]+)?: /, "")) ?? [];
+  const ai = aiPreview.preview;
+  const aiNotes = ai?.warnings.filter((w) => !w.startsWith("ai_cost_usd") && w !== ai.label).map((w) => w.replace(/^[a-z_]+(:[a-z0-9_]+)?: /, "")) ?? [];
   return (
     <div className="grid gap-4">
-      <p className="text-base">Lihat baju ini dipakai badan 3D yang dibentuk dari ukuranmu: tinggi, lingkar, dan panjang yang kamu isi. Avatar dibuat dari angka saja, tanpa foto, dan hanya bisa dilihat olehmu; penjahit tidak menerimanya.</p>
+      <p className="text-base">Lihat baju ini dipakai badan yang dibentuk dari ukuranmu: tinggi, lingkar, dan panjang yang kamu isi. Avatar dibuat dari angka saja, tanpa foto, dan hanya bisa dilihat olehmu; penjahit tidak menerimanya.</p>
       {!mset && <p className="text-base text-muted">Isi dan simpan ukuran badan (termasuk tinggi) dulu.</p>}
       <div className="flex flex-wrap items-end gap-3">
         <Field label="Bentuk dasar badan">
@@ -346,9 +380,21 @@ function AvatarBox({ cust }: { cust: Customization }) {
             {GENDERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </Field>
-        <button className="btn btn-quiet w-fit" disabled={act.busy || pending || !mset} onClick={make}>{preview?.url ? "Buat ulang avatar 3D" : "Buat avatar 3D"}</button>
+        {aiReady && <button className="btn w-fit" disabled={act.busy || aiPreview.pending || !mset} onClick={() => make(true)}>{aiPreview.pending ? <LoaderCircle size={16} className="animate-spin" /> : <Sparkles size={16} />}{ai?.url ? "Gambar ulang di avatarku" : "Lihat di avatarku (AI)"}</button>}
+        <button className="btn btn-quiet w-fit" disabled={act.busy || pending || !mset} onClick={() => make(false)}>{preview?.url ? "Buat ulang avatar 3D" : "Buat avatar 3D"}</button>
       </div>
+      {aiReady && notice.data?.ai_tryon?.avatar_notice && <p className="text-base text-muted">{notice.data.ai_tryon.avatar_notice} Gaya bebas dari desainmu ikut digambar.</p>}
       {act.error && <Notice tone="error">{act.error}</Notice>}
+      {aiPreview.pending && <p role="status">Baju sedang digambar di avatarmu (sekitar 15 detik)…</p>}
+      {ai?.status === "failed" && <Notice tone="error">Avatar AI gagal dibuat. {aiNotes.join(" ")}</Notice>}
+      {ai?.status === "stale" && <Notice tone="error">Desain atau ukuran sudah berubah sejak gambar ini dibuat. Gambar ulang.</Notice>}
+      {ai?.url && (
+        <figure className="m-0 grid max-w-md gap-2">
+          <img src={fileUrl(ai.url)} alt="Avatar dari ukuranmu memakai baju rancangan dengan gaya bebasmu" className="w-full bg-surface" />
+          <figcaption className="text-base text-muted">{ai.label}</figcaption>
+        </figure>
+      )}
+      {ai?.status !== "failed" && aiNotes.map((w) => <p key={w} className="text-base text-muted">{w}</p>)}
       {pending && <p role="status">Avatar sedang dibentuk dari ukuranmu…</p>}
       {preview?.status === "failed" && <Notice tone="error">Avatar gagal dibuat.</Notice>}
       {preview?.status === "stale" && <Notice tone="error">Desain atau ukuran sudah berubah sejak avatar ini dibuat. Buat ulang.</Notice>}
@@ -467,8 +513,8 @@ export function StudioWorkspace({ initialListingId, initialCustomizationId }: { 
             {action.error && <Notice tone="error">{action.error}</Notice>}
           </Section></div>
           {cust && <div key={cust.id} className="studio-design-panels">
-          <div hidden={step !== 1}><Section title="Desain"><div className="studio-selected-model"><GarmentDrawing code={cust.template.code} /><div><span>MODEL PILIHANMU</span><strong>{cust.template.name}</strong><button type="button" onClick={() => setStep(0)}>Pilih model lain <ArrowRight size={12} /></button></div><span className="studio-selected-check"><Check size={15} /></span></div><DesignOptions cust={cust} initialTemplate={initialTemplate} onChanged={reload} onDirtyChange={setDirty} /><FabricMapBox cust={cust} onChanged={reload} /><PromptBox cust={cust} onChanged={reload} /><RevisionHistory cust={cust} onChanged={reload} /></Section></div>
-          <div hidden={step !== 2}><Section title="Ukuran & Fit On"><Measurements cust={cust} onChanged={reload} onFrontUploaded={setFrontPhotoId} /><PhotoTryOn key={frontPhotoId ?? "no-photo"} custId={cust.id} revision={cust.current_revision} frontPhotoId={frontPhotoId} /><div className="studio-option-group"><div className="studio-group-heading"><h3>Coba di badanmu (3D)</h3></div><AvatarBox cust={cust} /></div></Section></div>
+          <div hidden={step !== 1}><Section title="Desain"><div className="studio-selected-model"><GarmentDrawing code={cust.template.code} /><div><span>MODEL PILIHANMU</span><strong>{cust.template.name}</strong><button type="button" onClick={() => setStep(0)}>Pilih model lain <ArrowRight size={12} /></button></div><span className="studio-selected-check"><Check size={15} /></span></div><DesignOptions cust={cust} initialTemplate={initialTemplate} onChanged={reload} onDirtyChange={setDirty} /><FabricMapBox cust={cust} onChanged={reload} /><PromptBox cust={cust} onChanged={reload} /><StyleBox cust={cust} onChanged={reload} /><RevisionHistory cust={cust} onChanged={reload} /></Section></div>
+          <div hidden={step !== 2}><Section title="Ukuran & Fit On"><Measurements cust={cust} onChanged={reload} onFrontUploaded={setFrontPhotoId} /><PhotoTryOn key={frontPhotoId ?? "no-photo"} custId={cust.id} revision={cust.current_revision} frontPhotoId={frontPhotoId} /><div className="studio-option-group"><div className="studio-group-heading"><h3>Coba di avatarmu</h3></div><AvatarBox cust={cust} /></div></Section></div>
           <div hidden={step !== 3}><Section title="Kebutuhan kain"><EstimateBox cust={cust} onChanged={reload} /></Section></div>
           <div hidden={step !== 4}><Section title="Pilih penjahit"><Tailors cust={cust} /></Section></div>
           </div>}

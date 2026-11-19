@@ -24,13 +24,19 @@ from PIL import Image
 
 from app.ml.vision import body3d, render
 from app.ml.vision.body3d import (
+    L_ANKLE,
     L_ELBOW,
+    L_HIP,
+    L_KNEE,
     L_SHOULDER,
     L_WRIST,
     LM,
     NECK,
     NUM_BETAS,
+    R_ANKLE,
     R_ELBOW,
+    R_HIP,
+    R_KNEE,
     R_SHOULDER,
     R_WRIST,
 )
@@ -57,7 +63,8 @@ SHAPES = {
     "T04": {"below_waist_cm": 42, "sleeve": "full"},
     "T05": {"below_waist_cm": 55, "sleeve": "full"},
 }
-NOT_DRAWN = {"collar": {"classic", "mandarin"}, "pockets": None, "trim": None}
+FRINGE_M = {"fringe_short": 0.06, "fringe_long": 0.12}
+NOT_DRAWN: dict[str, set | None] = {}  # every template option is drawn; free style is read by style_shape
 LABELS = {"chest_circumference": "lingkar dada", "waist_circumference": "lingkar pinggang",
           "hip_circumference": "lingkar pinggul", "shoulder_width": "lebar bahu", "back_length": "panjang punggung",
           "sleeve_length": "panjang lengan", "neck_circumference": "lingkar leher",
@@ -349,7 +356,8 @@ def _face_meta(rings: list[np.ndarray], from_hem: np.ndarray, heights: np.ndarra
     return heights[rows], mid, from_hem[rows]
 
 
-def _torso(mesh, body, joints, hem_y, neck_y, chest_y, offset, neck_cm, sleeved: bool) -> _Piece:
+def _torso(mesh, body, joints, hem_y, neck_y, chest_y, offset, neck_cm, sleeved: bool,
+           waist_y: float | None = None, flare: float = 0.0) -> _Piece:
     up, u, v = np.array([0.0, 1.0, 0.0]), np.array([1.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0])
     top_y = (joints[L_SHOULDER][1] + joints[R_SHOULDER][1]) / 2 - 0.02
     points, centers, radii = [], [], []
@@ -365,6 +373,9 @@ def _torso(mesh, body, joints, hem_y, neck_y, chest_y, offset, neck_cm, sleeved:
     heights = [p[1] for p in points]
     chest = int(np.argmin(np.abs(np.array(heights) - chest_y)))
     radii = _drape(np.array(radii), chest, -1, taper=0.99) + offset  # below the chest the cloth hangs
+    if flare and waist_y is not None and waist_y > hem_y:  # A-line: wider towards the hem, from the waist
+        below = np.clip((waist_y - np.array(heights)) / (waist_y - hem_y), 0, 1)
+        radii *= (1 + flare * below)[:, None]
     rings = [_ring(p, u, v, c, r) for p, c, r in zip(points, _smooth(centers), radii, strict=True)]
     # shoulders: slope from the last trunk ring up to a ring round the base of the neck, rounded at
     # the outside as the height rises fast at first
@@ -385,7 +396,8 @@ def _torso(mesh, body, joints, hem_y, neck_y, chest_y, offset, neck_cm, sleeved:
     return _Piece(pv, pf, puv, d_end, line, *_face_meta(rings, heights - hem_y, heights))
 
 
-def _sleeve(mesh, body, joints, side: str, length_m: float, offset: float) -> _Piece | None:
+def _sleeve(mesh, body, joints, side: str, length_m: float, offset: float, profile: str | None = None
+            ) -> _Piece | None:
     sh, el, wr = ((L_SHOULDER, L_ELBOW, L_WRIST) if side == "left" else (R_SHOULDER, R_ELBOW, R_WRIST))
     path = [joints[sh], joints[el], joints[wr]]
     seg = [np.linalg.norm(path[1] - path[0]), np.linalg.norm(path[2] - path[1])]
@@ -415,6 +427,8 @@ def _sleeve(mesh, body, joints, side: str, length_m: float, offset: float) -> _P
     radii = np.array(radii)
     radii[k:] = _drape(radii[k:], 0, 1, taper=0.97, flare=1.02)
     radii[:k + 1] = _drape(radii[:k + 1], k, -1, taper=0.9, flare=1.04)
+    if profile:
+        radii *= _sleeve_profile(profile, np.array(dist))[:, None]
     rings = [_ring(p, u, v, c, r + offset)
              for (p, u, v), c, r in zip(frames, _smooth(centers), radii, strict=True)]
     # close the seam: the top ring continues sideways into the body, under the torso's cloth (along
@@ -497,6 +511,222 @@ def _buttons(torso: _Piece, state: dict, hem_y: float, neck_y: float):
     return trimesh.util.concatenate(spheres) if spheres else None
 
 
+# ---------- 2b. free style, collars, pockets and fringe ----------
+
+@dataclass
+class StyleShape:
+    """What the buyer's free style requests change in the 3D garment. Requests no rule recognises are kept
+    in `not_drawn` and reported, never silently dropped."""
+    ease_add_cm: float = 0.0
+    hem: str | None = None  # crop | thigh | knee | calf | ankle
+    sleeve_length: str | None = None  # none | short | three_quarter | full
+    sleeve_profile: str | None = None  # puff | bell | wide
+    slit_m: float = 0.0
+    flare: float = 0.0
+    belt: bool = False
+    high_collar: bool = False
+    drawn: list[str] = field(default_factory=list)
+    not_drawn: list[str] = field(default_factory=list)
+
+
+def _rx(pattern: str):
+    import re
+
+    return re.compile(pattern)
+
+
+# (pattern over the Indonesian text and the English text, what it sets)
+STYLE_RULES = [
+    (_rx(r"oversize|oversized|longgar|loose|boxy|baggy|relaxed"), {"ease_add_cm": 16.0}),
+    (_rx(r"\bslim\b|ketat|fitted|pas badan|body ?fit|tight"), {"ease_add_cm": -6.0}),
+    (_rx(r"\bcrop|cropped"), {"hem": "crop"}),
+    (_rx(r"semata kaki|mata kaki|ankle|\bmaxi\b"), {"hem": "ankle"}),
+    (_rx(r"sebetis|betis|\bcalf|\bmidi\b"), {"hem": "calf"}),
+    (_rx(r"selutut|lutut|\bknee"), {"hem": "knee"}),
+    (_rx(r"sepaha|paha|thigh|mini"), {"hem": "thigh"}),
+    (_rx(r"tanpa lengan|sleeveless|sabrina"), {"sleeve_length": "none"}),
+    (_rx(r"lengan panjang|long sleeve|full.length sleeve"), {"sleeve_length": "full"}),
+    (_rx(r"lengan pendek|short sleeve"), {"sleeve_length": "short"}),
+    (_rx(r"3/4|tiga perempat|three.quarter"), {"sleeve_length": "three_quarter"}),
+    (_rx(r"balon|balloon|puff|bishop|mengembang di lengan|lengan (?:mengembang|kerut)"), {"sleeve_profile": "puff"}),
+    (_rx(r"lonceng|\bbell|terompet|flared sleeve"), {"sleeve_profile": "bell"}),
+    (_rx(r"kimono|kelelawar|batwing|lengan lebar|wide sleeve"), {"sleeve_profile": "wide"}),
+    (_rx(r"belahan|\bslit"), {"slit_m": 0.22}),
+    (_rx(r"a-line|a line|\bflare|mengembang|melebar|\bumbrella|payung"), {"flare": 0.35}),
+    (_rx(r"ikat pinggang|sabuk|\bbelt|\bobi\b|tali pinggang"), {"belt": True}),
+    (_rx(r"kerah (?:sanghai|shanghai|tinggi|tegak|mandarin)|stand.?collar|mandarin collar|high collar"),
+     {"high_collar": True}),
+]
+# words that mean the request is about a sleeve, so "mengembang" or "flare" in it is not an A-line hem
+_SLEEVE_WORDS = _rx(r"lengan|sleeve|manset|cuff")
+
+
+def style_shape(state: dict) -> StyleShape:
+    shape = StyleShape()
+    for item in state.get("style") or []:
+        words = f"{item.get('text', '')} | {item.get('en', '')}".lower()
+        hit = False
+        for pattern, change in STYLE_RULES:
+            if not pattern.search(words):
+                continue
+            if "flare" in change and _SLEEVE_WORDS.search(words):
+                continue
+            for key, value in change.items():
+                if key == "ease_add_cm":
+                    shape.ease_add_cm = value
+                elif key == "hem" and shape.hem is not None:
+                    continue  # the first length named in a request wins ("selutut" before "paha")
+                else:
+                    setattr(shape, key, value)
+            hit = True
+        (shape.drawn if hit else shape.not_drawn).append(item.get("text", ""))
+    return shape
+
+
+def _sleeve_profile(profile: str, dist: np.ndarray) -> np.ndarray:
+    """Multiplier on the sleeve's radius from shoulder (t=0) to cuff (t=1)."""
+    t = (dist - dist[0]) / max(dist[-1] - dist[0], 1e-6)
+    if profile == "puff":  # full in the middle, gathered back to the arm at the cuff
+        return 1 + 1.4 * np.sin(np.pi * np.clip(t, 0, 1) ** 0.7) * (t < 0.96)
+    if profile == "bell":
+        return 1 + 2.4 * np.clip(t - 0.3, 0, None) ** 1.4
+    return 1 + 0.55 * np.clip(t * 2.0, 0, 1)  # wide / kimono: loose from the shoulder down
+
+
+def _hem_from_style(hem: str, joints, waist_y: float) -> float:
+    knee = (joints[L_KNEE][1] + joints[R_KNEE][1]) / 2
+    ankle = (joints[L_ANKLE][1] + joints[R_ANKLE][1]) / 2
+    hip = (joints[L_HIP][1] + joints[R_HIP][1]) / 2
+    return {"crop": waist_y + 0.04, "thigh": (hip + knee) / 2, "knee": knee - 0.02,
+            "calf": (knee + ankle) / 2, "ankle": ankle + 0.06}[hem]
+
+
+def _piece(rings: list[np.ndarray], heights: np.ndarray, from_end: np.ndarray, top_first: bool) -> _Piece:
+    pv, pf, puv, d_end, line = _tube(rings, top_first=top_first)
+    return _Piece(pv, pf, puv, d_end, line, *_face_meta(rings, from_end, heights))
+
+
+def _collar(state: dict, high: bool, joints, neck_y: float, neck_cm: float) -> _Piece | None:
+    """A stand round the neck (mandarin, or a requested high collar) and, for a classic shirt collar, a
+    fall that turns down over it with its points at the front."""
+    kind = state.get("collar")
+    if kind not in ("mandarin", "classic") and not high:
+        return None
+    base_y = neck_y + 0.015
+    r0 = neck_cm / 100 / (2 * math.pi) + 0.022
+    centre = np.array([joints[NECK][0], 0.0, joints[NECK][2]])
+    u, v = np.array([1.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0])
+    stand_h = 0.045 if high and kind != "classic" else 0.032
+
+    def ring(y, r):
+        return _ring(centre + [0.0, y, 0.0], u, v, np.zeros(2), np.full(COLUMNS + 1, r))
+
+    rings, heights = [], []
+    for t in np.linspace(0, 1, 5):  # the stand narrows a little towards its top edge
+        rings.append(ring(base_y + t * stand_h, r0 * (1 - 0.06 * t)))
+        heights.append(base_y + t * stand_h)
+    if kind == "classic":  # the fall: from the top of the stand, out and down over it
+        top_r = r0 * 0.94 + 0.004
+        for t in np.linspace(0.15, 1, 5):
+            rings.append(ring(base_y + stand_h - t * (stand_h + 0.045), top_r + 0.004 + t * 0.05))
+            heights.append(base_y + stand_h - t * (stand_h + 0.045))
+    heights = np.array(heights)
+    return _piece(rings, heights, heights - heights.min(), top_first=True)
+
+
+def _collar_keep(piece: _Piece, kind: str | None) -> np.ndarray:
+    off = _angle_off_front(piece.angle)
+    if kind == "classic":  # the fall's points spread apart towards its edge, the stand meets at the front
+        lower = piece.row_y < piece.row_y.max() - 0.033
+        return off >= np.where(lower, np.radians(4) + np.radians(30) * np.clip(
+            (piece.row_y.max() - piece.row_y - 0.033) / 0.06, 0, 1), np.radians(4))
+    return off >= np.radians(5)  # a mandarin collar opens a little at the front
+
+
+def _surface_point(torso: _Piece, angle: float, y: float, centre_xz: np.ndarray):
+    """The torso cloth's point at a height and angle, and the horizontal outward direction there."""
+    cand = np.where(torso.row_y != -np.inf)[0]
+    da = np.abs((torso.angle[cand] - angle + math.pi) % (2 * math.pi) - math.pi)
+    i = cand[np.argmin(da + 4 * np.abs(torso.row_y[cand] - y))]
+    p = torso.verts[torso.faces[i]].mean(axis=0)
+    out = np.array([p[0] - centre_xz[0], 0.0, p[2] - centre_xz[1]])
+    return p, out / (np.linalg.norm(out) + 1e-9)
+
+
+POCKETS = {  # option -> [(angle from the wearer's left, height key, width m, height m)]
+    "left_chest_single": [(math.radians(64), "chest", 0.11, 0.13)],
+    "double_chest": [(math.radians(64), "chest", 0.11, 0.13), (math.radians(116), "chest", 0.11, 0.13)],
+    "side_double": [(math.radians(35), "hip", 0.15, 0.17), (math.radians(145), "hip", 0.15, 0.17)],
+    "double_welt": [(math.radians(58), "waist", 0.13, 0.014), (math.radians(122), "waist", 0.13, 0.014)],
+}
+
+
+def _pockets(torso: _Piece, state: dict, ys: dict[str, float], centre_xz: np.ndarray, rgba):
+    import trimesh
+
+    boxes = []
+    for angle, where, w, h in POCKETS.get(state.get("pockets"), []):
+        p, n = _surface_point(torso, angle, ys[where], centre_xz)
+        up = np.array([0.0, 1.0, 0.0])
+        side = np.cross(up, n)
+        box = trimesh.creation.box(extents=[w, h, 0.004])
+        frame = np.eye(4)
+        frame[:3, 0], frame[:3, 1], frame[:3, 2], frame[:3, 3] = side, up, n, p + 0.006 * n
+        box.apply_transform(frame)
+        box.visual.vertex_colors = rgba
+        boxes.append(box)
+    return trimesh.util.concatenate(boxes) if boxes else None
+
+
+def _fringe(torso: _Piece, keep: np.ndarray, length_m: float, rgba):
+    """Strands hanging from the hem every 8 mm (thin double-sided ribbons)."""
+    import trimesh
+
+    used = np.unique(torso.faces[keep])
+    hem = used[torso.d_end[used] < 1e-6]
+    if len(hem) < 3:
+        return None
+    pts = torso.verts[hem]
+    centre = pts.mean(axis=0)
+    order = np.argsort(np.arctan2(pts[:, 2] - centre[2], pts[:, 0] - centre[0]))
+    pts = pts[order]
+    seg = np.linalg.norm(np.diff(np.vstack([pts, pts[:1]]), axis=0), axis=1)
+    pos = np.concatenate([[0], np.cumsum(seg)])
+    samples = np.arange(0, pos[-1], 0.008)
+    ring = np.vstack([pts, pts[:1]])
+    top = np.stack([np.interp(samples, pos, ring[:, k]) for k in range(3)], axis=1)
+    out = top - [centre[0], top[:, 1].mean(), centre[2]]
+    out[:, 1] = 0
+    out /= np.linalg.norm(out, axis=1, keepdims=True) + 1e-9
+    tangent = np.cross([0.0, 1.0, 0.0], out)
+    w = 0.0015 * tangent
+    bottom = top + [0.0, -length_m, 0.0] + 0.012 * out
+    verts = np.concatenate([top - w, top + w, bottom + w, bottom - w])
+    n = len(top)
+    a, b, c, d = np.arange(n), np.arange(n) + n, np.arange(n) + 2 * n, np.arange(n) + 3 * n
+    faces = np.concatenate([np.stack([a, b, c], 1), np.stack([a, c, d], 1)])
+    mesh = trimesh.Trimesh(vertices=verts, faces=faces, process=False)
+    mesh.visual.vertex_colors = rgba
+    return mesh
+
+
+def _belt(torso: _Piece, waist_y: float, centre_xz: np.ndarray, rgba):
+    """A band of the same cloth round the waist, just outside the garment."""
+    import trimesh
+
+    mask = (np.abs(torso.row_y - waist_y) < 0.022)
+    if not mask.any():
+        return None
+    mesh = trimesh.Trimesh(vertices=torso.verts.copy(), faces=torso.faces[mask], process=False)
+    mesh.remove_unreferenced_vertices()
+    out = mesh.vertices - [centre_xz[0], 0.0, centre_xz[1]]
+    out[:, 1] = 0
+    out /= np.linalg.norm(out, axis=1, keepdims=True) + 1e-9
+    mesh.vertices = mesh.vertices + 0.006 * out
+    mesh.visual.vertex_colors = rgba
+    return mesh
+
+
 # ---------- 3. assembling and exporting ----------
 
 def _material(texture: Image.Image | None, rgba):
@@ -538,18 +768,29 @@ def build(body, template_code: str, state: dict, ease_cm: float, height_cm: floa
     verts, joints = _posed(body, betas)
     mesh = trimesh.Trimesh(vertices=verts, faces=body.faces, process=False)
     shape = SHAPES[template_code]
+    style = style_shape(state)
     neck_y = verts[LM["SHOULDER_TOP"]][1]
     waist_y = verts[LM["BACK_BELLY_BUTTON"]][1]
     chest_y = (verts[LM["LEFT_NIPPLE"]][1] + verts[LM["RIGHT_NIPPLE"]][1]) / 2
     hem_y = waist_y - (shape["below_waist_cm"] + float(state.get("hem_length_delta_cm") or 0)) / 100
-    offset = ease_cm / 100 / (2 * math.pi) + 0.006  # ease is a circumference; 6 mm keeps cloth off skin
-    pieces = [_torso(mesh, body, joints, hem_y, neck_y, chest_y, offset, fitted.get("neck_circumference", 38.0),
-                     shape["sleeve"] is not None)]
-    if shape["sleeve"] is not None:
-        base = fitted["sleeve_length"] if shape["sleeve"] == "full" else shape["sleeve"]
+    if style.hem:
+        hem_y = _hem_from_style(style.hem, joints, waist_y)
+    ease = max(ease_cm + style.ease_add_cm, 4.0)
+    offset = ease / 100 / (2 * math.pi) + 0.006  # ease is a circumference; 6 mm keeps cloth off skin
+    sleeve_kind = shape["sleeve"]
+    if style.sleeve_length == "none":
+        sleeve_kind = None
+    elif style.sleeve_length:
+        sleeve_kind = {"full": "full", "short": 22, "three_quarter": "three_quarter"}[style.sleeve_length]
+    neck_cm = fitted.get("neck_circumference", 38.0)
+    pieces = [_torso(mesh, body, joints, hem_y, neck_y, chest_y, offset, neck_cm, sleeve_kind is not None,
+                     waist_y=waist_y, flare=style.flare)]
+    if sleeve_kind is not None:
+        full = fitted["sleeve_length"]
+        base = full if sleeve_kind == "full" else 0.75 * full if sleeve_kind == "three_quarter" else sleeve_kind
         length = (base + float(state.get("sleeve_length_delta_cm") or 0)) / 100
         for side in ("left", "right"):
-            sleeve = _sleeve(mesh, body, joints, side, length, 0.7 * offset)
+            sleeve = _sleeve(mesh, body, joints, side, length, 0.7 * offset, style.sleeve_profile)
             if sleeve is not None:
                 pieces.append(sleeve)
     # torso cloth clears the trunk only (the arms hang next to it); sleeves clear only their arm, so
@@ -564,6 +805,8 @@ def build(body, template_code: str, state: dict, ease_cm: float, height_cm: floa
         own = np.isin(body.vertex_part, side)
         _clear(piece, verts[own], normals[own], 0.004)
     plain_rgba = [*np.asarray(texture.convert("RGB")).reshape(-1, 3).mean(axis=0).astype(int).tolist(), 255]
+    trim_rgba = [int(c * 0.82) for c in plain_rgba[:3]] + [255]
+    centre_xz = np.array([joints[NECK][0], joints[NECK][2]])
     textured, plain = _material(texture, [255, 255, 255, 255]), _material(None, plain_rgba)
     scene = trimesh.Scene()
     body_mesh = trimesh.Trimesh(vertices=verts, faces=body.faces, process=False)
@@ -574,8 +817,16 @@ def build(body, template_code: str, state: dict, ease_cm: float, height_cm: floa
     base = (textured, TILE_M, TILE_M) if default is None else \
         (_material(default.image, [255, 255, 255, 255]), default.tile_w_m, default.tile_h_m)
     own = {p: (_material(t.image, [255, 255, 255, 255]), t.tile_w_m, t.tile_h_m) for p, t in panels.items()}
+    collar = _collar(state, style.high_collar, joints, neck_y, neck_cm)
+    torso_keep = None
     for i, piece in enumerate(pieces):
         keep = _keep(piece, state, neck_y)
+        if i == 0:
+            if style.slit_m:  # side slits: open at both side seams, up from the hem
+                side = np.minimum(np.abs(piece.angle % (2 * math.pi)), np.abs(piece.angle - math.pi))
+                side = np.minimum(side, np.abs(piece.angle - 2 * math.pi))
+                keep &= ~((side < np.radians(6)) & (piece.hem < style.slit_m))
+            torso_keep = keep
         motif = _textured(piece, placement, chest_y)
         panel = _panel_of(piece, i > 0, "hem" in panels)
         assigned = np.isin(panel, list(panels))
@@ -587,6 +838,17 @@ def build(body, template_code: str, state: dict, ease_cm: float, height_cm: floa
             if mask.any():
                 scene.add_geometry(_sub(piece, mask, mat, tw, th, anchor, centred), node_name=f"garment_{i}_{name}",
                                    geom_name=f"garment_{i}_{name}")
+    if collar is not None:
+        scene.add_geometry(_sub(collar, _collar_keep(collar, state.get("collar")), base[0], base[1], base[2]),
+                           node_name="collar", geom_name="collar")
+    ys = {"chest": chest_y + 0.03, "waist": waist_y - 0.03, "hip": max(waist_y - 0.10, hem_y + 0.12)}
+    extras = {"pockets": _pockets(pieces[0], state, ys, centre_xz, trim_rgba),
+              "belt": _belt(pieces[0], waist_y, centre_xz, trim_rgba) if style.belt else None}
+    if state.get("trim") in FRINGE_M:
+        extras["fringe"] = _fringe(pieces[0], torso_keep, FRINGE_M[state["trim"]], plain_rgba)
+    for name, geom in extras.items():
+        if geom is not None:
+            scene.add_geometry(geom, node_name=name, geom_name=name)
     buttons = _buttons(pieces[0], state, hem_y, neck_y)
     if buttons is not None:
         scene.add_geometry(buttons, node_name="buttons", geom_name="buttons")
@@ -595,8 +857,9 @@ def build(body, template_code: str, state: dict, ease_cm: float, height_cm: floa
     if skipped:
         warnings.append("not_drawn: " + ", ".join(LABELS[k] for k in skipped)
                         + " belum digambar pada avatar 3D; lihat ilustrasi desain")
-    if state.get("style"):
-        warnings.append("style_not_drawn: gaya bebas belum tampil pada avatar 3D; lihat avatar AI")
+    if style.not_drawn:
+        warnings.append("style_not_drawn: " + "; ".join(style.not_drawn)
+                        + " belum bisa dibentuk pada avatar 3D; lihat avatar AI")
     buf = io.BytesIO()
     buf.write(scene.export(file_type="glb", include_normals=True))
     return Avatar(glb=buf.getvalue(), fitted=fitted, warnings=warnings)

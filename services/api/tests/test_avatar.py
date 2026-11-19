@@ -217,3 +217,55 @@ def test_real_avatar_matches_the_measurements_and_exports_a_glb(code):
     names = set(scene.geometry)
     assert "body" in names and any(n.startswith("garment_0") for n in names)
     assert any(n.startswith("garment_1") for n in names) == (code != "T03")  # the vest has no sleeves
+
+
+# ---------- collars, pockets, fringe and the free style on the 3D garment ----------
+
+def _style(*texts):
+    return [{"part": "detail", "text": t} for t in texts]
+
+
+def test_style_words_become_garment_shape_and_the_rest_is_reported():
+    shape = avatar.style_shape({"style": _style("oversize", "lengan balon mengerut", "belahan samping",
+                                                "panjang selutut", "ikat pinggang", "kerah sanghai", "peplum")})
+    assert shape.ease_add_cm > 0 and shape.sleeve_profile == "puff" and shape.slit_m > 0
+    assert shape.hem == "knee" and shape.belt and shape.high_collar
+    assert shape.flare == 0  # "mengerut" on a sleeve is not an A-line hem
+    assert shape.not_drawn == ["peplum"]
+    english = avatar.style_shape({"style": [{"part": "sleeves", "text": "lengan model khusus",
+                                             "en": "bell sleeves"}]})
+    assert english.sleeve_profile == "bell" and english.not_drawn == []
+    assert avatar.style_shape({}).drawn == []
+
+
+def test_sleeve_profiles_swell_where_they_should():
+    dist = np.linspace(0.07, 0.55, 25)
+    puff, bell = avatar._sleeve_profile("puff", dist), avatar._sleeve_profile("bell", dist)
+    assert puff[12] > 1.8 and puff[-1] == pytest.approx(1.0) and puff[0] == pytest.approx(1.0)
+    assert bell[-1] > 2 and bell[0] == pytest.approx(1.0) and np.all(np.diff(bell) >= 0)
+
+
+@pytest.mark.skipif(body3d.get_body_model("neutral") is None, reason="SMPL-X model files not installed")
+def test_real_avatar_draws_collars_pockets_fringe_and_style():
+    import trimesh
+
+    body = body3d.get_body_model("neutral")
+    texture = avatar.fabric_texture(_fabric_png())
+
+    def scene(code, **extra):
+        defn = template_defs.definition(code)
+        state = {**template_defs.defaults(defn), **extra}
+        out = avatar.build(body, code, state, defn["material_rules"]["ease_cm"], 170.0, dict(DIMS), texture)
+        return trimesh.load(io.BytesIO(out.glb), file_type="glb"), out.warnings
+
+    classic, warnings = scene("T01", collar="classic", pockets="left_chest_single")
+    assert {"collar", "pockets"} <= set(classic.geometry) and not any("not_drawn" in w for w in warnings)
+    fringe, _ = scene("T05", trim="fringe_long")
+    hem_low = min(g.bounds[0][1] for n, g in fringe.geometry.items() if n.startswith("garment_0"))
+    assert fringe.geometry["fringe"].bounds[0][1] < hem_low - 0.10  # strands hang about 12 cm below the hem
+    plain, _ = scene("T05")
+    styled, warnings = scene("T05", style=_style("panjang semata kaki", "ikat pinggang", "peplum"))
+    low = {name: min(g.bounds[0][1] for n, g in sc.geometry.items() if n.startswith("garment_0"))
+           for name, sc in (("plain", plain), ("styled", styled))}
+    assert low["styled"] < low["plain"] - 0.3 and "belt" in styled.geometry
+    assert any(w.startswith("style_not_drawn: peplum") for w in warnings)

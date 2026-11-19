@@ -595,6 +595,47 @@ def build(body, template_code: str, state: dict, ease_cm: float, height_cm: floa
     if skipped:
         warnings.append("not_drawn: " + ", ".join(LABELS[k] for k in skipped)
                         + " belum digambar pada avatar 3D; lihat ilustrasi desain")
+    if state.get("style"):
+        warnings.append("style_not_drawn: gaya bebas belum tampil pada avatar 3D; lihat avatar AI")
     buf = io.BytesIO()
     buf.write(scene.export(file_type="glb", include_normals=True))
     return Avatar(glb=buf.getvalue(), fitted=fitted, warnings=warnings)
+
+
+# ---------- 4. a flat front picture of the bare body (for the image model to dress) ----------
+
+FRONT_SIZE = (768, 1024)
+FRONT_BG = (237, 235, 230)
+FRONT_SKIN = np.array([204, 196, 189], dtype=float)
+FRONT_LIGHT = np.array([0.3, 0.4, 1.0]) / np.linalg.norm([0.3, 0.4, 1.0])
+
+
+def draw_front(verts: np.ndarray, faces: np.ndarray, size: tuple[int, int] = FRONT_SIZE) -> Image.Image:
+    """Front view of a mesh, shaded grey on a plain background (painter's algorithm: far faces first).
+    No face texture, no hair: only the body's shape, which is what the measurements decide."""
+    from PIL import ImageDraw
+
+    tri = verts[faces]
+    normal = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+    normal /= np.linalg.norm(normal, axis=1, keepdims=True) + 1e-12
+    visible = normal[:, 2] > 0
+    shade = 0.35 + 0.65 * np.clip(normal @ FRONT_LIGHT, 0, 1)
+    width, height = size
+    lo, hi = verts[:, 1].min(), verts[:, 1].max()
+    scale = height * 0.9 / (hi - lo)  # the body fills 90% of the height, centred
+    cx = (verts[:, 0].min() + verts[:, 0].max()) / 2
+    xy = np.stack([width / 2 + (tri[:, :, 0] - cx) * scale, height * 0.05 + (hi - tri[:, :, 1]) * scale], axis=-1)
+    image = Image.new("RGB", size, FRONT_BG)
+    draw = ImageDraw.Draw(image)
+    for i in np.argsort(tri[:, :, 2].mean(axis=1)):
+        if visible[i]:
+            colour = tuple(int(c) for c in np.clip(FRONT_SKIN * shade[i], 0, 255))
+            draw.polygon([tuple(p) for p in xy[i]], fill=colour, outline=colour)
+    return image
+
+
+def front_picture(body, height_cm: float, values: dict[str, float]) -> tuple[Image.Image, dict[str, float]]:
+    """The buyer's body rebuilt from their measurements, drawn from the front without any garment."""
+    betas, fitted = shape_for(body, height_cm, values)
+    verts, _ = _posed(body, betas)
+    return draw_front(verts, np.asarray(body.faces)), fitted

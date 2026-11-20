@@ -82,21 +82,27 @@ def edit_image(messages: list[dict], *, model: str, timeout: int = 150) -> Image
     base, key = endpoint()
     if settings.llm_provider != "openrouter":
         raise RuntimeError("Pembuatan gambar AI hanya tersedia lewat OpenRouter")
-    body = {"model": model, "modalities": ["image", "text"], "messages": messages, "usage": {"include": True}}
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {key}"}
-    req = urllib.request.Request(f"{base}/chat/completions", data=json.dumps(body).encode(),
-                                 headers=headers, method="POST")
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            data = json.load(resp)
-        url = data["choices"][0]["message"]["images"][0]["image_url"]["url"]
-        png = base64.b64decode(url.split(",", 1)[1])
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode(errors="replace")[:200]
-        raise RuntimeError(f"Penyedia gambar menolak permintaan (HTTP {exc.code}): {detail}") from exc
-    except (OSError, KeyError, IndexError, ValueError) as exc:
-        raise RuntimeError(f"Penyedia gambar tidak mengembalikan gambar: {exc}") from exc
-    return ImageResult(png=png, usage=data.get("usage") or {})
+    # Models that also write text take ["image", "text"]; image-only models (Seedream and the like) refuse
+    # that pair with a 404 about output modalities, so they are asked again for the image alone.
+    for modalities in (["image", "text"], ["image"]):
+        body = {"model": model, "modalities": modalities, "messages": messages, "usage": {"include": True}}
+        req = urllib.request.Request(f"{base}/chat/completions", data=json.dumps(body).encode(),
+                                     headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.load(resp)
+            url = data["choices"][0]["message"]["images"][0]["image_url"]["url"]
+            png = base64.b64decode(url.split(",", 1)[1])
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode(errors="replace")[:200]
+            if exc.code == 404 and "output modalities" in detail and len(modalities) > 1:
+                continue
+            raise RuntimeError(f"Penyedia gambar menolak permintaan (HTTP {exc.code}): {detail}") from exc
+        except (OSError, KeyError, IndexError, ValueError) as exc:
+            raise RuntimeError(f"Penyedia gambar tidak mengembalikan gambar: {exc}") from exc
+        return ImageResult(png=png, usage=data.get("usage") or {})
+    raise RuntimeError("Penyedia gambar tidak mengembalikan gambar")
 
 
 def parse_json(text: str, what: str) -> dict:

@@ -142,6 +142,40 @@ def build_avatar_messages(mannequin: Image.Image, drawing: Image.Image, fabric: 
     ]}]
 
 
+PRODUCT_LABEL = ("Ilustrasi dibuat model gambar AI dari foto kain asli dan desain ini; bentuk dan lipatan hanya "
+                 "perkiraan, bukan pola potong atau jaminan hasil akhir.")
+PRODUCT_METHOD_PREFIX = "ai_product_render"
+
+
+def build_product_messages(drawing: Image.Image, fabric: Image.Image, template_name: str,
+                           state: dict) -> list[dict]:
+    """The garment on its own, as a tidy catalogue picture. Only the flat drawing and the listing's public fabric
+    photo are sent: no person, no measurements."""
+    text = (
+        "You are drawing a product picture for a clothing shop.\n"
+        "Image 1 is a rough flat drawing of a garment that shows its cut (neckline or collar, sleeve length, hem "
+        "length, buttons, pockets), crudely filled with its fabric. Image 2 is a photo of the real woven fabric.\n"
+        f"Draw this garment: {describe(template_name, state)}.\n"
+        + _style_text(state) +
+        "Rules: the garment alone, seen from the front, laid flat, upright, centred and symmetrical, on a plain "
+        "warm off-white background, like a clean catalogue flat-lay photo with soft even light. Neat straight seams, "
+        "both sleeves the same shape and length, the collar and buttons clearly visible. Take the cut and details "
+        f"from image 1 and the description above. {FABRIC_RULE} Keep the woven motif rows straight and level "
+        "across the garment and matched at the centre front. No person, mannequin, hanger, text, logos or "
+        "watermarks. Return the image only."
+    )
+    return [{"role": "user", "content": [
+        {"type": "text", "text": text},
+        {"type": "image_url", "image_url": {"url": _jpeg_url(drawing, 640)}},
+        {"type": "image_url", "image_url": {"url": _jpeg_url(fabric, 768)}},
+    ]}]
+
+
+def generate_product(drawing: Image.Image, fabric: Image.Image, template_name: str, state: dict,
+                     *, model: str) -> llm_client.ImageResult:
+    return llm_client.edit_image(build_product_messages(drawing, fabric, template_name, state), model=model)
+
+
 def generate(photo: Image.Image, drawing: Image.Image, fabric: Image.Image, template_name: str, state: dict,
              *, model: str) -> llm_client.ImageResult:
     return llm_client.edit_image(build_messages(photo, drawing, fabric, template_name, state), model=model)

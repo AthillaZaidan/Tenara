@@ -1,0 +1,137 @@
+name: CI/CD
+
+# Pull requests: tests only. Push to main: tests, then deploy to the Azure VM.
+# Deploy needs these repository secrets (Settings > Secrets and variables > Actions):
+#   DEPLOY_HOST         public host name of the VM (same as SITE_ADDRESS in the VM's .env)
+#   DEPLOY_USER         SSH user on the VM
+#   DEPLOY_SSH_KEY      private key of a key pair made only for CI (public half is in the VM's authorized_keys)
+#   DEPLOY_KNOWN_HOSTS  the VM's host key line(s), so CI refuses to talk to an impostor
+# The production .env, models and storage live only on the VM; nothing secret is in this repo.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**", "experiments/**"]
+  pull_request:
+    paths-ignore: ["**.md", "docs/**", "experiments/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: tenara
+          POSTGRES_PASSWORD: tenara
+          POSTGRES_DB: tenara
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U tenara -d tenara"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://tenara:tenara@localhost:5432/tenara_test
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: services/api/uv.lock
+      # The body3d extra (torch, smplx) is left out: the SMPL-X files are not in the repo, so the tests
+      # that need the real body model skip themselves. trimesh and scipy are enough for the rest.
+      - run: uv sync --frozen
+      - run: uv pip install trimesh scipy
+      - run: uv run --no-sync ruff check .
+      - run: uv run --no-sync pytest -q
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://example.invalid
+          NEXT_TELEMETRY_DISABLED: "1"
+
+  deploy:
+    needs: [api, web]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host vm
+            HostName $HOST
+            User $DEPLOY_USER
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ServerAliveInterval 30
+          EOF
+
+      # Same sync as the manual flow. Excluded paths are never copied and, with --delete, never removed:
+      # that keeps the VM's .env, models and storage (and the SMPL-X files) out of reach of the pipeline.
+      - name: Sync code to the VM
+        run: |
+          rsync -az --delete \
+            --exclude=.git --exclude=.github --exclude=node_modules --exclude=.venv --exclude=.next \
+            --exclude='.env*' --exclude=services/api/storage --exclude=services/api/models \
+            --exclude=docs --exclude=backups --exclude=experiments --exclude='*.md' \
+            --exclude=tests --exclude=Tenara_PRD.md \
+            ./ vm:tenara/
+
+      - name: Back up the database, build and restart
+        run: |
+          ssh vm 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          cd ~/tenara
+          export COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml
+          mkdir -p ~/backups
+          docker compose exec -T db pg_dump -U tenara tenara | gzip > ~/backups/pre-deploy-$(date +%Y%m%d-%H%M%S).sql.gz
+          ls -1t ~/backups/pre-deploy-*.sql.gz | tail -n +6 | xargs -r rm --
+          docker compose up -d --build
+          docker image prune -f
+          docker compose ps
+          REMOTE
+
+      - name: Health check
+        run: |
+          curl -fsS --retry 12 --retry-delay 10 --retry-all-errors --max-time 15 "https://$HOST/api/v1/health"
+          echo
+          curl -fsS --retry 6 --retry-delay 10 --retry-all-errors --max-time 15 -o /dev/null "https://$HOST/"

@@ -163,10 +163,38 @@ def _save(session: Session, preview: Preview, cust: Customization, image, method
 
 
 def handle_product_preview(session: Session, job: Job) -> dict:
+    """The design as a product picture: drawn by the image model when one is configured (only the flat drawing
+    and the public fabric photo leave the server), else, or when the provider fails, the flat drawing itself."""
     preview = session.get(Preview, uuid.UUID(job.input["preview_id"]))
     cust, revision, listing = _design(session, preview)
-    rendered = render.render_garment(cust.template_code, revision.state, _texture(session, listing))
+    photo = _fabric_photo(session, listing)
+    rendered = render.render_garment(cust.template_code, revision.state, render.load_texture(photo))
+    if tryon_ai.available():
+        try:
+            return _product_with_ai(session, preview, cust, revision, rendered, photo, job)
+        except RuntimeError as exc:  # say so instead of passing the flat drawing off as the AI picture
+            rendered.warnings.append(f"ai_failed: Ilustrasi AI gagal ({exc}); yang tampil adalah gambar datar")
     return _save(session, preview, cust, rendered.image, PRODUCT_METHOD, rendered.warnings, job)
+
+
+def _product_with_ai(session: Session, preview: Preview, cust: Customization, revision,
+                     rendered: render.Rendered, photo: bytes, job: Job) -> dict:
+    from app.services import template_defs
+
+    fabric = ImageOps.exif_transpose(Image.open(io.BytesIO(photo))).convert("RGB")
+    name = template_defs.DEFINITIONS[cust.template_code]["name"]
+    result = tryon_ai.generate_product(rendered.image, fabric, name, revision.state,
+                                       model=settings.llm_image_model)
+    try:
+        output = Image.open(io.BytesIO(result.png)).convert("RGB")
+    except (OSError, ValueError) as exc:
+        raise RuntimeError("gambar dari penyedia tidak dapat dibaca") from exc
+    method = f"{tryon_ai.PRODUCT_METHOD_PREFIX}:{settings.llm_image_model}"
+    notes = _ai_notes(rendered.warnings)
+    cost = result.usage.get("cost")
+    if cost is not None:
+        notes.append(f"ai_cost_usd: {cost}")
+    return _save(session, preview, cust, output, method, notes, job, label=tryon_ai.PRODUCT_LABEL)
 
 
 def handle_on_body_preview(session: Session, job: Job) -> dict:

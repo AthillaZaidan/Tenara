@@ -23,9 +23,10 @@ RUN VIRTUAL_ENV=/opt/venv uv pip install --no-cache --no-deps -r torch.txt \
 
 # ---- runtime ----
 FROM python:3.12-slim-bookworm
-# opencv (a mediapipe dependency) needs these shared libraries
+# opencv (a mediapipe dependency) needs libgl1/libglib; mediapipe's pose landmarker loads EGL/GLES
+# even on CPU (without them every photo measurement fails with "libEGL.so.1: cannot open shared object")
 RUN apt-get update \
- && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 \
+ && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 libegl1 libgles2 \
  && rm -rf /var/lib/apt/lists/* \
  && useradd --uid 1000 --create-home tenara \
  && mkdir -p /data/storage /data/fastembed && chown -R tenara /data

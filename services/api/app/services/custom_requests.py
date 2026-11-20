@@ -13,6 +13,7 @@ from app.core.errors import (
     InvalidTransition,
     NotFound,
 )
+from app.ml.vision import tryon_ai
 from app.models import (
     Customization,
     DeliveryAddress,
@@ -167,7 +168,9 @@ def _design_preview_out(session: Session, file_id: str | None) -> dict | None:
     stored = session.get(File, uuid.UUID(file_id)) if file_id else None
     if stored is None or stored.deleted_at is not None:
         return None
-    return {"url": f"/api/v1/files/{stored.id}?token={make_token(stored.id)}", "label": PREVIEW_LABEL}
+    drawn_by = session.scalar(select(Preview.method).where(Preview.file_id == stored.id).limit(1)) or ""
+    label = tryon_ai.PRODUCT_LABEL if drawn_by.startswith(tryon_ai.PRODUCT_METHOD_PREFIX) else PREVIEW_LABEL
+    return {"url": f"/api/v1/files/{stored.id}?token={make_token(stored.id)}", "label": label}
 
 
 def submit_request(session: Session, buyer: User, req: CustomRequest) -> CustomRequest:

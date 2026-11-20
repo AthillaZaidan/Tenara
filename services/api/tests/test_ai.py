@@ -391,6 +391,63 @@ def test_product_preview_uses_the_listings_own_fabric(client, session, ai, h, ma
     assert len(colors) > 3  # real fabric texture, not a flat fill
 
 
+@pytest.fixture
+def product_ai(monkeypatch):
+    from app.ml import llm_client
+    from app.ml.vision import tryon_ai
+
+    monkeypatch.setattr(tryon_ai.settings, "llm_image_model", "g/img")
+    monkeypatch.setattr(tryon_ai.settings, "llm_provider", "openrouter")
+    monkeypatch.setattr(llm_client, "configured", lambda: True)
+    calls = []
+
+    def fake(messages, *, model, timeout=150):
+        calls.append({"messages": messages, "model": model})
+        buf = io.BytesIO()
+        Image.new("RGB", (40, 50), (150, 40, 40)).save(buf, format="PNG")
+        return llm_client.ImageResult(png=buf.getvalue(), usage={"cost": 0.04})
+
+    monkeypatch.setattr(tryon_ai.llm_client, "edit_image", fake)
+    return calls
+
+
+def test_product_preview_is_drawn_by_the_image_model_when_one_is_set(client, session, ai, h, make_listing,
+                                                                    product_ai):
+    cust = _create(client, h, make_listing())
+    _add_texture(session, make_listing, cust)
+    _apply(client, h, cust["id"], 1, changes={"collar": "mandarin", "buttons": "wood_option_01"})
+    preview = _product_preview(client, h, cust)
+    run_jobs(session)
+    done = client.get(f"{API}/previews/{preview['id']}", headers=h).json()["data"]
+    assert done["method"] == "ai_product_render:g/img" and done["status"] == "completed_with_warnings"
+    assert "model gambar AI" in done["label"] and "model gambar AI" in done["warnings"][0]
+    assert any(w.startswith("ai_cost_usd") for w in done["warnings"])
+    img = Image.open(io.BytesIO(client.get(done["url"]).content))
+    assert img.size == (40, 50)
+    content = product_ai[0]["messages"][0]["content"]
+    assert len(content) == 3  # instruction, flat drawing, fabric photo: nothing about the buyer
+    assert "flat-lay" in content[0]["text"] and "a mandarin (stand-up) collar" in content[0]["text"]
+    assert "wooden buttons" in content[0]["text"]
+
+
+def test_a_failed_image_model_falls_back_to_the_flat_drawing_and_says_so(client, session, ai, h, make_listing,
+                                                                        product_ai, monkeypatch):
+    from app.ml.vision import tryon_ai
+
+    def boom(messages, *, model, timeout=150):
+        raise RuntimeError("HTTP 402")
+
+    monkeypatch.setattr(tryon_ai.llm_client, "edit_image", boom)
+    cust = _create(client, h, make_listing())
+    _add_texture(session, make_listing, cust)
+    preview = _product_preview(client, h, cust)
+    run_jobs(session)
+    done = client.get(f"{API}/previews/{preview['id']}", headers=h).json()["data"]
+    assert done["method"] == "pillow_flat_composite_v1" and done["url"]
+    assert any(w.startswith("ai_failed") and "HTTP 402" in w for w in done["warnings"])
+    assert "model gambar AI" not in done["label"]
+
+
 def test_each_revision_gets_its_own_preview_and_old_ones_go_stale(client, session, ai, h, make_listing):
     cust = _create(client, h, make_listing())
     _add_texture(session, make_listing, cust)

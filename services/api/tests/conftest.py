@@ -29,6 +29,8 @@ _security._hasher = PasswordHasher(time_cost=1, memory_cost=512, parallelism=1)
 # Tests never call a real model provider: the design prompt goes through the offline rules
 # (tests of the LLM path inject a scripted LLMInterpreter).
 settings.prompt_interpreter = "rules"
+# Product pictures fall back to the flat drawing; tests of the image model set one and fake the provider.
+settings.llm_image_model = ""
 
 
 def _ensure_test_db(url: str) -> None:

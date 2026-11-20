@@ -366,5 +366,6 @@ def preview_out(session: Session, preview: Preview) -> dict:
             "design_revision": preview.design_revision, "method": preview.method,
             "warnings": warnings, "job_id": preview.job_id, "url": url,
             "measurement_set_id": preview.measurement_set_id,
-            "label": {"avatar_3d": AVATAR_LABEL, "avatar_ai": tryon_ai.AVATAR_LABEL}.get(
+            "label": tryon_ai.PRODUCT_LABEL if (preview.method or "").startswith(tryon_ai.PRODUCT_METHOD_PREFIX)
+            else {"avatar_3d": AVATAR_LABEL, "avatar_ai": tryon_ai.AVATAR_LABEL}.get(
                 preview.kind, "Ilustrasi konseptual; bukan pola potong atau jaminan hasil akhir.")}

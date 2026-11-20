@@ -43,6 +43,43 @@ def test_edit_image_sends_the_images_and_decodes_the_reply(monkeypatch):
     assert sent["url"].endswith("/chat/completions") and sent["auth"] == "Bearer k"
 
 
+def test_an_image_only_model_is_asked_again_for_the_image_alone(monkeypatch):
+    sent = []
+
+    def fake_urlopen(req, timeout):
+        body = json.loads(req.data)
+        sent.append(body["modalities"])
+        if body["modalities"] == ["image", "text"]:
+            raise llm_client.urllib.error.HTTPError(
+                req.full_url, 404, "nf", {}, io.BytesIO(b'{"error":{"message":"No endpoints found that support '
+                                                         b'the requested output modalities: image, text"}}'))
+        url = "data:image/png;base64," + base64.b64encode(_png((4, 5, 6))).decode()
+        return _Resp(json.dumps({"choices": [{"message": {"images": [{"image_url": {"url": url}}]}}]}).encode())
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(llm_client.settings, "llm_provider", "openrouter")
+    monkeypatch.setattr(llm_client.settings, "openrouter_api_key", "k")
+    out = llm_client.edit_image([{"role": "user", "content": "x"}], model="seed/img")
+    assert sent == [["image", "text"], ["image"]]
+    assert Image.open(io.BytesIO(out.png)).getpixel((0, 0)) == (4, 5, 6)
+
+
+def test_other_refusals_are_not_retried(monkeypatch):
+    calls = []
+
+    def fake_urlopen(req, timeout):
+        calls.append(1)
+        raise llm_client.urllib.error.HTTPError(req.full_url, 403, "f", {},
+                                                io.BytesIO(b"This model is not available in your region."))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(llm_client.settings, "llm_provider", "openrouter")
+    monkeypatch.setattr(llm_client.settings, "openrouter_api_key", "k")
+    with pytest.raises(RuntimeError, match="HTTP 403"):
+        llm_client.edit_image([], model="m")
+    assert len(calls) == 1
+
+
 def test_a_reply_without_an_image_is_a_provider_failure_not_an_answer(monkeypatch):
     monkeypatch.setattr(llm_client.urllib.request, "urlopen",
                         lambda req, timeout: _Resp(json.dumps({"choices": [{"message": {"content": "no"}}]}).encode()))

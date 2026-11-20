@@ -286,6 +286,28 @@ def test_tailor_gets_the_product_preview_but_never_the_on_body_try_on(scene, sto
     assert "design_preview" not in m
 
 
+def test_the_tailor_is_told_when_the_product_picture_was_drawn_by_ai(scene, storage):
+    from app.main import app
+    from app.ml.vision import tryon_ai
+    from app.models import Customization, Preview
+    from app.services.files import create_file
+    from app.services.storage import get_storage
+
+    s = scene
+    app.dependency_overrides[get_storage] = lambda: storage
+    _ready_customization(s)
+    cust = s.session.get(Customization, s.cust["id"])
+    f = create_file(s.session, storage, owner_id=s.buyer.id, kind="preview", data=b"\x89PNG ai",
+                    content_type="image/png")
+    s.session.add(Preview(customization_id=cust.id, design_revision=cust.current_revision, kind="product",
+                          status="completed", file_id=f.id, method=f"{tryon_ai.PRODUCT_METHOD_PREFIX}:g/img"))
+    s.session.flush()
+    req = _request(s)
+    _submit(s, req["id"])
+    t = s.client.get(f"{API}/custom-requests/{req['id']}", headers=s.h["tailor"]).json()["data"]
+    assert t["design_preview"]["label"] == tryon_ai.PRODUCT_LABEL
+
+
 def test_without_a_current_product_preview_the_tailor_gets_data_only(scene, storage):
     from app.models import Customization, Preview
     from app.services.files import create_file

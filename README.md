@@ -7,8 +7,6 @@ Marketplace tenun Nusantara: kenali budayanya, beli kainnya, jahit bajunya.
   <img src="docs/screenshots/katalog-kain.png" alt="Katalog kain dengan filter daerah dan teknik" width="49%">
 </p>
 
-**Live:** https://tenara-demo-c8kf.eastasia.cloudapp.azure.com
-
 ## Produk
 
 Tenara menyatukan tiga hal dalam satu alur: **belajar** (galeri budaya interaktif), **belanja** (katalog kain dari penjual), dan **menjahit** (baju custom dari kain yang dipilih).
